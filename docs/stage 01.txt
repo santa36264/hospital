@@ -1,0 +1,2118 @@
+============================================================
+STAGE 01 — REQUIREMENTS, SCOPE & STAKEHOLDER ANALYSIS
+============================================================
+
+PROJECT TITLE
+Hospital Health Data Management, Reporting and Analysis System
+
+DOCUMENT
+Stage 01 — Requirements, Scope & Stakeholder Analysis
+
+PROJECT TYPE
+Single-Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. PURPOSE OF THIS DOCUMENT
+============================================================
+
+This document defines the requirements, scope, actors, workflows,
+business rules, data concepts, reporting requirements, analysis
+requirements, and acceptance criteria for the Hospital Health Data
+Management, Reporting and Analysis System.
+
+This document is the foundation for all later development stages.
+
+The development team must use this document as the source of truth
+for the system requirements.
+
+Future stages must implement these requirements without silently
+changing the business scope.
+
+If a later implementation stage discovers a requirement conflict,
+the conflict must be reviewed before changing the requirements.
+
+============================================================
+2. PROJECT OBJECTIVE
+============================================================
+
+The objective is to develop a web-based system that allows one
+hospital to:
+
+1. Configure health-data datasets.
+2. Define health indicators belonging to datasets.
+3. Define reporting periods.
+4. Enter health-service data.
+5. Validate entered data.
+6. Save data as drafts.
+7. Submit completed data.
+8. Review submitted data.
+9. Return incorrect data for correction.
+10. Approve valid submitted data.
+11. Generate standard reports.
+12. Generate custom reports.
+13. Analyze health data.
+14. Compare data across reporting periods.
+15. Display useful statistics and trends.
+16. Export reports.
+17. Maintain user accountability through audit logs.
+
+The system is primarily a HEALTH DATA COLLECTION, REPORTING AND
+ANALYSIS system.
+
+It is NOT intended to be a complete hospital patient-management
+or electronic medical record system.
+
+============================================================
+3. IMPORTANT PROJECT SCOPE DECISION
+============================================================
+
+This project will manage data for ONE HOSPITAL.
+
+The system will NOT initially support multiple hospitals,
+multiple facilities, zones, woredas, regions, or a national
+health reporting hierarchy.
+
+Therefore, the user should not have to select:
+
+Region
+Zone
+Woreda
+Hospital/Facility
+
+before entering data.
+
+The hospital is the fixed organization represented by the system.
+
+The architecture should still be designed cleanly enough that
+multi-hospital support could be added in a future version if
+required, but multi-hospital functionality is OUT OF SCOPE for
+this version.
+
+============================================================
+4. SOURCE / REFERENCE SYSTEM
+============================================================
+
+The project was informed by screenshots of an existing/sample
+health data reporting system supplied for this project.
+
+The screenshots show concepts including:
+
+- Data Entry
+- Datasets
+- Reporting Periods
+- Dataset Report
+- Custom Report
+- Data Analysis
+- Dataset/indicator-oriented reporting
+
+The screenshots also show a health-reporting style workflow involving
+datasets and reporting periods.
+
+These screenshots are used as functional inspiration and reference
+for the system structure.
+
+The screenshots do NOT provide complete requirements for this
+specific hospital.
+
+Therefore:
+
+- Concepts visibly supported by the screenshots may be used as
+  reference requirements.
+- Hospital-specific datasets, indicators, permissions, calculations,
+  validation rules, and workflows are proposed requirements unless
+  confirmed later by the actual hospital.
+- No dataset or indicator shown in the reference screenshots should
+  automatically be treated as a confirmed requirement.
+
+Source/reference note:
+The provided sample screenshots were used as functional inspiration
+for concepts such as datasets, reporting periods, data entry,
+dataset reports, custom reports, and data analysis.
+
+The screenshots are NOT claims that actual hospital employees
+provided specific requirements, and sample-screen datasets or
+indicators are NOT confirmed requirements of the hospital.
+
+============================================================
+4A. FINAL STAGE 01 PROJECT DECISIONS (ADDED 2026-10-02)
+============================================================
+
+The following items are FINAL PROJECT DECISIONS made after the
+Stage 01 requirements review. They override any ambiguous or
+conflicting earlier statement in this document.
+
+They are PROJECT DECISIONS, not confirmed hospital stakeholder
+facts.
+
+PD-01  SUBMISSION DEFINITION
+       A submission represents one Dataset + Reporting Period +
+       Data Entry Owner.
+       A Data Entry user owns the submission they create.
+       A submission is a persistent record beginning at DRAFT status.
+       The submission contains the indicator data values for that
+       dataset and reporting period.
+       The system must prevent competing active submissions for the
+       same dataset and reporting period in the initial single-
+       hospital version.
+
+PD-02  SUBMISSION STATUSES
+       Use these persistent statuses only:
+           DRAFT, SUBMITTED, UNDER_REVIEW, RETURNED, APPROVED.
+       Do NOT use RESUBMITTED as a separate persistent status.
+       Use the term UNDER_REVIEW consistently.
+
+PD-03  SUBMISSION WORKFLOW
+       DRAFT
+         | Submit
+         v
+       SUBMITTED
+         | Reporting starts review
+         v
+       UNDER_REVIEW
+         | Return OR Approve
+         v
+       RETURNED or APPROVED
+
+       RETURNED submissions are corrected by the Data Entry owner
+       and resubmitted as:
+         RETURNED -> SUBMITTED -> UNDER_REVIEW
+             -> APPROVED / RETURNED
+
+PD-04  SUBMISSION REVIEW
+       A Reporting user explicitly starts the review of a SUBMITTED
+       submission.
+       The system changes SUBMITTED -> UNDER_REVIEW.
+       Only authorized Reporting users can perform the review.
+
+PD-05  RETURNED SUBMISSIONS
+       When a Reporting user returns a submission:
+       - A return reason is mandatory.
+       - The submission becomes RETURNED.
+       - The original submission record remains.
+       - The Data Entry owner can correct the data.
+       - The submission can be resubmitted.
+       - The system must maintain revision/history information.
+       Resubmission changes RETURNED -> SUBMITTED.
+       Do not create a new submission for every correction.
+
+PD-06  REVISION HISTORY
+       The system must preserve the history of important submission
+       changes. At minimum, the history must allow the system to
+       determine:
+       - Who submitted
+       - Who reviewed
+       - Who returned
+       - Return reason
+       - Who resubmitted
+       - Who approved
+       - When each action occurred
+       The detailed database implementation will be designed in
+       Stage 03.
+
+PD-07  APPROVED DATA CORRECTION
+       Data Entry users cannot directly modify APPROVED data.
+       If approved data is discovered to be incorrect:
+       - It requires a controlled amendment/correction process.
+       - Ordinary Data Entry users cannot directly change it.
+       - An authorized administrative/reporting action must be
+         recorded.
+       - The system must preserve the original approved value/history.
+       - Any correction must be auditable.
+       The detailed amendment workflow will be finalized during the
+       architecture/database stages.
+
+PD-08  DATA ENTRY DATASET ACCESS
+       For the initial version:
+       - All active Data Entry users can access active datasets.
+       - There is no per-user dataset assignment system in the
+         initial version.
+       The architecture may allow dataset assignment to be introduced
+       later.
+
+PD-09  ADMIN DATA ENTRY
+       Admin is responsible for system configuration.
+       Admin should NOT perform ordinary health-data entry.
+       Therefore:
+       - Admin does not use the normal Data Entry workflow.
+       - Admin cannot approve data they personally entered.
+       - Separation of duties must prevent self-approval.
+       Reporting is responsible for reviewing and approving
+       submissions.
+
+PD-10  REPORTING AUDIT ACCESS
+       Audit logs are Admin-only in the initial version.
+       Reporting users do not have general access to the complete
+       audit log.
+       Reporting users can still see workflow history necessary to
+       review submissions.
+
+PD-11  MANAGER DATA ACCESS
+       Manager users primarily consume approved information.
+       Manager users must NOT see unapproved raw submission data
+       through normal reporting and analysis functionality.
+       Manager dashboard, reports, statistics, and analysis should
+       use approved data.
+
+PD-12  DATA ENTRY ANALYSIS ACCESS
+       Data Entry users do not receive management-level analysis.
+       They may view information necessary to understand their own
+       submissions, such as:
+       - Draft status
+       - Submitted status
+       - Returned status
+       - Approval status
+       - Return reason
+       - Their own submission history
+       Management analytics and cross-period analysis are for
+       Reporting, Manager, and authorized Admin functionality.
+
+PD-13  REPORTING PERIOD LIFECYCLE
+       The initial period statuses remain OPEN and CLOSED.
+       Admin controls period opening and closing.
+       A CLOSED period cannot receive ordinary new data entry.
+       If a draft exists when the period closes:
+       - The draft becomes read-only.
+       - It cannot be submitted while the period is closed.
+       - Its historical information remains preserved.
+       Reopening a closed period is an exceptional administrative
+       action and must be auditable.
+
+PD-14  DATASET/INDICATOR DEACTIVATION
+       If a dataset becomes inactive:
+       - Existing historical data remains preserved.
+       - Existing drafts for that dataset become read-only.
+       - New data cannot be entered or submitted for that dataset.
+       If an indicator becomes inactive:
+       - Existing historical values remain preserved.
+       - Existing drafts containing that indicator become read-only
+         for that indicator.
+       - New values cannot be entered for the inactive indicator.
+
+PD-15  CONCURRENCY
+       The initial version must prevent two competing active
+       submissions for the same Dataset + Reporting Period.
+       Only one active submission may exist for that combination.
+       The Data Entry owner controls the draft.
+       This prevents conflicting submissions for the same reporting
+       period.
+
+PD-16  CUSTOM REPORT STRUCTURE
+       Custom reports are structured reports.
+       The user selects:
+       - Dataset
+       - Indicators
+       - Reporting periods
+       - Filters
+       - Output columns
+       The initial report format should support an indicator-by-period
+       table, for example:
+           Indicator | January | February | March
+       The report must have a preview before export.
+       The detailed report-builder UI will be designed in later
+       stages.
+
+PD-17  REPORT HISTORY
+       Report History means a history/log of generated reports.
+       It should record information such as:
+       - User
+       - Report type
+       - Dataset
+       - Selected indicators
+       - Selected periods
+       - Filters/parameters
+       - Generated date/time
+       Report History is different from Submission Status Report.
+
+PD-18  NOTIFICATIONS
+       In-system notifications must be persisted.
+       Notifications should support:
+       - User recipient
+       - Notification type
+       - Message
+       - Created date/time
+       - Read/unread status
+       - Read date/time where applicable
+       Important events include:
+       - Submission
+       - Submission assigned/available for review
+       - Submission returned
+       - Submission approved
+       The detailed notification implementation will be designed
+       later.
+       Email and SMS remain out of scope.
+
+PD-19  AUDIT LOG POLICY
+       Audit logs are append-only from the application perspective.
+       Ordinary users cannot:
+       - Edit audit records.
+       - Delete audit records.
+       Audit records should capture important system actions.
+       Audit retention policy will be configurable/documented during
+       system administration and deployment stages.
+
+PD-20  PASSWORD AND SESSION SECURITY
+       The system must implement a reasonable password security
+       policy. Requirements include:
+       - Minimum password length.
+       - Secure password hashing.
+       - JWT expiration.
+       - Authentication failure protection/rate limiting.
+       - Session/inactivity timeout.
+       - Secure logout/token invalidation strategy where applicable.
+       Exact numeric values may be finalized during Stage 04 and
+       Stage 12, but the requirements must explicitly include these
+       controls.
+
+PD-21  INDICATOR VALIDATION
+       Indicator validation must be configurable where appropriate.
+       For percentage indicators:
+       - Default acceptable range: 0 to 100.
+       - The indicator configuration may define specific validation
+         rules when a particular indicator requires different limits.
+       Numeric indicators may define:
+       - Minimum value
+       - Maximum value
+       - Decimal precision
+       - Required/optional
+       Other data types must have appropriate validation rules.
+
+PD-22  USER ROLES
+       Each user has ONE primary role in the initial version.
+       The four primary roles are:
+           ADMIN, DATA_ENTRY, REPORTING, MANAGER.
+       Multi-role users are outside the initial scope.
+
+============================================================
+5. TECHNOLOGY STACK
+============================================================
+
+The system will use the following technology architecture.
+
+FRONTEND
+---------
+React
+
+Directory:
+client/
+
+BACKEND
+-------
+Node.js
+Express.js
+
+Directory:
+server/
+
+DATABASE
+--------
+MySQL
+
+API
+---
+RESTful API
+
+AUTHENTICATION
+--------------
+JWT-based authentication.
+
+GENERAL ARCHITECTURE
+--------------------
+
+React Client
+     |
+     | HTTP/HTTPS REST API
+     |
+Node.js + Express Server
+     |
+     | Database queries
+     |
+MySQL Database
+
+
+The React frontend must not directly access MySQL.
+
+All database operations must go through the Express backend API.
+
+============================================================
+6. PRIMARY SYSTEM USERS / ROLES
+============================================================
+
+The system contains four primary roles.
+
+1. ADMIN
+2. DATA ENTRY
+3. REPORTING
+4. MANAGER
+
+Each role has different responsibilities.
+
+------------------------------------------------------------
+6.1 ADMIN
+------------------------------------------------------------
+
+The Admin is responsible for configuring and controlling the system.
+
+Main responsibilities:
+
+- Manage users.
+- Assign roles.
+- Activate/deactivate users.
+- Manage datasets.
+- Manage indicators.
+- Manage reporting periods.
+- Configure system settings.
+- View activity/audit logs.
+- Maintain system configuration.
+- Monitor system-level information.
+
+Admin should have the highest level of system configuration access.
+
+Admin should not perform ordinary health-data entry.
+
+Admin does not use the normal Data Entry workflow and cannot
+approve data personally entered by the Admin. Separation of duties
+must prevent self-approval.
+
+------------------------------------------------------------
+6.2 DATA ENTRY
+------------------------------------------------------------
+
+The Data Entry user is responsible for entering health data.
+
+Main responsibilities:
+
+- Access active datasets.
+- Select reporting periods.
+- Enter indicator values.
+- Save incomplete data as draft.
+- Edit draft data.
+- Submit completed data.
+- View own submissions.
+- Correct returned submissions.
+- Resubmit corrected data.
+
+For the initial version, all active Data Entry users can access
+active datasets. There is no per-user dataset assignment system in
+the initial version. The architecture may allow dataset assignment
+to be introduced later.
+
+Data Entry users should not manage system configuration.
+
+Data Entry users should not approve their own submitted data.
+
+------------------------------------------------------------
+6.3 REPORTING
+------------------------------------------------------------
+
+The Reporting user is responsible for reviewing submitted data
+and producing reports.
+
+Main responsibilities:
+
+- View submitted data.
+- Review data submissions.
+- Validate submitted information.
+- Return incorrect submissions.
+- Provide return/review reasons.
+- Approve valid submissions.
+- Generate dataset reports.
+- Generate standard reports.
+- Generate custom reports.
+- Export reports.
+- View reporting history.
+
+Reporting users are responsible for the reporting and data-quality
+workflow.
+
+Reporting users can see the workflow history necessary to review
+submissions, but they do NOT have general access to the complete
+audit log. Audit logs are Admin-only in the initial version.
+
+------------------------------------------------------------
+6.4 MANAGER
+------------------------------------------------------------
+
+The Manager primarily consumes information rather than entering
+or configuring raw data.
+
+Main responsibilities:
+
+- View dashboard.
+- View approved health data.
+- View reports.
+- View statistics.
+- View trends.
+- Compare reporting periods.
+- Analyze indicators.
+- View management-level information.
+
+The Manager should normally work with approved data.
+
+Manager users must NOT see unapproved raw submission data through
+normal reporting and analysis functionality.
+
+Manager dashboard, reports, statistics, and analysis should use
+approved data.
+
+The Manager does not configure datasets or approve data.
+
+============================================================
+7. ROLE PERMISSION SUMMARY
+============================================================
+
+The exact permission implementation will be finalized during the
+RBAC development stage, but the business responsibility is:
+
+FUNCTION                         ADMIN   DATA ENTRY   REPORTING   MANAGER
+-----------------------------------------------------------------------
+Login                              YES       YES          YES        YES
+View dashboard                     YES       YES          YES        YES
+Manage users                       YES       NO           NO         NO
+Manage roles                       YES       NO           NO         NO
+Manage datasets                    YES       NO           NO         NO
+Manage indicators                  YES       NO           NO         NO
+Manage reporting periods           YES       NO           NO         NO
+Enter data                         NO        YES          NO         NO
+Save draft                         NO        YES          NO         NO
+Submit data                        NO        YES          NO         NO
+Review submissions                 NO        NO           YES        NO
+Return submission                  NO        NO           YES        NO
+Approve submission                 NO        NO           YES        NO
+Generate standard reports          YES       NO           YES        YES
+Generate custom reports            YES       NO           YES        YES
+View analysis                      YES       LIMITED**    YES        YES
+Export reports                     YES       NO           YES        YES
+View audit logs                    YES       NO           NO         NO
+System settings                    YES       NO           NO         NO
+
+NOTES:
+- Admin does not perform ordinary health-data entry and does not use
+  the normal Data Entry workflow.
+- Separation of duties must prevent self-approval of data.
+- **Data Entry "View analysis" is LIMITED to information about their
+  own submissions (draft/submitted/returned/approval status, return
+  reason, own submission history). Data Entry users do not receive
+  management-level analysis.
+- Audit logs are Admin-only in the initial version.
+- Manager dashboards, reports, statistics, and analysis use approved
+  data only; Managers must not see unapproved raw submission data
+  through normal reporting and analysis functionality.
+- Each user has ONE primary role in the initial version.
+- Exact permission implementation will be finalized during the RBAC
+  development stage, but the business responsibilities defined here
+  must be preserved.
+
+============================================================
+8. CORE SYSTEM CONCEPTS
+============================================================
+
+The system is built around five major concepts:
+
+1. DATASET
+2. INDICATOR
+3. REPORTING PERIOD
+4. DATA VALUE / DATA ENTRY
+5. SUBMISSION
+
+Relationship:
+
+Dataset
+   |
+   +---- Indicator
+
+Reporting Period
+
+Submission  (represents one Dataset + one Reporting Period + one Data Entry Owner)
+   |
+   +---- Data Value / Data Entry  (stores the value for one Indicator
+                                   for that Reporting Period)
+
+
+A dataset is a logical collection of related health indicators.
+
+An indicator represents a specific measurable health-data item.
+
+A reporting period defines the period for which data is being
+reported.
+
+A data entry stores the value provided for an indicator during a
+specific reporting period, within a submission.
+
+A submission represents a collection of entered data submitted
+through the reporting workflow. A submission is a persistent record
+beginning at DRAFT status, and one Data Entry user owns the
+submission they create. In the initial single-hospital version, the
+system must prevent competing active submissions for the same
+Dataset + Reporting Period.
+
+============================================================
+9. DATASET REQUIREMENTS
+============================================================
+
+The system must allow the Admin to create and manage datasets.
+
+A dataset should have information such as:
+
+- Dataset ID
+- Dataset name
+- Dataset code
+- Description
+- Status
+- Created date
+- Updated date
+
+Possible statuses:
+
+ACTIVE
+INACTIVE
+
+Only active datasets should normally be available for new data entry.
+
+The system must prevent users from entering new data into an
+inactive dataset.
+
+If a dataset becomes inactive:
+
+- Existing historical data remains preserved.
+- Existing drafts for that dataset become read-only.
+- New data cannot be entered or submitted for that dataset.
+
+A dataset can contain multiple indicators.
+
+Example conceptual datasets may include:
+
+- Monthly Health Service Dataset
+- Maternal Health Dataset
+- Child Health Dataset
+- Immunization Dataset
+- HIV-related Dataset
+- TB-related Dataset
+- Nutrition Dataset
+
+IMPORTANT:
+
+The above examples are proposed examples for requirements analysis.
+They are NOT confirmed hospital datasets.
+
+Actual hospital datasets must be configurable through the Admin
+interface.
+
+============================================================
+10. INDICATOR REQUIREMENTS
+============================================================
+
+Each dataset contains one or more indicators.
+
+An indicator should have information such as:
+
+- Indicator ID
+- Dataset ID
+- Indicator name
+- Indicator code
+- Description
+- Data type
+- Required/not required
+- Validation rules
+- Display order
+- Active/inactive status
+
+Possible data types include:
+
+- INTEGER
+- DECIMAL
+- TEXT
+- DATE
+- BOOLEAN
+- PERCENTAGE
+
+Numeric health indicators will be a major use case.
+
+Examples of conceptual indicators:
+
+- Number of patients/services
+- Number of male cases
+- Number of female cases
+- Number of children served
+- Number of completed services
+- Number of referrals
+- Percentage of coverage
+
+These are examples only.
+
+The Admin must be able to configure the actual indicators required
+by the hospital.
+
+If an indicator becomes inactive:
+
+- Existing historical values remain preserved.
+- Existing drafts containing that indicator become read-only for
+  that indicator.
+- New values cannot be entered for the inactive indicator.
+
+============================================================
+11. REPORTING PERIOD REQUIREMENTS
+============================================================
+
+The system must support reporting periods.
+
+A reporting period may represent:
+
+- Monthly reporting
+- Quarterly reporting
+- Annual reporting
+
+The first implementation should primarily support monthly reporting,
+while the data model should be designed so that other period types
+can be supported.
+
+Example:
+
+January 2026
+February 2026
+March 2026
+
+A reporting period should have:
+
+- ID
+- Name/label
+- Start date
+- End date
+- Period type
+- Status
+- Created date
+- Closed date if applicable
+
+Possible statuses:
+
+OPEN
+CLOSED
+
+Users may enter or modify data only when the relevant reporting
+period allows it.
+
+A closed reporting period must not accept ordinary new data entry.
+
+Admin controls period opening and closing.
+
+If a draft exists when the period closes:
+
+- The draft becomes read-only.
+- It cannot be submitted while the period is closed.
+- Its historical information remains preserved.
+
+Reopening a closed period is an exceptional administrative action
+and must be auditable.
+
+============================================================
+12. DATA ENTRY WORKFLOW
+============================================================
+
+The primary data-entry workflow is:
+
+1. Data Entry user logs in.
+2. User opens Data Entry.
+3. User selects a dataset.
+4. User selects a reporting period.
+5. System loads the indicators belonging to the dataset.
+6. User enters indicator values.
+7. System validates the values.
+8. User saves the information as draft.
+9. User may return later and continue editing.
+10. User submits the completed data.
+11. System changes the submission status.
+12. Reporting user reviews the submission.
+
+The interface should make data entry practical for many indicators.
+
+The system should clearly show:
+
+- Indicator name
+- Indicator code where applicable
+- Data type
+- Required status
+- Input field
+- Validation message
+- Existing value where applicable
+
+============================================================
+13. SUBMISSION WORKFLOW
+============================================================
+
+The submission workflow is:
+
+DRAFT
+  |
+  | Submit
+  v
+SUBMITTED
+  |
+  | Reporting starts review
+  v
+UNDER_REVIEW
+  |
+  +--------------------+
+  |                    |
+  | Return             | Approve
+  v                    v
+RETURNED            APPROVED
+  |
+  | Data Entry corrects
+  |
+  v
+SUBMITTED
+  |
+  v
+UNDER_REVIEW
+  |
+  v
+APPROVED / RETURNED
+
+
+The system must maintain the status of each submission.
+
+The only persistent submission statuses are:
+
+- DRAFT
+- SUBMITTED
+- UNDER_REVIEW
+- RETURNED
+- APPROVED
+
+RESUBMITTED is NOT a separate persistent status.
+The term UNDER_REVIEW is used consistently.
+
+A submission is a persistent record beginning at DRAFT status.
+A Data Entry user owns the submission they create.
+
+------------------------------------------------------------
+DRAFT
+------------------------------------------------------------
+
+Data is being prepared and may be edited by the Data Entry owner.
+
+------------------------------------------------------------
+SUBMITTED
+------------------------------------------------------------
+
+The Data Entry user has completed the data and submitted it for
+review.
+
+The user should not freely modify submitted data.
+
+------------------------------------------------------------
+UNDER_REVIEW
+------------------------------------------------------------
+
+A Reporting user has explicitly started the review of the
+submission. The system changes SUBMITTED -> UNDER_REVIEW.
+
+Only authorized Reporting users can perform the review.
+
+------------------------------------------------------------
+RETURNED
+------------------------------------------------------------
+
+The Reporting user has identified a problem.
+
+The Reporting user must provide a reason when returning data.
+
+The original submission record remains.
+
+The Data Entry owner can correct the data.
+
+The submission can be resubmitted.
+
+Resubmission changes RETURNED -> SUBMITTED.
+
+Do not create a new submission for every correction.
+
+The system must maintain revision/history information.
+At minimum, the history must allow the system to determine:
+
+- Who submitted
+- Who reviewed
+- Who returned
+- Return reason
+- Who resubmitted
+- Who approved
+- When each action occurred
+
+------------------------------------------------------------
+APPROVED
+------------------------------------------------------------
+
+The Reporting user has accepted the submission.
+
+Approved data becomes available for official reporting and
+analysis.
+
+Data Entry users cannot directly modify APPROVED data.
+If approved data is discovered to be incorrect, it requires a
+controlled amendment/correction process:
+
+- Ordinary Data Entry users cannot directly change it.
+- An authorized administrative/reporting action must be recorded.
+- The system must preserve the original approved value/history.
+- Any correction must be auditable.
+
+The detailed amendment workflow will be finalized during the
+architecture/database stages.
+
+============================================================
+14. DATA VALIDATION REQUIREMENTS
+============================================================
+
+The system must validate data before submission.
+
+Validation may include:
+
+1. Required fields must contain values.
+2. Numeric fields must contain valid numbers.
+3. Integer fields must contain integers.
+4. Decimal fields must contain valid decimals.
+5. Percentage fields must follow configured percentage rules.
+   The default acceptable range for percentage indicators is 0 to 100,
+   unless the indicator configuration defines different limits.
+6. Boolean fields must contain valid yes/no values.
+7. Date fields must contain valid dates.
+8. Values must respect configured minimum/maximum limits.
+   Numeric indicators may define:
+   - Minimum value
+   - Maximum value
+   - Decimal precision
+   - Required/optional
+9. Inactive indicators cannot receive new data.
+10. Closed reporting periods cannot receive new data.
+11. Users cannot submit incomplete required data.
+12. Users cannot submit data they are not authorized to submit.
+    In the initial version, all active Data Entry users can access
+    active datasets, so authorization is based on the user being an
+    active Data Entry user.
+
+Validation must occur on the backend.
+
+Frontend validation should also be implemented for usability.
+
+Backend validation is authoritative.
+
+============================================================
+15. DATA INTEGRITY REQUIREMENTS
+============================================================
+
+The system must prevent duplicate or conflicting data where the
+business rules prohibit it.
+
+For example, the system must identify the combination of:
+
+- Dataset
+- Reporting period
+
+when determining whether a competing active submission already
+exists. Only one active submission may exist for a given
+Dataset + Reporting Period.
+
+Within a submission, each indicator should have one data value for
+the reporting period.
+
+The exact database constraints will be finalized during the
+database-design stage.
+
+============================================================
+16. DATASET REPORT REQUIREMENTS
+============================================================
+
+The system must provide Dataset Reports.
+
+A Dataset Report allows an authorized user to select a dataset
+and reporting period and view the associated indicator data.
+
+A dataset report should display:
+
+- Dataset information
+- Reporting period
+- Indicators
+- Indicator values
+- Submission/status information where appropriate
+
+Reports should use approved data for official reporting.
+
+Where draft or unapproved data is displayed for review purposes,
+the interface must clearly identify its status.
+
+============================================================
+17. STANDARD REPORT REQUIREMENTS
+============================================================
+
+The system should support standard reports such as:
+
+1. Monthly Report
+2. Dataset Report
+3. Indicator Report
+4. Period Comparison Report
+5. Submission Status Report
+6. Report History
+
+The exact report list can be expanded after actual hospital
+requirements are confirmed.
+
+Report History means a history/log of generated reports. It should
+record information such as:
+
+- User
+- Report type
+- Dataset
+- Selected indicators
+- Selected periods
+- Filters/parameters
+- Generated date/time
+
+Report History is different from Submission Status Report.
+
+============================================================
+18. CUSTOM REPORT REQUIREMENTS
+============================================================
+
+The system must support custom report generation.
+
+A user with appropriate permission should be able to select:
+
+- Dataset
+- Indicators
+- Reporting periods
+- Columns
+- Filters
+- Relevant criteria
+
+The system should generate a report preview before export.
+
+Custom reports are structured reports.
+The initial report format should support an indicator-by-period
+table, for example:
+
+    Indicator | January | February | March
+
+Example:
+
+Dataset:
+Monthly Health Service Dataset
+
+Indicators:
+Indicator A
+Indicator B
+Indicator C
+
+Periods:
+January 2026
+February 2026
+March 2026
+
+Result:
+
+Indicator | Jan | Feb | Mar
+
+The custom-report feature must use authorized data only.
+
+============================================================
+19. REPORT EXPORT REQUIREMENTS
+============================================================
+
+Authorized users should be able to export reports.
+
+Initial export formats:
+
+- PDF
+- Excel
+- Print-friendly view
+
+The exported report should contain appropriate information such as:
+
+- Report title
+- Hospital/system name
+- Dataset
+- Reporting period
+- Selected indicators
+- Data values
+- Generated date
+- Relevant status information
+
+============================================================
+20. DATA ANALYSIS REQUIREMENTS
+============================================================
+
+The system must provide data analysis functionality.
+
+Analysis should focus on converting collected data into useful
+information.
+
+Possible analysis features:
+
+- Total values
+- Percentages
+- Indicator statistics
+- Monthly trends
+- Period comparisons
+- Dataset summaries
+- Indicator comparisons
+- Trend charts
+
+Example:
+
+Indicator X
+
+January: 120
+February: 145
+March: 160
+
+The system may display this as a trend chart.
+
+Analysis should normally use approved data.
+
+Manager users must NOT receive unapproved raw submission data
+through management reporting/analysis.
+Data Entry users do not receive management-level analysis; they may
+view information about their own submissions only.
+
+The system must clearly distinguish analytical information from
+raw/unapproved submissions.
+
+============================================================
+21. DASHBOARD REQUIREMENTS
+============================================================
+
+The system must provide role-appropriate dashboards.
+
+The Manager dashboard should emphasize:
+
+- Key statistics
+- Reporting status
+- Approved data
+- Trends
+- Dataset summaries
+- Indicator summaries
+- Period comparisons
+- Charts
+
+The Manager dashboard, reports, statistics, and analysis should use
+approved data only.
+
+The Reporting dashboard should emphasize:
+
+- Pending submissions
+- Returned submissions
+- Approved submissions
+- Reporting status
+- Recent reports
+
+The Data Entry dashboard should emphasize:
+
+- Available datasets
+- Current reporting periods
+- Draft submissions
+- Returned submissions
+- Submitted submissions
+
+The Data Entry dashboard should show information about the user's
+own submissions (draft/submitted/returned/approval status, return
+reason, own submission history). It does not provide management-
+level analytics.
+
+The Admin dashboard should emphasize:
+
+- Users
+- Dataset configuration
+- Reporting periods
+- System activity
+- Overall system status
+
+============================================================
+22. AUDIT LOG REQUIREMENTS
+============================================================
+
+The system must maintain accountability for important actions.
+
+The audit log should record information such as:
+
+- User
+- Action
+- Date/time
+- Affected resource
+- Resource ID
+- Previous value where appropriate
+- New value where appropriate
+- Relevant description
+
+Important actions to audit include:
+
+- Login
+- Logout where appropriate
+- User creation
+- User update
+- Role assignment
+- Dataset creation/update
+- Indicator creation/update
+- Reporting-period changes
+- Data creation
+- Data update
+- Submission
+- Return
+- Approval
+- Report generation where appropriate
+
+Audit records should not be freely editable by ordinary users.
+
+Audit logs are append-only from the application perspective.
+Ordinary users cannot edit audit records.
+Ordinary users cannot delete audit records.
+Audit logs are Admin-only in the initial version.
+Audit retention policy will be configurable/documented during the
+system administration and deployment stages.
+
+============================================================
+23. AUTHENTICATION REQUIREMENTS
+============================================================
+
+Users must authenticate before accessing protected functionality.
+
+The system must support:
+
+- Login
+- Logout
+- Password protection
+- Authenticated sessions/tokens
+- Role-based authorization
+- Protected frontend routes
+- Protected backend API endpoints
+
+Unauthenticated users must not access protected system data.
+
+Additional security requirements:
+
+- Minimum password length.
+- Secure password hashing.
+- JWT expiration.
+- Authentication failure protection/rate limiting.
+- Session/inactivity timeout.
+- Secure logout/token invalidation strategy where applicable.
+
+Exact numeric values may be finalized during Stage 04 and Stage 12,
+but the requirements must explicitly include these controls.
+
+============================================================
+24. USER MANAGEMENT REQUIREMENTS
+============================================================
+
+Admin must be able to:
+
+- Create users
+- View users
+- Update users
+- Activate users
+- Deactivate users
+- Assign roles
+- View basic user information
+
+A deactivated user must not be allowed to authenticate normally.
+
+The system must not expose passwords.
+
+Passwords must be stored securely using appropriate password hashing.
+
+============================================================
+25. PROFILE REQUIREMENTS
+============================================================
+
+Authenticated users should be able to view and manage appropriate
+account information.
+
+Possible features:
+
+- View profile
+- Update name
+- Update email where allowed
+- Change password
+
+Users should not be able to change their own role unless explicitly
+authorized.
+
+============================================================
+26. NOTIFICATION REQUIREMENTS
+============================================================
+
+The system should provide in-system notifications for important
+workflow events.
+
+Examples:
+
+- Submission successful
+- Submission returned
+- Submission approved
+- Data successfully saved
+- Validation error
+- Report generated
+- System configuration changed
+
+In-system notifications must be persisted.
+Notifications should support:
+
+- User recipient
+- Notification type
+- Message
+- Created date/time
+- Read/unread status
+- Read date/time where applicable
+
+Important workflow events include:
+
+- Submission
+- Submission assigned/available for review
+- Submission returned
+- Submission approved
+
+The detailed notification implementation will be designed later.
+Email and SMS remain out of scope.
+
+The exact notification architecture will be finalized during
+implementation.
+
+Email/SMS integration is NOT required for the initial system unless
+it is later explicitly added to the requirements.
+
+============================================================
+27. BUSINESS RULES
+============================================================
+
+BR-001
+Only authenticated users can access protected system functionality.
+
+BR-002
+Users can perform only actions permitted by their role.
+
+BR-003
+Only Admin users can manage core system configuration.
+
+BR-004
+Only active datasets should be available for new data entry.
+
+BR-005
+Only active indicators should be available for new data entry.
+
+BR-006
+Required indicators must have valid values before submission.
+
+BR-007
+Data Entry users can edit their own draft data.
+
+BR-008
+Submitted data cannot be freely edited by the Data Entry user.
+
+BR-009
+Reporting users review submitted data.
+
+BR-010
+Reporting users may approve valid submissions.
+
+BR-011
+Reporting users may return incorrect submissions.
+
+BR-012
+Returned submissions must include a reason.
+
+BR-013
+Returned submissions may be corrected and resubmitted.
+
+BR-014
+Approved data is treated as official data for reporting and
+analysis.
+
+BR-015
+Closed reporting periods cannot accept ordinary new data entry.
+
+BR-016
+Inactive datasets cannot accept new submissions.
+
+BR-017
+Inactive indicators cannot accept new values.
+
+BR-018
+Users cannot access resources outside their authorization.
+
+BR-019
+Important system actions must be auditable.
+
+BR-020
+Reports must respect user permissions.
+
+BR-021
+Official reports should use approved data unless the report is
+explicitly a review/status report.
+
+BR-022
+The system must prevent unauthorized direct database access from
+the frontend.
+
+BR-023
+Each user has ONE primary role in the initial version.
+Multi-role users are outside the initial scope.
+
+BR-024
+A submission is a persistent record beginning at DRAFT status.
+The only persistent submission statuses are DRAFT, SUBMITTED,
+UNDER_REVIEW, RETURNED, and APPROVED. RESUBMITTED is not a
+separate persistent status.
+
+BR-025
+A submission represents one Dataset + one Reporting Period + one
+Data Entry Owner. The Data Entry user owns the submission they
+create.
+
+BR-026
+Only one active submission may exist for a given Dataset +
+Reporting Period. The system must prevent competing active
+submissions for the same combination.
+
+BR-027
+A Reporting user must explicitly start the review of a SUBMITTED
+submission. The system changes SUBMITTED -> UNDER_REVIEW. Only
+authorized Reporting users can perform the review.
+
+BR-028
+A returned submission must include a return reason. Resubmission
+changes RETURNED -> SUBMITTED. The original submission record is
+retained, and revision/history information must be maintained.
+
+BR-029
+Data Entry users cannot directly modify APPROVED data. Corrections
+to approved data require a controlled, auditable amendment process
+that preserves the original approved value/history.
+
+BR-030
+If a reporting period closes, existing drafts for that period
+become read-only and cannot be submitted while the period is
+closed. Reopening a closed period is exceptional and must be
+auditable.
+
+BR-031
+If a dataset becomes inactive, existing drafts for that dataset
+become read-only and new data cannot be entered or submitted.
+If an indicator becomes inactive, existing drafts containing that
+indicator become read-only for that indicator.
+
+BR-032
+Manager users must not see unapproved raw submission data through
+normal reporting and analysis functionality.
+
+BR-033
+Data Entry users do not receive management-level analysis; they may
+only view information about their own submissions.
+
+BR-034
+Admin does not perform ordinary health-data entry and cannot
+approve data personally entered by the Admin. Separation of duties
+must prevent self-approval.
+
+BR-035
+Audit logs are Admin-only in the initial version. Reporting users
+cannot access the complete audit log, though they can see workflow
+history necessary to review submissions.
+
+BR-036
+Audit logs are append-only from the application perspective.
+Ordinary users cannot edit or delete audit records.
+
+BR-037
+In the initial version, all active Data Entry users can access
+active datasets. There is no per-user dataset assignment system.
+
+============================================================
+28. NON-FUNCTIONAL REQUIREMENTS
+============================================================
+
+SECURITY
+--------
+
+The system must:
+
+- Authenticate users securely.
+- Authorize API requests.
+- Hash passwords securely.
+- Validate input.
+- Protect against unauthorized access.
+- Protect sensitive API operations.
+- Avoid exposing database credentials to the client.
+- Enforce server-side authorization.
+
+PERFORMANCE
+-----------
+
+The system should provide reasonable response times for normal
+hospital reporting workloads.
+
+Large datasets and reports should be handled efficiently.
+
+USABILITY
+---------
+
+The interface should be:
+
+- Clear
+- Consistent
+- Simple to understand
+- Suitable for repeated data entry
+- Easy to navigate
+- Responsive
+
+RELIABILITY
+-----------
+
+The system should preserve submitted data and maintain consistent
+workflow states.
+
+MAINTAINABILITY
+---------------
+
+The backend and frontend should be organized into maintainable
+modules.
+
+The system should separate:
+
+- Routes
+- Controllers
+- Services
+- Validation
+- Database/data-access logic
+- Authentication
+- Authorization
+
+The exact architecture will be defined in Stage 02.
+
+SCALABILITY
+-----------
+
+Although this version serves one hospital, the system should be
+structured so that future expansion is possible without rewriting
+the entire application.
+
+============================================================
+29. OUT OF SCOPE
+============================================================
+
+The following are NOT part of the initial system:
+
+1. Full Electronic Medical Record (EMR).
+2. Patient registration management.
+3. Appointment scheduling.
+4. Pharmacy management.
+5. Laboratory management.
+6. Radiology management.
+7. Inpatient bed management.
+8. Hospital billing.
+9. Insurance claims management.
+10. Payroll.
+11. Human-resource management.
+12. Inventory management.
+13. Ambulance management.
+14. National multi-facility reporting hierarchy.
+15. Multiple-hospital management.
+16. Zone/woreda/region administration.
+17. Patient-level clinical record management.
+18. Real-time medical-device integration.
+19. SMS gateway integration.
+20. Email gateway integration.
+21. Online payment processing.
+
+These features may be considered future extensions but must not be
+implemented as part of the initial project unless the requirements
+are formally changed.
+
+============================================================
+30. PROPOSED CORE DATABASE ENTITIES
+============================================================
+
+The following entities are proposed for later database design.
+
+IMPORTANT:
+This is a requirements-level list, NOT the final database schema.
+
+1. users
+2. roles
+3. permissions
+4. datasets
+5. indicators
+6. reporting_periods
+7. submissions
+8. data_values
+9. audit_logs
+10. notifications
+
+Additional tables may be required after detailed database design.
+
+Candidate additional tables include a submission revision/history
+table (to record who submitted, reviewed, returned, resubmitted,
+and approved, plus return reasons and timestamps). The exact
+implementation will be designed in Stage 03.
+
+The exact columns, relationships, indexes, constraints, and
+normalization will be designed in Stage 03.
+
+============================================================
+31. CORE SYSTEM WORKFLOW
+============================================================
+
+The overall system workflow is:
+
+                 ADMIN
+                   |
+                   v
+        Configure Datasets
+                   |
+                   v
+        Configure Indicators
+                   |
+                   v
+       Configure Reporting Period
+                   |
+                   v
+              DATA ENTRY
+                   |
+                   v
+             Enter Data
+                   |
+                   v
+               Validate
+                   |
+                   v
+                Draft
+                   |
+                   v
+               Submit
+                   |
+                   v
+              REPORTING
+                   |
+                   v
+               Review
+              /       \
+             /         \
+        Return         Approve
+          |               |
+          v               v
+      Correction      Approved Data
+          |               |
+          v               |
+      Resubmit            |
+          |               |
+          +-------<-------+
+                          |
+                          v
+                  Reports & Analysis
+                          |
+                          v
+                       MANAGER
+
+
+============================================================
+32. STAKEHOLDER INTERVIEW SIMULATION
+============================================================
+
+The following questions and answers represent a requirements-analysis
+simulation.
+
+They are NOT claims that actual hospital employees provided these
+answers.
+
+They are proposed answers used to establish a practical initial
+system design.
+
+Where these proposed answers conflict with the FINAL STAGE 01
+PROJECT DECISIONS in Section 4A, the Section 4A decisions take
+precedence.
+
+------------------------------------------------------------
+32.1 ADMIN INTERVIEW
+------------------------------------------------------------
+
+QUESTION:
+Who should control the system configuration?
+
+PROPOSED ANSWER:
+The Admin should manage users, datasets, indicators, reporting
+periods, and system settings.
+
+QUESTION:
+Can every user create datasets?
+
+PROPOSED ANSWER:
+No. Dataset creation should be restricted to Admin.
+
+QUESTION:
+Can an inactive dataset be used for new data entry?
+
+PROPOSED ANSWER:
+No.
+
+QUESTION:
+Should the hospital be selectable from a list?
+
+PROPOSED ANSWER:
+No. This version is for one hospital.
+
+------------------------------------------------------------
+32.2 DATA ENTRY INTERVIEW
+------------------------------------------------------------
+
+QUESTION:
+What does a Data Entry user do?
+
+PROPOSED ANSWER:
+The user selects a dataset and reporting period, enters indicator
+values, saves drafts, and submits completed data.
+
+QUESTION:
+Can incomplete data be saved?
+
+PROPOSED ANSWER:
+Yes. It should be possible to save a draft and continue later.
+
+QUESTION:
+Can submitted data be changed freely?
+
+PROPOSED ANSWER:
+No. Submitted data enters the review workflow.
+
+QUESTION:
+What happens if the Reporting user finds an error?
+
+PROPOSED ANSWER:
+The submission is returned with a reason so the Data Entry user can
+correct and resubmit it.
+
+------------------------------------------------------------
+32.3 REPORTING INTERVIEW
+------------------------------------------------------------
+
+QUESTION:
+What does the Reporting user need?
+
+PROPOSED ANSWER:
+The Reporting user needs to review submissions, return incorrect
+data, approve valid data, and generate reports.
+
+QUESTION:
+Should a reason be required when returning data?
+
+PROPOSED ANSWER:
+Yes.
+
+QUESTION:
+Which data should official reports use?
+
+PROPOSED ANSWER:
+Approved data.
+
+------------------------------------------------------------
+32.4 MANAGER INTERVIEW
+------------------------------------------------------------
+
+QUESTION:
+What information does the Manager need?
+
+PROPOSED ANSWER:
+The Manager needs dashboards, statistics, trends, comparisons,
+reports, and approved health data.
+
+QUESTION:
+Does the Manager need to enter raw indicator data?
+
+PROPOSED ANSWER:
+No, not as part of the primary workflow.
+
+QUESTION:
+What is more useful than seeing raw records?
+
+PROPOSED ANSWER:
+Summaries, trends, comparisons, charts, and reports that support
+management decisions.
+
+============================================================
+33. REQUIREMENT TRACEABILITY
+============================================================
+
+The major system requirements must map to future development stages.
+
+Requirement Area
+----------------
+
+Authentication
+    -> Stage 04
+
+Users/Roles
+    -> Stage 04 and Stage 11
+
+Datasets
+    -> Stage 05
+
+Indicators
+    -> Stage 05
+
+Reporting Periods
+    -> Stage 05
+
+Data Entry
+    -> Stage 06
+
+Submission Workflow
+    -> Stage 06
+
+Review/Approval
+    -> Stage 07
+
+Submission Revision History
+    -> Stage 03 (database) and Stage 06/Stage 07 (workflow)
+
+Approved Data Amendment
+    -> Stage 07 and Stage 12
+
+Dataset Reports
+    -> Stage 08
+
+Custom Reports
+    -> Stage 09
+
+Export
+    -> Stage 09
+
+Dashboard
+    -> Stage 10
+
+Data Analysis
+    -> Stage 10
+
+Audit Logs
+    -> Stage 11
+
+Notifications
+    -> Stage 06/07 (workflow events) and Stage 11 (administration)
+
+Security/Business Rules
+    -> Stage 12
+
+Testing/UI
+    -> Stage 13
+
+Deployment/Documentation
+    -> Stage 14
+
+Architecture
+    -> Stage 02
+
+Database Design
+    -> Stage 03
+
+============================================================
+34. STAGE 01 ACCEPTANCE CRITERIA
+============================================================
+
+Stage 01 is considered complete when:
+
+[ ] Project purpose is defined.
+
+[ ] Project scope is defined.
+
+[ ] Single-hospital scope is confirmed.
+
+[ ] Out-of-scope functionality is documented.
+
+[ ] Technology stack is documented.
+
+[ ] Four primary roles are defined.
+
+[ ] Role responsibilities are documented.
+
+[ ] Dataset concept is defined.
+
+[ ] Indicator concept is defined.
+
+[ ] Reporting-period concept is defined.
+
+[ ] Data-entry workflow is defined.
+
+[ ] Submission workflow is defined.
+
+[ ] Review/approval workflow is defined.
+
+[ ] Return/correction workflow is defined.
+
+[ ] Dataset reports are defined.
+
+[ ] Custom reports are defined.
+
+[ ] Export requirements are defined.
+
+[ ] Data analysis requirements are defined.
+
+[ ] Dashboard requirements are defined.
+
+[ ] Audit requirements are defined.
+
+[ ] Authentication requirements are defined.
+
+[ ] Business rules are defined.
+
+[ ] Non-functional requirements are defined.
+
+[ ] Proposed database entities are identified.
+
+[ ] Stakeholder questions and proposed answers are documented.
+
+[ ] Future development stages are mapped to requirements.
+
+[ ] Submission definition and persistent status model are documented.
+
+[ ] Submission review workflow is documented.
+
+[ ] Revision history requirements are documented.
+
+[ ] Approved-data correction process is documented.
+
+[ ] Closed-period/draft and inactive dataset/indicator behavior is documented.
+
+[ ] Role access boundaries (Admin, Data Entry, Reporting, Manager) are clear.
+
+[ ] Audit log access and append-only policy is documented.
+
+[ ] Notification persistence requirements are documented.
+
+============================================================
+35. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+This document defines WHAT the system must do.
+
+It does not yet define every implementation detail.
+
+Do NOT begin detailed database coding, API implementation,
+React component implementation, or production deployment during
+Stage 01.
+
+Those activities belong to later stages.
+
+Stage 01 must establish the requirements before implementation.
+
+============================================================
+36. PROJECT DEVELOPMENT PRINCIPLE
+============================================================
+
+The project will be developed incrementally.
+
+The development process is:
+
+Stage 01
+Requirements
+    |
+    v
+Stage 02
+Architecture
+    |
+    v
+Stage 03
+Database + Project Foundation
+    |
+    v
+Stage 04
+Authentication + RBAC
+    |
+    v
+Stage 05
+Datasets + Indicators + Periods
+    |
+    v
+Stage 06
+Data Entry
+    |
+    v
+Stage 07
+Review + Approval
+    |
+    v
+Stage 08
+Standard Reports
+    |
+    v
+Stage 09
+Custom Reports + Export
+    |
+    v
+Stage 10
+Dashboard + Analysis
+    |
+    v
+Stage 11
+Administration + Audit
+    |
+    v
+Stage 12
+Security + Business Rules
+    |
+    v
+Stage 13
+Testing + UI/UX
+    |
+    v
+Stage 14
+Deployment + Documentation
+
+
+Each stage must be completed and tested before moving to the next
+stage.
+
+OpenCode must not silently implement future stages while working
+on the current stage.
+
+============================================================
+37. FINAL STAGE 01 DECISION
+============================================================
+
+The project is a:
+
+SINGLE-HOSPITAL
+HEALTH DATA MANAGEMENT
+REPORTING
+AND ANALYSIS SYSTEM
+
+using:
+
+Frontend:
+React
+
+Backend:
+Node.js + Express.js
+
+Database:
+MySQL
+
+The primary workflow is:
+
+CONFIGURE
+   ->
+COLLECT
+   ->
+VALIDATE
+   ->
+SUBMIT
+   ->
+REVIEW
+   ->
+APPROVE / RETURN
+   ->
+REPORT
+   ->
+ANALYZE
+   ->
+MANAGE
+
+The system focuses on health-service data and reporting rather than
+patient-level hospital management.
+
+============================================================
+END OF STAGE 01
+============================================================

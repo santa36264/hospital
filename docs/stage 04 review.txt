@@ -1,0 +1,373 @@
+============================================================
+STAGE 04 — AUTHENTICATION, USERS & RBAC REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 04 implementation review (no Stage 05 features)
+
+============================================================
+1. WHAT WAS IMPLEMENTED
+============================================================
+
+Backend (server/):
+- bcrypt password hashing (Argon2id could NOT be built on this
+  Windows environment; bcrypt 6.0.0 installed successfully — see
+  section 26).
+- JWT access + refresh tokens (jsonwebtoken), claims: sub, role,
+  sid, jti, iat, exp.
+- Server-side refresh sessions table (refresh_sessions) with
+  hashed token storage (SHA-256), expiry, revocation, last-used.
+- Refresh-token rotation on every refresh; old session revoked.
+- Inactivity timeout (default 30 minutes, configurable) enforced
+  on every authenticated request and at refresh time.
+- Login rate limiting (express-rate-limit, configurable).
+- Authentication audit events into audit_logs.
+- Middleware: requireAuth, requireRole.
+- Routes: POST /auth/login, POST /auth/logout, POST /auth/refresh,
+  GET /auth/me, plus development-only /auth/test/{admin,data-entry,
+  reporting,manager} (NOT registered in production).
+- Cookies: HttpOnly access_token and refresh_token, SameSite=lax,
+  Secure in production, explicit max-age.
+- CORS credentials enabled for configured CLIENT_URL.
+
+Frontend (client/):
+- AuthContext (loading/authenticated/unauthenticated, user, login,
+  logout, refresh, error handling).
+- Tailwind CSS v4 login page (email, password, show/hide, loading,
+  validation, auth error states, responsive).
+- Protected routes: /app (RequireAuth), role areas /app/admin,
+  /app/data-entry, /app/reporting, /app/manager (RequireRole),
+  /unauthorized, /login.
+- Authenticated shell: sidebar with role-aware navigation, header
+  with current user + role, logout.
+- Axios client with withCredentials, 401 -> single refresh retry,
+  no infinite loops, auth:unauthorized event clears session.
+
+Database:
+- Migration 002_refresh_sessions.js added. No Stage 03 tables
+  dropped or rebuilt.
+- Seed 002_dev_users.js: four development users (one per role).
+
+============================================================
+2. FILES CREATED
+============================================================
+
+server/migrations/002_refresh_sessions.js
+server/seeds/002_dev_users.js
+server/src/services/tokenService.js
+server/src/services/authService.js
+server/src/repositories/userRepository.js
+server/src/repositories/sessionRepository.js
+server/src/repositories/auditLogRepository.js
+server/src/middleware/authMiddleware.js
+server/src/middleware/rateLimiter.js
+server/src/controllers/authController.js
+server/src/routes/authRoutes.js
+server/src/utils/duration.js
+client/src/context/AuthContext.jsx
+client/src/layouts/AppShell.jsx
+client/src/pages/LoginPage.jsx
+client/src/pages/placeholderPages.jsx
+client/src/routes/RequireAuth.jsx
+docs/stage 04 review.txt
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/package.json (deps: bcrypt, cookie-parser,
+express-rate-limit, jsonwebtoken; scripts unchanged)
+server/knexfile.js (unchanged)
+server/.env, server/.env.example (JWT/session/rate-limit vars)
+server/src/config/environment.js (jwt, session, rateLimit)
+server/src/app.js (cookie-parser)
+server/src/routes/index.js (auth routes mounted)
+client/package.json (unchanged; tailwind/react-router/axios used)
+client/src/App.jsx (renders AppRoutes)
+client/src/routes/AppRoutes.jsx (auth-aware routing)
+client/src/api/client.js (credentials + 401 refresh interceptor)
+client/src/index.css (Tailwind import)
+README.md (stage status)
+
+Removed: client/src/pages/HomePage.jsx, client/src/api/healthApi.js
+(superseded by auth shell).
+
+============================================================
+4. DATABASE MIGRATIONS
+============================================================
+
+Batch 2: 002_refresh_sessions (refresh_sessions table with user_id
+FK, token_hash UNIQUE, expires_at, revoked_at, last_used_at,
+user_agent, ip_address, timestamps).
+
+Note: expires_at/revoked_at/last_used_at are DATETIME (not
+TIMESTAMP) to avoid MariaDB implicit DEFAULT/ON UPDATE CURRENT_
+TIMESTAMP behavior observed on TIMESTAMP columns.
+
+============================================================
+5. AUTHENTICATION ARCHITECTURE
+============================================================
+
+React -> POST /api/v1/auth/login -> authController -> authService
+-> userRepository -> MySQL (bcrypt.compare) -> create session row
+-> sign access + refresh JWT -> HttpOnly cookies.
+BrowserRouter -> AuthContext (GET /auth/me, refresh fallback) ->
+RequireAuth/RequireRole -> AppShell.
+
+Protected API request: cookies -> requireAuth (JWT verify, sid
+session check, inactivity, user ACTIVE) -> requireRole ->
+controller.
+
+============================================================
+6. PASSWORD HASHING METHOD
+============================================================
+
+bcrypt (bcrypt@6.0.0), cost factor 10. Argon2id could not be
+installed (node-gyp build failure on this Windows environment);
+bcrypt chosen per Stage 04 fallback rule and documented here.
+password_hash stored only; never returned by API.
+
+============================================================
+7. JWT IMPLEMENTATION
+============================================================
+
+jsonwebtoken. Access token claims: sub, role, sid, jti, iat, exp.
+Refresh token claims: sub, sid, iat, exp. Secrets from env:
+JWT_ACCESS_SECRET / JWT_REFRESH_SECRET. No passwords, hashes, or
+health data in tokens.
+
+============================================================
+8. TOKEN/SESSION STORAGE
+============================================================
+
+Tokens travel in HttpOnly cookies (access_token, refresh_token).
+React never reads the JWT. Refresh sessions persisted server-side;
+only SHA-256 hash of refresh token stored. localStorage/
+sessionStorage are NOT used.
+
+============================================================
+9. EXPIRATION VALUES
+============================================================
+
+Access token: JWT_ACCESS_EXPIRES_IN=15m (default 15m).
+Refresh: JWT_REFRESH_EXPIRES_IN=7d (default 7d).
+Cookie max-age mirrors these.
+
+============================================================
+10. INACTIVITY TIMEOUT
+============================================================
+
+SESSION_INACTIVITY_TIMEOUT_MINUTES=30 (default 30). Enforced on
+every authenticated request (requireAuth) and on refresh; a session
+idle longer than this is revoked and rejected with 401.
+
+============================================================
+11. LOGOUT BEHAVIOR
+============================================================
+
+POST /auth/logout revokes the refresh session (server-side), clears
+both cookies, writes LOGOUT audit event. Client redirects to /login.
+
+============================================================
+12. REFRESH BEHAVIOR
+============================================================
+
+POST /auth/refresh verifies signature/expiry/session/revocation/
+inactivity/user ACTIVE, rotates the session (old revoked, new
+created), issues new access + refresh tokens, and sets new cookies.
+Reuse of a revoked/expired refresh token returns 401.
+
+============================================================
+13. AUTHENTICATION ENDPOINTS
+============================================================
+
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+POST /api/v1/auth/refresh
+GET  /api/v1/auth/me
+GET  /api/v1/auth/test/{admin,data-entry,reporting,manager}
+     (development only, not registered when NODE_ENV=production)
+
+============================================================
+14. AUTHENTICATION MIDDLEWARE
+============================================================
+
+requireAuth: reads access_token cookie, verifies JWT + expiry,
+loads sid session, enforces revocation/expiry/inactivity, loads
+user, checks ACTIVE, touches last_used_at, sets req.user.
+401 for unauthenticated/expired/invalid.
+
+============================================================
+15. RBAC MIDDLEWARE
+============================================================
+
+requireRole('ADMIN' | 'DATA_ENTRY' | 'REPORTING' | 'MANAGER').
+403 for wrong role. Enforced server-side; POST /auth/test/* proved
+experimentally.
+
+============================================================
+16. FOUR ROLES
+============================================================
+
+ADMIN, DATA_ENTRY, REPORTING, MANAGER — seeded, each user has
+exactly one primary role; multi-role is out of scope.
+
+============================================================
+17. SELF-APPROVAL AUTHORIZATION FOUNDATION
+============================================================
+
+requireAuth + requireRole('REPORTING') is the enforcement point.
+When Stage 07 implements submission approval, the SubmissionService
+must additionally reject approval when submission.owner_user_id ==
+req.user.id. No approval workflow implemented in Stage 04.
+
+============================================================
+18. TAILWIND CSS INTEGRATION
+============================================================
+
+Tailwind v4 via @tailwindcss/vite; index.css uses
+`@import "tailwindcss";`. All Stage 04 UI uses Tailwind classes.
+No Bootstrap/MUI/other CSS framework.
+
+============================================================
+19. LOGIN UI
+============================================================
+
+client/src/pages/LoginPage.jsx: app title, email, password with
+show/hide, loading state, field validation, generic auth error
+display, accessible labels, responsive.
+
+============================================================
+20. REACT AUTH STATE
+============================================================
+
+AuthContext exposes { user, status: loading|authenticated|
+unauthenticated, login, logout, refresh }. Initial load tries
+/auth/me, falls back to /auth/refresh.
+
+============================================================
+21. PROTECTED ROUTES
+============================================================
+
+/login public. /app protected (RequireAuth, redirect /login).
+Role areas via RequireRole, else /unauthorized. Wildcard -> /app.
+
+============================================================
+22. API CLIENT AUTH BEHAVIOR
+============================================================
+
+apiClient: baseURL VITE_API_BASE_URL, withCredentials, 401
+handler retries once via POST /auth/refresh (except auth
+endpoints), on failure dispatches auth:unauthorized -> context
+logs out and RequireAuth redirects to /login. No retry loops.
+
+============================================================
+23. RATE LIMITING
+============================================================
+
+POST /auth/login limited (window 15 min, max 20 by default),
+configurable via AUTH_RATE_LIMIT_WINDOW_MS /
+AUTH_RATE_LIMIT_MAX.
+
+============================================================
+24. AUDIT/SECURITY EVENTS
+============================================================
+
+LOGIN_SUCCESS, LOGIN_FAILED, LOGIN_BLOCKED_INACTIVE,
+SESSION_REFRESHED, LOGOUT written to audit_logs. No passwords,
+hashes, JWT/refresh secrets recorded.
+
+============================================================
+25. DEVELOPMENT TEST USERS
+============================================================
+
+admin@dev.local / DevAdmin123!       (ADMIN)
+dataentry@dev.local / DevData123!    (DATA_ENTRY)
+reporting@dev.local / DevReport123!  (REPORTING)
+manager@dev.local / DevManager123!   (MANAGER)
+Development-only; safe placeholders; not real staff.
+
+============================================================
+26. TESTS PERFORMED
+============================================================
+
+1. Valid Admin login — PASS
+2. Valid Data Entry login — PASS
+3. Valid Reporting login — PASS
+4. Valid Manager login — PASS
+5. Invalid password — 401 generic message — PASS
+6. Invalid user — 401 generic message — PASS
+7. Missing credentials — 400 with field errors — PASS
+8. Inactive user — 401 generic message — PASS (user restored)
+9. Logout — revokes session, clears cookies — PASS
+10. Valid refresh — rotates session, new cookies — PASS
+11. Invalid refresh (no cookie / bad token) — 401 — PASS
+12. Revoked refresh after logout — 401 — PASS
+13. /auth/me authenticated — 200 safe user — PASS
+14. /auth/me unauthenticated — 401 — PASS
+15. Correct-role /auth/test/* per role — 200 — PASS
+16. Wrong-role admin test as DATA_ENTRY/REPORTING/MANAGER — 403 — PASS
+17. Client production build — npm run build succeeded — PASS
+18. /api/v1/health still ok — PASS
+19. Password hash stored as $2b$10$... — verified in DB — PASS
+20. No plaintext passwords anywhere — verified — PASS
+21. React never connects to MySQL (only axios to /api/v1) — by construction — PASS
+
+============================================================
+27. PROBLEMS ENCOUNTERED
+============================================================
+
+- argon2 npm build failed (node-gyp) -> used bcrypt (documented).
+- nodemon unavailable (prior); using node --watch.
+- MariaDB added implicit DEFAULT CURRENT_TIMESTAMP / ON UPDATE
+  CURRENT_TIMESTAMP on TIMESTAMP columns, which overwrote
+  expires_at/revoked_at on subsequent updates; diagnosed via
+  SHOW CREATE TABLE and fixed by switching those columns to
+  DATETIME.
+- Stale background node processes from Stage 03 session carrying
+  old code were killed to avoid false verification results.
+
+============================================================
+28. PROBLEMS FIXED
+============================================================
+
+- refresh_sessions columns migrated to DATETIME; expires_at now
+  persists correctly (+7d); revoked_at no longer auto-set.
+- Inactivity + rotation verified end-to-end.
+
+============================================================
+29. REMAINING ISSUES
+============================================================
+
+- No automated test suite yet (Stage 13).
+- Inactivity uses last_used_at touched per request; precise
+  client-side idle timer is a UX refinement for later.
+- Admin user-management UI, password reset, email flows are out
+  of scope.
+- Development users must not be deployed to production.
+
+============================================================
+30. CONFIRMATION — STAGE 05 NOT STARTED
+============================================================
+
+No dataset/indicator/period CRUD, data entry, submission
+workflow, reports, custom reports, dashboard analytics, analysis,
+notification UI, audit-log UI, or deployment implemented.
+
+============================================================
+31. FINAL STAGE 04 READINESS ASSESSMENT
+============================================================
+
+Stage 04 acceptance criteria met: working login/logout/refresh/me,
+bcrypt hashing, JWT auth, HttpOnly cookie sessions, inactivity
+timeout, ACTIVE-only auth, requireAuth/requireRole middleware,
+401/403 handling, four roles, admin-only test endpoints, Tailwind
+login UI, protected role-aware routes, login rate limiting, audit
+security events, env-based secrets, client build success, health
+endpoint intact, Stage 05 not started.
+
+Stage 04 is READY for Stage 05.
+
+============================================================
+END OF STAGE 04 REVIEW
+============================================================

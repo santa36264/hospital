@@ -1,0 +1,1935 @@
+============================================================
+STAGE 02 — SYSTEM ARCHITECTURE & TECHNICAL DESIGN
+============================================================
+
+PROJECT TITLE
+Hospital Health Data Management, Reporting and Analysis System
+
+DOCUMENT
+Stage 02 — System Architecture & Technical Design
+
+============================================================
+1. PURPOSE
+============================================================
+
+This document defines the technical architecture and development
+structure for the Hospital Health Data Management, Reporting and
+Analysis System.
+
+Stage 01 defined WHAT the system must do.
+
+Stage 02 defines HOW the system will be organized technically.
+
+This stage must establish a clear architecture before application
+implementation begins.
+
+This document must be consistent with:
+
+docs/stage 01.txt
+
+Stage 01 is the authoritative source for business requirements.
+
+If a technical decision conflicts with a business requirement,
+the business requirement must be reviewed before implementation.
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+The project uses the following technologies.
+
+FRONTEND
+--------
+
+React
+
+Directory:
+
+client/
+
+BACKEND
+--------
+
+Node.js
+Express.js
+
+Directory:
+
+server/
+
+DATABASE
+--------
+
+MySQL
+
+API
+---
+
+REST API
+
+AUTHENTICATION
+--------------
+
+JWT-based authentication.
+
+ARCHITECTURE
+------------
+
+Client-Server architecture.
+
+The React application communicates with the Express API.
+
+The Express API communicates with MySQL.
+
+The React application must NEVER connect directly to MySQL.
+
+Architecture:
+
+                    USER
+                      |
+                      v
+              React Application
+                  client/
+                      |
+                HTTP / HTTPS
+                      |
+                      v
+             Express REST API
+                  server/
+                      |
+                Service Layer
+                      |
+               Data Access Layer
+                      |
+                      v
+                  MySQL
+                 Database
+
+
+============================================================
+3. ARCHITECTURAL PRINCIPLES
+============================================================
+
+The application must follow these principles:
+
+1. Separation of concerns.
+2. Clear frontend/backend separation.
+3. REST API communication.
+4. Server-side authorization.
+5. Server-side validation.
+6. Business logic must not be placed directly inside routes.
+7. Database access must be separated from HTTP handling.
+8. Sensitive configuration must use environment variables.
+9. Authentication and authorization must be centralized.
+10. Errors must be handled consistently.
+11. API responses must follow a consistent structure.
+12. The system must be maintainable and testable.
+13. Future stages must not unnecessarily rewrite previous stages.
+14. Business requirements must not be silently changed.
+15. Security must be enforced on the backend even when the frontend
+    also performs validation.
+
+============================================================
+4. HIGH-LEVEL SYSTEM ARCHITECTURE
+============================================================
+
+The system consists of the following major layers.
+
+------------------------------------------------------------
+4.1 PRESENTATION LAYER
+------------------------------------------------------------
+
+Technology:
+
+React
+
+Responsibilities:
+
+- User interface
+- Forms
+- Tables
+- Dashboards
+- Charts
+- Navigation
+- Client-side validation
+- Loading states
+- Error states
+- Notifications
+- Authentication state
+- Role-based interface visibility
+
+The React client communicates with the backend only through the
+REST API.
+
+The client must not contain database credentials.
+
+------------------------------------------------------------
+4.2 API LAYER
+------------------------------------------------------------
+
+Technology:
+
+Node.js + Express.js
+
+Responsibilities:
+
+- HTTP requests
+- API routing
+- Authentication middleware
+- Authorization middleware
+- Request validation
+- Controller execution
+- Error handling
+- Response formatting
+
+Routes should remain thin.
+
+Business logic should not be implemented directly inside route files.
+
+------------------------------------------------------------
+4.3 BUSINESS LOGIC LAYER
+------------------------------------------------------------
+
+The backend should contain a service layer.
+
+Responsibilities:
+
+- Business rules
+- Submission workflow
+- Dataset rules
+- Indicator validation
+- Reporting logic
+- Approval/return logic
+- Notification creation
+- Report generation logic
+- Data analysis calculations
+- Authorization-sensitive business operations
+
+Controllers should call services instead of containing large amounts
+of business logic.
+
+------------------------------------------------------------
+4.4 DATA ACCESS LAYER
+------------------------------------------------------------
+
+Responsibilities:
+
+- Database queries
+- CRUD operations
+- Transactions
+- Query composition
+- Data retrieval
+
+Database-access logic should be separated from controllers.
+
+The implementation must use parameterized queries or a secure ORM/
+query builder approach to prevent SQL injection.
+
+The exact MySQL access library may be selected during Stage 03 after
+considering the project architecture.
+
+------------------------------------------------------------
+4.5 DATABASE LAYER
+------------------------------------------------------------
+
+Technology:
+
+MySQL
+
+Responsibilities:
+
+- Persistent data storage
+- Relationships
+- Constraints
+- Indexes
+- Transactional integrity
+- User data
+- Dataset configuration
+- Indicators
+- Reporting periods
+- Submissions
+- Data values
+- Revision history
+- Notifications
+- Audit logs
+
+The exact schema is NOT finalized in Stage 02.
+
+The detailed schema will be designed in Stage 03.
+
+============================================================
+5. RECOMMENDED BACKEND REQUEST FLOW
+============================================================
+
+A normal API request should follow this conceptual flow:
+
+HTTP Request
+     |
+     v
+Route
+     |
+     v
+Authentication Middleware
+     |
+     v
+Authorization Middleware
+     |
+     v
+Request Validation
+     |
+     v
+Controller
+     |
+     v
+Service
+     |
+     v
+Data Access Layer
+     |
+     v
+MySQL
+     |
+     v
+Service
+     |
+     v
+Controller
+     |
+     v
+Standard API Response
+     |
+     v
+React Client
+
+
+Example:
+
+POST /api/v1/submissions/:id/submit
+
+Route
+  ->
+Authenticate user
+  ->
+Check permission
+  ->
+Validate request
+  ->
+Submission Controller
+  ->
+Submission Service
+  ->
+Verify submission ownership/status
+  ->
+Apply business rules
+  ->
+Update database
+  ->
+Create audit/history information
+  ->
+Return response
+
+
+============================================================
+6. BACKEND PROJECT STRUCTURE
+============================================================
+
+The backend should follow a maintainable modular structure.
+
+Recommended structure:
+
+server/
+│
+├── src/
+│   │
+│   ├── config/
+│   │   ├── database.js
+│   │   └── environment.js
+│   │
+│   ├── controllers/
+│   │
+│   ├── services/
+│   │
+│   ├── repositories/
+│   │
+│   ├── routes/
+│   │
+│   ├── middleware/
+│   │
+│   ├── validators/
+│   │
+│   ├── models/
+│   │
+│   ├── utils/
+│   │
+│   ├── constants/
+│   │
+│   ├── errors/
+│   │
+│   ├── app.js
+│   └── server.js
+│
+├── tests/
+│
+├── .env
+├── .env.example
+├── .gitignore
+└── package.json
+
+
+IMPORTANT:
+
+This is the recommended architecture.
+
+The exact contents of each directory will be finalized during
+implementation.
+
+Do not create all implementation files during Stage 02.
+
+============================================================
+7. BACKEND MODULE STRUCTURE
+============================================================
+
+The backend should be organized around major business modules.
+
+Recommended modules:
+
+1. Authentication
+2. Users
+3. Roles/Permissions
+4. Datasets
+5. Indicators
+6. Reporting Periods
+7. Submissions
+8. Submission History / Revisions
+9. Reports
+10. Custom Reports
+11. Dashboard
+12. Data Analysis
+13. Notifications
+14. Audit Logs
+15. System Settings
+
+Each module should have clear responsibility.
+
+Avoid creating one extremely large controller or service.
+
+============================================================
+8. CONTROLLER RESPONSIBILITIES
+============================================================
+
+Controllers are responsible for handling HTTP concerns.
+
+A controller may:
+
+- Receive request.
+- Extract parameters.
+- Call validation.
+- Call a service.
+- Return an API response.
+
+Controllers should NOT contain large business rules.
+
+Bad conceptual design:
+
+Route
+  ->
+Controller
+  ->
+hundreds of lines of database queries and business rules
+
+
+Preferred:
+
+Route
+  ->
+Middleware
+  ->
+Controller
+  ->
+Service
+  ->
+Repository
+  ->
+Database
+
+
+============================================================
+9. SERVICE LAYER RESPONSIBILITIES
+============================================================
+
+Services contain application/business logic.
+
+Examples:
+
+AuthenticationService
+---------------------
+- Login
+- Password verification
+- Token generation
+- Authentication-related operations
+
+DatasetService
+--------------
+- Create dataset
+- Update dataset
+- Activate/deactivate dataset
+- Validate dataset-related rules
+
+IndicatorService
+----------------
+- Create indicator
+- Update indicator
+- Activate/deactivate indicator
+- Validate indicator configuration
+
+ReportingPeriodService
+----------------------
+- Create period
+- Open period
+- Close period
+- Validate period status
+
+SubmissionService
+-----------------
+- Create draft
+- Update draft
+- Submit
+- Start review
+- Return
+- Resubmit
+- Approve
+- Apply amendment rules
+
+ReportService
+-------------
+- Generate dataset reports
+- Generate standard reports
+- Generate report history
+
+CustomReportService
+-------------------
+- Build custom report
+- Apply filters
+- Preview report
+- Prepare export data
+
+AnalysisService
+---------------
+- Calculate statistics
+- Compare periods
+- Prepare trend data
+- Prepare dashboard metrics
+
+NotificationService
+--------------------
+- Create notification
+- Mark notification read
+- Retrieve notifications
+
+AuditService
+------------
+- Record important system actions
+- Retrieve audit logs for Admin
+
+============================================================
+10. REPOSITORY / DATA ACCESS RESPONSIBILITIES
+============================================================
+
+Repositories/data-access modules are responsible for communication
+with MySQL.
+
+Examples:
+
+UserRepository
+DatasetRepository
+IndicatorRepository
+ReportingPeriodRepository
+SubmissionRepository
+SubmissionHistoryRepository
+DataValueRepository
+NotificationRepository
+AuditLogRepository
+
+Repositories should not decide whether a user is allowed to approve
+a submission.
+
+That is business logic and belongs in the service/authorization
+layers.
+
+============================================================
+11. API DESIGN
+============================================================
+
+The backend will expose a REST API.
+
+Base path:
+
+/api/v1
+
+Example structure:
+
+/api/v1/auth
+/api/v1/users
+/api/v1/roles
+/api/v1/datasets
+/api/v1/indicators
+/api/v1/reporting-periods
+/api/v1/submissions
+/api/v1/reports
+/api/v1/custom-reports
+/api/v1/dashboard
+/api/v1/analysis
+/api/v1/notifications
+/api/v1/audit-logs
+/api/v1/settings
+
+
+============================================================
+12. HTTP METHOD CONVENTIONS
+============================================================
+
+Use standard REST conventions where appropriate.
+
+GET
+---
+Retrieve resources.
+
+POST
+----
+Create resources or perform explicit actions.
+
+PUT/PATCH
+---------
+Update resources.
+
+DELETE
+------
+Delete resources only where deletion is permitted by business rules.
+
+Important:
+
+Audit logs must not be exposed through an ordinary delete endpoint.
+
+Historical health data must not be casually deleted.
+
+Where deactivation is required, prefer status changes over physical
+deletion.
+
+============================================================
+13. EXAMPLE API STRUCTURE
+============================================================
+
+These are architectural examples, not the final API list.
+
+Authentication:
+
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/auth/me
+POST /api/v1/auth/change-password
+
+
+Datasets:
+
+GET    /api/v1/datasets
+GET    /api/v1/datasets/:id
+POST   /api/v1/datasets
+PATCH  /api/v1/datasets/:id
+PATCH  /api/v1/datasets/:id/status
+
+
+Indicators:
+
+GET    /api/v1/datasets/:datasetId/indicators
+POST   /api/v1/datasets/:datasetId/indicators
+GET    /api/v1/indicators/:id
+PATCH  /api/v1/indicators/:id
+
+
+Reporting Periods:
+
+GET    /api/v1/reporting-periods
+POST   /api/v1/reporting-periods
+PATCH  /api/v1/reporting-periods/:id
+POST   /api/v1/reporting-periods/:id/close
+POST   /api/v1/reporting-periods/:id/reopen
+
+
+Submissions:
+
+GET    /api/v1/submissions
+GET    /api/v1/submissions/:id
+POST   /api/v1/submissions
+PATCH  /api/v1/submissions/:id
+POST   /api/v1/submissions/:id/submit
+POST   /api/v1/submissions/:id/start-review
+POST   /api/v1/submissions/:id/return
+POST   /api/v1/submissions/:id/resubmit
+POST   /api/v1/submissions/:id/approve
+
+
+Reports:
+
+GET    /api/v1/reports/dataset
+GET    /api/v1/reports/monthly
+GET    /api/v1/reports/indicator
+GET    /api/v1/reports/comparison
+GET    /api/v1/reports/submission-status
+GET    /api/v1/reports/history
+
+
+Custom Reports:
+
+POST   /api/v1/custom-reports/preview
+POST   /api/v1/custom-reports/export
+
+The initial custom report structure supports an indicator-by-period
+table.
+
+Example:
+
+Indicator | January | February | March
+
+The report must have a preview before export.
+
+
+Dashboard:
+
+GET    /api/v1/dashboard/admin
+GET    /api/v1/dashboard/data-entry
+GET    /api/v1/dashboard/reporting
+GET    /api/v1/dashboard/manager
+
+
+Notifications:
+
+GET    /api/v1/notifications
+PATCH  /api/v1/notifications/:id/read
+PATCH  /api/v1/notifications/read-all
+
+
+Audit:
+
+GET    /api/v1/audit-logs   (ADMIN-ONLY)
+
+These endpoints must be finalized and validated during implementation.
+
+============================================================
+14. API VERSIONING
+============================================================
+
+The initial API should use:
+
+/api/v1
+
+Therefore the final conceptual structure should be:
+
+/api/v1/auth
+/api/v1/users
+/api/v1/datasets
+...
+
+This allows future API versions without immediately breaking an
+existing client.
+
+============================================================
+15. API RESPONSE STANDARD
+============================================================
+
+API responses should use a consistent structure.
+
+Successful response example:
+
+{
+    "success": true,
+    "message": "Request completed successfully.",
+    "data": {}
+}
+
+
+Error response example:
+
+{
+    "success": false,
+    "message": "Validation failed.",
+    "errors": {}
+}
+
+
+Collection response example:
+
+{
+    "success": true,
+    "message": "Datasets retrieved successfully.",
+    "data": [],
+    "meta": {
+        "page": 1,
+        "perPage": 20,
+        "total": 100
+    }
+}
+
+
+The exact response implementation may be refined during development,
+but consistency must be maintained across the API.
+
+============================================================
+16. ERROR HANDLING
+============================================================
+
+The backend must have centralized error handling.
+
+Errors should be categorized appropriately.
+
+Examples:
+
+400
+----
+Bad request / validation problem.
+
+401
+----
+Unauthenticated.
+
+403
+----
+Authenticated but not authorized.
+
+404
+----
+Resource not found.
+
+409
+----
+Business conflict or duplicate resource.
+
+422
+----
+Validation/business validation failure where appropriate.
+
+500
+----
+Unexpected server error.
+
+The API must not expose sensitive internal stack traces in production.
+
+Errors should be logged appropriately on the server.
+
+============================================================
+17. AUTHENTICATION ARCHITECTURE
+============================================================
+
+Authentication uses JWT.
+
+Conceptual flow:
+
+User
+ |
+ | username/email + password
+ v
+POST /api/v1/auth/login
+ |
+ v
+Authentication Service
+ |
+ | verify password
+ v
+JWT generated
+ |
+ v
+React stores authentication state
+ |
+ v
+Protected API request
+ |
+ Authorization header
+ |
+ v
+JWT Middleware
+ |
+ v
+Authenticated User
+ |
+ v
+Authorization
+
+
+The exact token storage strategy must prioritize security.
+
+The final implementation must not expose authentication secrets
+to client-side source code.
+
+JWT expiration is required.
+
+Authenticated sessions require an inactivity/session timeout. The
+exact timeout duration may be finalized during the authentication
+implementation stage.
+
+Logout/token invalidation behavior will be finalized during the
+authentication implementation stage.
+
+============================================================
+18. AUTHORIZATION ARCHITECTURE
+============================================================
+
+Authentication answers:
+
+"Who is the user?"
+
+Authorization answers:
+
+"What is this user allowed to do?"
+
+The backend must enforce role/permission checks.
+
+Example:
+
+Admin
+  -> user management
+
+Data Entry
+  -> draft/data submission workflow
+
+Reporting
+  -> review/approval/reporting
+
+Manager
+  -> approved data/analysis
+
+
+Frontend route protection alone is NOT sufficient.
+
+Each user has ONE primary role in the initial version:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Multi-role users are out of scope for the initial version.
+
+Every protected API operation must enforce authorization on the
+server.
+
+============================================================
+19. ROLE-BASED FRONTEND ARCHITECTURE
+============================================================
+
+React navigation should adapt according to the authenticated user's
+role.
+
+Example:
+
+ADMIN
+-----
+Dashboard
+Users
+Datasets
+Indicators
+Reporting Periods
+Reports
+Audit Logs
+Settings
+
+
+DATA ENTRY
+----------
+Dashboard
+Data Entry
+My Submissions
+Notifications
+Profile
+
+
+REPORTING
+---------
+Dashboard
+Submissions
+Reports
+Custom Reports
+Analysis
+Notifications
+Profile
+
+
+MANAGER
+-------
+Dashboard
+Reports
+Analysis
+Notifications
+Profile
+
+
+The exact navigation labels can be refined during UI/UX stages.
+
+Frontend visibility does not replace backend authorization.
+
+============================================================
+20. FRONTEND PROJECT STRUCTURE
+============================================================
+
+Recommended React structure:
+
+client/
+│
+├── src/
+│   │
+│   ├── assets/
+│   │
+│   ├── components/
+│   │
+│   ├── layouts/
+│   │
+│   ├── pages/
+│   │
+│   ├── features/
+│   │
+│   ├── hooks/
+│   │
+│   ├── services/
+│   │
+│   ├── api/
+│   │
+│   ├── context/
+│   │
+│   ├── routes/
+│   │
+│   ├── utils/
+│   │
+│   ├── constants/
+│   │
+│   ├── types/
+│   │
+│   ├── App.jsx
+│   │
+│   └── main.jsx
+│
+├── public/
+├── .env
+├── .env.example
+├── .gitignore
+└── package.json
+
+
+The exact frontend structure can be refined during implementation.
+
+============================================================
+21. FRONTEND FEATURE ORGANIZATION
+============================================================
+
+Major React features should correspond to business modules.
+
+Examples:
+
+features/
+│
+├── auth/
+├── users/
+├── datasets/
+├── indicators/
+├── reportingPeriods/
+├── submissions/
+├── reports/
+├── customReports/
+├── dashboard/
+├── analysis/
+├── notifications/
+└── auditLogs/
+
+
+This keeps related UI, hooks, API calls, and state organized.
+
+============================================================
+22. FRONTEND API COMMUNICATION
+============================================================
+
+The React client must use a centralized API communication mechanism.
+
+The application should have a central API configuration.
+
+Example conceptual structure:
+
+api/
+    client
+    authApi
+    datasetApi
+    indicatorApi
+    submissionApi
+    reportApi
+    notificationApi
+
+
+The API base URL must come from environment configuration.
+
+Do not hardcode production server URLs throughout components.
+
+============================================================
+23. FRONTEND STATE MANAGEMENT
+============================================================
+
+The application will require state for:
+
+- Authentication
+- Current user
+- Role
+- Notifications
+- Form state
+- Submission state
+- Dashboard data
+- Report data
+
+The state-management technology should be selected during
+implementation based on actual complexity.
+
+Do not introduce unnecessary global state.
+
+Local component state should be used when global state is not needed.
+
+============================================================
+24. ROUTING
+============================================================
+
+The React application requires protected and public routes.
+
+Public:
+
+/login
+
+
+Protected examples:
+
+/dashboard
+/datasets
+/indicators
+/reporting-periods
+/data-entry
+/submissions
+/reports
+/custom-reports
+/analysis
+/users
+/audit-logs
+/settings
+
+
+Role-based route protection must be implemented.
+
+A user must not gain access simply by manually typing a URL.
+
+============================================================
+25. DATA FLOW FOR DATA ENTRY
+============================================================
+
+The Data Entry flow should be:
+
+React
+ |
+ | Select Dataset
+ v
+GET active datasets
+ |
+ | Select Reporting Period
+ v
+GET reporting period
+ |
+ | Load indicators
+ v
+GET dataset indicators
+ |
+ | Enter values
+ v
+Frontend validation
+ |
+ | Save
+ v
+POST/PATCH submission
+ |
+ v
+Express
+ |
+ v
+Server validation
+ |
+ v
+Business rules
+ |
+ v
+MySQL
+
+
+The backend remains authoritative.
+
+============================================================
+26. DATA FLOW FOR SUBMISSION
+============================================================
+
+Submission:
+
+Data Entry
+   |
+   | Submit
+   v
+React
+   |
+   | POST /submit
+   v
+Express
+   |
+   +--> Authentication
+   |
+   +--> Authorization
+   |
+   +--> Validation
+   |
+   +--> Submission Service
+   |
+   +--> Check DRAFT status
+   |
+   +--> Check period status
+   |
+   +--> Check dataset status
+   |
+   +--> Validate indicator values
+   |
+   +--> Save transaction
+   |
+   +--> Create history/audit information
+   |
+   +--> Notification
+   |
+   v
+SUBMITTED
+
+
+============================================================
+27. REVIEW/APPROVAL ARCHITECTURE
+============================================================
+
+Reporting user:
+
+GET submissions
+      |
+      v
+Select submission
+      |
+      v
+Start review
+      |
+      v
+UNDER_REVIEW
+      |
+      +-------------------+
+      |                   |
+      v                   v
+   RETURN              APPROVE
+      |                   |
+      v                   v
+ RETURNED             APPROVED
+      |
+      v
+Data Entry correction
+      |
+      v
+SUBMITTED
+      |
+      v
+UNDER_REVIEW
+
+
+All state transitions must be validated by the backend.
+
+The frontend must not be able to force an invalid status transition.
+
+============================================================
+28. TRANSACTION REQUIREMENTS
+============================================================
+
+Database transactions should be used where multiple database
+operations must succeed or fail together.
+
+Examples:
+
+Submitting data may involve:
+
+- Updating submission status.
+- Recording submission history.
+- Creating audit entry.
+- Creating notification.
+
+Approval may involve:
+
+- Updating submission status.
+- Recording history.
+- Recording audit event.
+- Creating notification.
+
+These operations should be handled transactionally where appropriate.
+
+============================================================
+29. REPORTING ARCHITECTURE
+============================================================
+
+Reports should be generated through backend services.
+
+Conceptual flow:
+
+React Report Page
+      |
+      v
+Report API
+      |
+      v
+Report Service
+      |
+      v
+Query approved data
+      |
+      v
+Transform data
+      |
+      v
+Report result
+      |
+      +------> Preview
+      |
+      +------> PDF
+      |
+      +------> Excel
+      |
+      +------> Print
+
+
+Official reports must respect the approved-data requirement from
+Stage 01.
+
+============================================================
+30. DATA ANALYSIS ARCHITECTURE
+============================================================
+
+Analysis should be separated from ordinary CRUD operations.
+
+Conceptual flow:
+
+Approved Data
+     |
+     v
+Analysis Service
+     |
+     +--> Totals
+     |
+     +--> Percentages
+     |
+     +--> Period comparison
+     |
+     +--> Trends
+     |
+     +--> Indicator statistics
+     |
+     v
+Analysis API
+     |
+     v
+React Charts / Tables / Statistics
+
+
+Analysis calculations should be reproducible from stored data.
+
+============================================================
+31. AUDIT ARCHITECTURE
+============================================================
+
+Important actions must create audit records.
+
+Conceptual flow:
+
+User Action
+    |
+    v
+Authorization
+    |
+    v
+Business Operation
+    |
+    +----> Audit Service
+              |
+              v
+          audit_logs
+
+
+Audit logs should contain sufficient information to determine:
+
+- Who performed the action.
+- What action occurred.
+- What resource was affected.
+- When it occurred.
+- Relevant old/new values where required.
+
+Audit records are append-only from the application perspective.
+
+Audit-log endpoints are ADMIN-ONLY in the initial version.
+Reporting users must not have general access to audit-log
+endpoints.
+
+Workflow history required for submission review remains separate
+from the Admin audit-log interface.
+
+============================================================
+32. NOTIFICATION ARCHITECTURE
+============================================================
+
+Notifications are stored in MySQL.
+
+Conceptual flow:
+
+Business Event
+     |
+     v
+Notification Service
+     |
+     v
+notifications table
+     |
+     v
+React Notification UI
+
+
+Examples:
+
+Submission submitted
+    ->
+Reporting users receive notification.
+
+Submission returned
+    ->
+Data Entry owner receives notification.
+
+Submission approved
+    ->
+Data Entry owner receives notification.
+
+
+Exact recipient rules will be implemented according to Stage 01.
+
+Email/SMS is not part of the initial implementation.
+
+============================================================
+33. SECURITY ARCHITECTURE
+============================================================
+
+The application must include:
+
+1. Password hashing.
+2. JWT authentication.
+3. JWT expiration.
+4. Authorization middleware.
+5. Request validation.
+6. SQL injection protection.
+7. Secure environment variables.
+8. CORS configuration.
+9. Rate limiting for authentication-sensitive endpoints.
+10. Secure HTTP configuration.
+11. Appropriate error handling.
+12. Protection against unauthorized resource access.
+13. Server-side business-rule enforcement.
+14. Audit logging.
+15. Input sanitization/validation where appropriate.
+16. Session/inactivity timeout.
+
+Security must be implemented at the backend.
+
+============================================================
+34. ENVIRONMENT CONFIGURATION
+============================================================
+
+Sensitive configuration must not be hardcoded.
+
+Backend environment variables may include:
+
+NODE_ENV
+PORT
+DATABASE_HOST
+DATABASE_PORT
+DATABASE_NAME
+DATABASE_USER
+DATABASE_PASSWORD
+JWT_SECRET
+JWT_EXPIRES_IN
+CLIENT_URL
+
+
+Frontend environment configuration may include:
+
+API_BASE_URL
+
+
+An example environment file must be provided.
+
+Real secrets must never be committed to Git.
+
+============================================================
+35. CONFIGURATION SEPARATION
+============================================================
+
+The system should support different environments.
+
+At minimum:
+
+Development
+Production
+
+Where appropriate:
+
+Testing
+
+
+Development configuration must not be hardcoded into production
+configuration.
+
+============================================================
+36. LOGGING
+============================================================
+
+The backend should provide structured application logging.
+
+Logs should help developers diagnose:
+
+- API errors
+- Authentication failures
+- Database errors
+- Unexpected server errors
+- Important application events
+
+Do not log:
+
+- Passwords
+- JWT secrets
+- Database passwords
+- Other sensitive credentials
+
+Audit logs and application logs are separate concepts.
+
+Audit logs represent user/system actions that require accountability.
+
+Application logs primarily support technical diagnostics.
+
+============================================================
+37. DATABASE ARCHITECTURE DIRECTION
+============================================================
+
+The database will be MySQL.
+
+The detailed schema will be created in Stage 03.
+
+The architecture must support relationships between:
+
+Users
+Roles
+Datasets
+Indicators
+Reporting Periods
+Submissions
+Data Values
+Submission History
+Notifications
+Audit Logs
+
+Potential additional entities may be introduced during detailed
+database design when justified by Stage 01 requirements.
+
+No final table structure is approved by Stage 02 alone.
+
+============================================================
+38. BUSINESS LOGIC BOUNDARIES
+============================================================
+
+The following rules must be enforced on the server:
+
+- Only authorized users can perform protected actions.
+- Only Data Entry users use ordinary data-entry workflow.
+- A Data Entry user owns their draft.
+- Only one active submission exists for Dataset + Period.
+- Submitted data cannot be freely edited.
+- Reporting starts review.
+- Reporting can return or approve.
+- Return requires a reason.
+- Returned data can be corrected and resubmitted.
+- Approved data cannot be directly edited by Data Entry.
+- Approved amendments must be controlled and auditable.
+- Closed periods cannot accept ordinary new entry.
+- Inactive datasets cannot accept new entry.
+- Inactive indicators cannot accept new values.
+- Manager-facing reports use approved data.
+- Audit logs cannot be edited/deleted by ordinary users.
+- Audit-log endpoints are Admin-only in the initial version.
+- Data Entry cannot approve submissions.
+- A user cannot approve data they personally entered.
+- Admin does not perform ordinary data entry.
+- Frontend restrictions are not sufficient for separation of duties;
+  backend authorization/business rules must enforce this.
+
+============================================================
+39. API SECURITY BOUNDARY
+============================================================
+
+Every protected API endpoint must determine:
+
+1. Is the user authenticated?
+2. Is the user's account active?
+3. What role does the user have?
+4. Does the role have permission?
+5. Does the user own or have access to the resource?
+6. Is the requested business operation valid?
+7. Is the resource in a valid state?
+
+Example:
+
+A Data Entry user attempting:
+
+POST /api/v1/submissions/123/approve
+
+must be rejected even if the user manually sends the request.
+
+Frontend hiding the button is not sufficient.
+
+============================================================
+40. FRONTEND SECURITY BOUNDARY
+============================================================
+
+The frontend improves usability but is not trusted for security.
+
+Frontend responsibilities:
+
+- Hide unauthorized navigation.
+- Protect routes.
+- Show appropriate UI.
+- Perform user-friendly validation.
+- Display API errors.
+
+Backend responsibilities:
+
+- Authentication
+- Authorization
+- Validation
+- Business rules
+- Resource ownership
+- Database integrity
+
+============================================================
+41. FILE / DOCUMENTATION ARCHITECTURE
+============================================================
+
+The project documentation remains:
+
+docs/
+│
+├── stage 01.txt
+├── stage 01 review.txt
+├── stage 02.txt
+├── stage 03.txt
+├── ...
+└── stage 14.txt
+
+
+The stage documents are development instructions and project
+documentation.
+
+Each stage must be completed and reviewed before moving to the next.
+
+============================================================
+42. GIT / SOURCE CONTROL ARCHITECTURE
+============================================================
+
+The project should use Git.
+
+Repository root:
+
+hospital/
+
+Recommended structure:
+
+hospital/
+├── .git/
+├── docs/
+├── client/
+└── server/
+
+Sensitive files such as:
+
+.env
+
+must not be committed.
+
+Use:
+
+.env.example
+
+to document required environment variables without exposing secrets.
+
+============================================================
+43. TESTING ARCHITECTURE
+============================================================
+
+Testing will be developed progressively.
+
+Backend testing should cover:
+
+- Authentication
+- Authorization
+- Validation
+- Services
+- Business rules
+- API endpoints
+- Submission state transitions
+
+Frontend testing should eventually cover:
+
+- Forms
+- Components
+- Routes
+- Role-based UI
+- Data-entry workflow
+- Report interfaces
+
+End-to-end testing will validate complete workflows.
+
+Detailed testing is Stage 13.
+
+============================================================
+44. ARCHITECTURAL QUALITY REQUIREMENTS
+============================================================
+
+The implementation should avoid:
+
+- Giant controllers.
+- Giant React components.
+- Duplicate business logic.
+- Direct database access from React.
+- Hardcoded credentials.
+- Hardcoded API URLs.
+- Business rules implemented only in frontend.
+- Repeated authorization logic.
+- Unnecessary global state.
+- Unnecessary dependencies.
+- Mixing unrelated modules.
+- Silent changes to requirements.
+
+The implementation should favor:
+
+- Small focused modules.
+- Reusable services.
+- Centralized error handling.
+- Centralized API communication.
+- Clear validation.
+- Clear authorization.
+- Consistent responses.
+- Testable business logic.
+
+============================================================
+45. STAGE 02 ARCHITECTURAL DECISIONS
+============================================================
+
+The following decisions are fixed for the project:
+
+AD-01
+React is the frontend.
+
+AD-02
+Node.js + Express.js is the backend.
+
+AD-03
+MySQL is the database.
+
+AD-04
+React communicates with Express through REST API.
+
+AD-05
+React never connects directly to MySQL.
+
+AD-06
+Backend follows Route -> Middleware -> Controller -> Service ->
+Repository/Data Access -> Database architecture.
+
+AD-07
+Business logic belongs primarily in services.
+
+AD-08
+Database access is separated from controllers.
+
+AD-09
+Authentication uses JWT.
+
+AD-10
+Authorization is enforced on the backend.
+
+AD-11
+The API base version is /api/v1.
+
+AD-12
+The backend uses centralized error handling.
+
+AD-13
+API responses follow a consistent structure.
+
+AD-14
+Sensitive configuration uses environment variables.
+
+AD-15
+The system uses role-based access control.
+
+AD-16
+The frontend uses role-aware routing/navigation.
+
+AD-17
+Approved data is the source for official reporting and analysis.
+
+AD-18
+Important workflow operations are auditable.
+
+AD-19
+Notifications are persisted in the database.
+
+AD-20
+The detailed MySQL schema belongs to Stage 03.
+
+AD-21
+Application implementation belongs to later stages.
+
+============================================================
+46. STAGE 02 OUT OF SCOPE
+============================================================
+
+Do NOT implement the following during Stage 02:
+
+- React application generation.
+- Express application generation.
+- Database creation.
+- MySQL tables.
+- Migrations.
+- Authentication implementation.
+- JWT implementation.
+- Login UI.
+- Dashboard UI.
+- Dataset CRUD.
+- Indicator CRUD.
+- Submission CRUD.
+- Report generation.
+- Custom report builder.
+- Charts.
+- Notifications implementation.
+- Audit implementation.
+
+Stage 02 is technical architecture and design.
+
+Implementation begins in later stages.
+
+============================================================
+47. STAGE 02 DELIVERABLE
+============================================================
+
+The Stage 02 deliverable is a complete technical architecture
+definition covering:
+
+- System architecture
+- Technology stack
+- Client/server communication
+- Backend layers
+- Frontend structure
+- Backend module structure
+- API architecture
+- Authentication architecture
+- Authorization architecture
+- Data flow
+- Error handling
+- Security architecture
+- Configuration
+- Logging
+- Testing direction
+- Database architecture direction
+- Development boundaries
+- Architectural decisions
+
+============================================================
+48. STAGE 02 ACCEPTANCE CRITERIA
+============================================================
+
+Stage 02 is complete when:
+
+[ ] System architecture is documented.
+
+[ ] React client architecture is documented.
+
+[ ] Node.js/Express server architecture is documented.
+
+[ ] MySQL database boundary is documented.
+
+[ ] Client-server communication is documented.
+
+[ ] Backend request flow is documented.
+
+[ ] Controller/service/repository responsibilities are documented.
+
+[ ] API structure is documented.
+
+[ ] API versioning is defined.
+
+[ ] API response structure is defined.
+
+[ ] Error-handling architecture is defined.
+
+[ ] Authentication architecture is defined.
+
+[ ] Authorization architecture is defined.
+
+[ ] Role-based frontend architecture is defined.
+
+[ ] Frontend project structure is documented.
+
+[ ] Backend project structure is documented.
+
+[ ] Data-entry data flow is documented.
+
+[ ] Submission workflow architecture is documented.
+
+[ ] Reporting architecture is documented.
+
+[ ] Analysis architecture is documented.
+
+[ ] Audit architecture is documented.
+
+[ ] Notification architecture is documented.
+
+[ ] Security architecture is documented.
+
+[ ] Environment configuration is documented.
+
+[ ] Logging approach is documented.
+
+[ ] Database architecture direction is documented.
+
+[ ] Git/source-control expectations are documented.
+
+[ ] Testing architecture direction is documented.
+
+[ ] Stage 02 does not implement application code.
+
+============================================================
+49. STAGE 02 COMPLETION RULE
+============================================================
+
+Stage 02 must be reviewed before Stage 03 begins.
+
+Stage 03 will use:
+
+docs/stage 01.txt
+docs/stage 01 review.txt
+docs/stage 02.txt
+
+to design the actual database and establish the project foundation.
+
+Do not skip directly from Stage 01 into application feature
+development.
+
+============================================================
+END OF STAGE 02
+============================================================

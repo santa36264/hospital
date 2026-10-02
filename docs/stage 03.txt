@@ -1,0 +1,1075 @@
+============================================================
+STAGE 03 — DATABASE DESIGN & PROJECT FOUNDATION
+============================================================
+
+PROJECT TITLE
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. PURPOSE
+============================================================
+
+Stage 01 defined the business requirements.
+
+Stage 02 defined the technical architecture.
+
+Stage 03 establishes the actual project foundation and database
+design.
+
+This is the first implementation stage.
+
+Stage 03 MUST create:
+
+1. React frontend foundation in client/
+2. Node.js + Express backend foundation in server/
+3. MySQL database foundation
+4. Database schema design
+5. Database migrations/schema implementation
+6. Basic client-server connection
+7. Environment configuration
+8. Basic project documentation/configuration
+
+Stage 03 MUST NOT implement business features yet.
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+Frontend:
+
+React
+
+Directory:
+
+client/
+
+Backend:
+
+Node.js + Express.js
+
+Directory:
+
+server/
+
+Database:
+
+MySQL
+
+API:
+
+REST API
+
+API Base:
+
+/api/v1
+
+Authentication:
+
+JWT
+
+Authentication implementation belongs to Stage 04.
+
+============================================================
+3. PROJECT ROOT
+============================================================
+
+The final root structure should be:
+
+hospital/
+│
+├── docs/
+│   ├── stage 01.txt
+│   ├── stage 01 review.txt
+│   ├── stage 02.txt
+│   ├── stage 02 review.txt
+│   └── stage 03.txt
+│
+├── client/
+│
+├── server/
+│
+├── .gitignore
+└── README.md
+
+
+Do not create unrelated projects or directories.
+
+============================================================
+4. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+This is the first implementation stage.
+
+Unlike Stage 01 and Stage 02, Stage 03 MUST create the actual
+application foundation.
+
+The implementation must follow:
+
+docs/stage 01.txt
+docs/stage 01 review.txt
+docs/stage 02.txt
+docs/stage 02 review.txt
+docs/stage 03.txt
+
+Do not silently change requirements.
+
+Do not introduce Laravel, Vue, PHP, PostgreSQL, MongoDB, Django,
+or another backend/frontend/database stack.
+
+============================================================
+5. REACT CLIENT FOUNDATION
+============================================================
+
+Create the React application inside:
+
+client/
+
+The client must be a proper React application.
+
+The project must support:
+
+- React development server
+- Production build
+- Environment configuration
+- API communication foundation
+- Routing foundation
+- Organized source structure
+
+Recommended structure:
+
+client/
+│
+├── src/
+│   ├── api/
+│   ├── assets/
+│   ├── components/
+│   ├── constants/
+│   ├── context/
+│   ├── features/
+│   ├── hooks/
+│   ├── layouts/
+│   ├── pages/
+│   ├── routes/
+│   ├── services/
+│   ├── types/
+│   ├── utils/
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── public/
+├── .env.example
+├── .gitignore
+└── package.json
+
+The exact tooling may be selected during implementation, but the
+result must remain a React application.
+
+============================================================
+6. REACT CLIENT INITIAL STATE
+============================================================
+
+The React application should initially contain only a foundation.
+
+It may contain:
+
+- Application shell
+- Basic routing setup
+- Placeholder/home page
+- API client configuration
+- Basic error boundary if appropriate
+- Basic loading/error infrastructure if appropriate
+
+Do NOT implement:
+
+- Login
+- Dashboard
+- Dataset management
+- Indicator management
+- Data entry
+- Submission workflow
+- Reports
+- Custom reports
+- Analysis
+- User management
+
+Those belong to later stages.
+
+============================================================
+7. BACKEND FOUNDATION
+============================================================
+
+Create the Node.js + Express application inside:
+
+server/
+
+The backend must support:
+
+- Node.js
+- Express.js
+- Environment configuration
+- REST API
+- Centralized error handling
+- Basic application startup
+- Database connection foundation
+- Organized architecture
+
+Recommended structure:
+
+server/
+│
+├── src/
+│   ├── config/
+│   │   ├── database.js
+│   │   └── environment.js
+│   │
+│   ├── controllers/
+│   ├── services/
+│   ├── repositories/
+│   ├── routes/
+│   ├── middleware/
+│   ├── validators/
+│   ├── models/
+│   ├── utils/
+│   ├── constants/
+│   ├── errors/
+│   ├── app.js
+│   └── server.js
+│
+├── tests/
+├── .env.example
+├── .gitignore
+└── package.json
+
+Do not create unnecessary empty files simply to fill directories.
+
+Only create files that have a clear purpose.
+
+============================================================
+8. BACKEND INITIAL API
+============================================================
+
+Create the API base:
+
+/api/v1
+
+The initial server must provide a simple health endpoint:
+
+GET /api/v1/health
+
+Expected conceptual response:
+
+{
+    "success": true,
+    "message": "Hospital Health Data Management API is running.",
+    "data": {
+        "status": "ok"
+    }
+}
+
+This endpoint is only for verifying that the backend is running.
+
+Do NOT implement authentication yet.
+
+============================================================
+9. DATABASE TECHNOLOGY
+============================================================
+
+Use:
+
+MySQL
+
+The application must connect to MySQL from the backend.
+
+React must NEVER connect directly to MySQL.
+
+Architecture:
+
+React
+   |
+   | HTTP
+   v
+Express
+   |
+   v
+Database Access Layer
+   |
+   v
+MySQL
+
+============================================================
+10. DATABASE NAME
+============================================================
+
+Use a clear project database name.
+
+Recommended:
+
+hospital_health_data
+
+If the local MySQL environment requires another naming convention,
+document the change before applying it.
+
+============================================================
+11. DATABASE DESIGN PRINCIPLE
+============================================================
+
+The database must represent the business requirements from Stage 01.
+
+The initial core domain includes:
+
+- Users
+- Roles
+- Datasets
+- Indicators
+- Reporting Periods
+- Submissions
+- Data Values
+- Submission History
+- Notifications
+- Audit Logs
+
+Additional supporting tables may be introduced when technically
+necessary.
+
+Do not add unrelated hospital-management entities such as:
+
+- Patients
+- Doctors
+- Pharmacy
+- Billing
+- Appointments
+- Laboratory
+- Insurance
+
+unless explicitly required by Stage 01.
+
+This project is a health-data management/reporting/analysis system,
+not a complete hospital information system.
+
+============================================================
+12. ROLE DESIGN
+============================================================
+
+The initial system has exactly four primary roles:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Each user has ONE primary role.
+
+Multi-role users are out of scope.
+
+The database must support role-based authorization.
+
+============================================================
+13. USERS
+============================================================
+
+The users table must support at minimum:
+
+- unique identifier
+- name
+- email/username as appropriate
+- password hash
+- role reference
+- account status
+- created timestamp
+- updated timestamp
+
+Do not store plaintext passwords.
+
+Authentication implementation belongs to Stage 04.
+
+============================================================
+14. ROLES
+============================================================
+
+The roles table must support the four initial roles:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Role values should be controlled and unique.
+
+The implementation may use:
+
+- role table + foreign key
+
+rather than hardcoding role names throughout database queries.
+
+============================================================
+15. DATASETS
+============================================================
+
+A dataset represents a collection of health indicators.
+
+Dataset must support at minimum:
+
+- identifier
+- name
+- code where appropriate
+- description
+- active/inactive status
+- created timestamp
+- updated timestamp
+
+Dataset deactivation must preserve historical information.
+
+Inactive datasets must not accept new data.
+
+============================================================
+16. INDICATORS
+============================================================
+
+An indicator belongs to a dataset.
+
+Indicator must support configuration needed by Stage 01:
+
+- identifier
+- dataset reference
+- name
+- code
+- description
+- data type
+- required flag
+- active/inactive status
+- minimum value where applicable
+- maximum value where applicable
+- precision where applicable
+- created timestamp
+- updated timestamp
+
+Initial supported conceptual data types:
+
+- numeric
+- decimal
+- text
+- date
+- yes/no
+- percentage
+
+Percentage indicators must support the default validation range:
+
+0–100
+
+Numeric indicators must support configurable validation rules.
+
+Do not hardcode all indicator limits into application code.
+
+============================================================
+17. REPORTING PERIODS
+============================================================
+
+Reporting periods represent periods in which health data is entered.
+
+A reporting period must support:
+
+- identifier
+- period name/label
+- start date where appropriate
+- end date where appropriate
+- status
+- created timestamp
+- updated timestamp
+
+Initial period statuses:
+
+OPEN
+CLOSED
+
+Closed periods must not accept ordinary new data.
+
+Reopening a closed period is exceptional and must be auditable.
+
+============================================================
+18. SUBMISSIONS
+============================================================
+
+A submission represents:
+
+ONE Dataset
++
+ONE Reporting Period
++
+ONE Data Entry Owner
+
+A submission must support:
+
+- identifier
+- dataset reference
+- reporting period reference
+- owner/user reference
+- status
+- submitted timestamp where applicable
+- reviewed timestamp where applicable
+- approved timestamp where applicable
+- returned timestamp where applicable
+- created timestamp
+- updated timestamp
+
+Persistent statuses are exactly:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Do NOT create a persistent RESUBMITTED status.
+
+Resubmission means:
+
+RETURNED -> SUBMITTED
+
+============================================================
+19. SUBMISSION UNIQUENESS
+============================================================
+
+There must be only ONE active submission for:
+
+Dataset + Reporting Period
+
+The database must enforce this requirement as far as technically
+possible.
+
+The implementation must prevent duplicate active submissions caused
+by concurrent requests.
+
+============================================================
+20. DATA VALUES
+============================================================
+
+Submission data must be stored separately from the submission
+metadata.
+
+A data value belongs to:
+
+Submission
++
+Indicator
+
+The design must allow an indicator to store the configured data type.
+
+The database design must support validation and retrieval of
+indicator values for reports and analysis.
+
+Do not create one database column for every indicator.
+
+Indicators are dynamic configuration records.
+
+Therefore the design must support dynamic indicators.
+
+============================================================
+21. SUBMISSION HISTORY
+============================================================
+
+Submission workflow history must be preserved.
+
+The system must be able to determine:
+
+- who submitted
+- who started review
+- who returned
+- who resubmitted
+- who approved
+- when each action occurred
+- return reason where applicable
+
+The history design must preserve the original submission record.
+
+Returned submissions are corrected and resubmitted rather than
+creating a new submission.
+
+============================================================
+22. APPROVED DATA AMENDMENTS
+============================================================
+
+Stage 01 requires controlled amendments for approved data.
+
+Stage 03 must provide the database architecture needed to preserve
+original approved information and record later amendments.
+
+The exact amendment workflow may be finalized in a later stage.
+
+Do not allow a normal Data Entry update operation to overwrite
+approved data directly.
+
+============================================================
+23. NOTIFICATIONS
+============================================================
+
+Notifications are persistent database records.
+
+The design must support:
+
+- recipient
+- notification type
+- message
+- read/unread state
+- created timestamp
+- read timestamp where applicable
+
+Notifications will be used by later stages.
+
+Do not implement the complete notification system yet.
+
+============================================================
+24. AUDIT LOGS
+============================================================
+
+Audit logs are separate from application logs.
+
+Audit records must support:
+
+- user
+- action
+- resource type
+- resource identifier
+- timestamp
+- old values where required
+- new values where required
+- useful metadata where appropriate
+
+Audit logs are append-only from the application perspective.
+
+Ordinary users cannot edit/delete audit logs.
+
+Audit-log access is ADMIN-ONLY.
+
+Reporting users use submission workflow history rather than general
+audit-log access.
+
+============================================================
+25. DATABASE RELATIONSHIP DIRECTION
+============================================================
+
+The core relationship direction should be:
+
+Role
+  |
+  +---- Users
+
+Dataset
+  |
+  +---- Indicators
+
+Dataset
+  |
+  +---- Submissions
+              |
+              +---- Reporting Period
+              |
+              +---- User/Owner
+              |
+              +---- Data Values
+              |
+              +---- Submission History
+
+User
+  |
+  +---- Notifications
+
+User
+  |
+  +---- Audit Logs
+
+
+A submission belongs to one dataset and one reporting period.
+
+An indicator belongs to one dataset.
+
+A data value belongs to one submission and one indicator.
+
+============================================================
+26. DATABASE INTEGRITY
+============================================================
+
+Use appropriate:
+
+- Primary keys
+- Foreign keys
+- Unique constraints
+- NOT NULL constraints
+- Indexes
+- Appropriate data types
+- Timestamp fields
+
+Foreign-key relationships must preserve referential integrity.
+
+Do not use destructive cascading deletes where they could destroy
+historical health data.
+
+Prefer preserving historical records.
+
+============================================================
+27. DATABASE MIGRATION / SCHEMA MANAGEMENT
+============================================================
+
+The project must have a reproducible database setup.
+
+Use an appropriate MySQL migration/schema-management approach.
+
+The exact Node.js database library may be selected during
+implementation.
+
+Candidates may include:
+
+- Prisma
+- Sequelize
+- Knex
+- mysql2 with a controlled migration solution
+
+Select ONE approach.
+
+Do not install multiple ORMs/query builders unnecessarily.
+
+The selected solution must work well with:
+
+- MySQL
+- Node.js
+- migrations
+- relationships
+- transactions
+- parameterized queries
+- maintainability
+
+Document the selected database technology in the Stage 03 review.
+
+============================================================
+28. ENVIRONMENT VARIABLES
+============================================================
+
+Backend environment configuration must include appropriate values
+for:
+
+NODE_ENV
+PORT
+
+DATABASE_HOST
+DATABASE_PORT
+DATABASE_NAME
+DATABASE_USER
+DATABASE_PASSWORD
+
+JWT configuration may be included in .env.example because JWT will
+be implemented in Stage 04.
+
+The actual JWT secret must not be committed.
+
+Frontend environment configuration must include the backend API URL.
+
+Example conceptual value:
+
+API_BASE_URL=http://localhost:<server-port>/api/v1
+
+Do not hardcode production URLs.
+
+============================================================
+29. GIT CONFIGURATION
+============================================================
+
+Create/update the root .gitignore so that sensitive and generated
+files are ignored.
+
+At minimum consider:
+
+.env
+node_modules/
+dist/
+build/
+coverage/
+logs/
+
+Do not ignore source code.
+
+Do not commit real credentials.
+
+============================================================
+30. ROOT README
+============================================================
+
+Create a basic README.md containing:
+
+- Project name
+- Project purpose
+- Technology stack
+- Directory structure
+- Development prerequisites
+- How to start backend
+- How to start frontend
+- MySQL setup requirements
+- Environment configuration overview
+- Stage status
+
+Do not write fictional deployment instructions.
+
+Only document commands that actually work in the created project.
+
+============================================================
+31. FRONTEND-BACKEND CONNECTION
+============================================================
+
+The React application must be configured to communicate with:
+
+/api/v1
+
+The initial integration test should call:
+
+GET /api/v1/health
+
+The frontend may display the backend health status on the initial
+development page.
+
+This is only a connectivity test.
+
+============================================================
+32. CORS
+============================================================
+
+Configure Express CORS appropriately for local development.
+
+The allowed client origin must be configurable through environment
+variables.
+
+Do not use an unrestricted production CORS configuration.
+
+============================================================
+33. DATABASE CONNECTION TEST
+============================================================
+
+The backend must be capable of establishing a MySQL connection.
+
+The implementation should provide a safe startup/database
+connection check.
+
+Database credentials must come from environment variables.
+
+Do not expose credentials in API responses.
+
+============================================================
+34. ERROR HANDLING FOUNDATION
+============================================================
+
+Implement centralized Express error handling.
+
+The backend must provide a consistent error response.
+
+Unexpected internal errors must not expose sensitive stack traces
+in production.
+
+============================================================
+35. HEALTH CHECK
+============================================================
+
+Implement:
+
+GET /api/v1/health
+
+The endpoint should confirm that the API is running.
+
+If appropriate, the response may also indicate database connectivity.
+
+Do not expose database credentials or internal connection details.
+
+============================================================
+36. WHAT STAGE 03 MUST NOT IMPLEMENT
+============================================================
+
+Do NOT implement:
+
+- Login
+- Registration UI
+- JWT authentication flow
+- Password reset
+- RBAC middleware
+- User management UI
+- Dataset management UI
+- Indicator management UI
+- Reporting period management UI
+- Data-entry forms
+- Submission workflow UI
+- Review workflow
+- Approval workflow
+- Reports
+- Custom reports
+- Dashboard
+- Data analysis
+- Notification UI
+- Audit-log UI
+- Production deployment
+
+Those belong to later stages.
+
+============================================================
+37. STAGE 03 IMPLEMENTATION ORDER
+============================================================
+
+Implement in this order:
+
+1. Inspect Stage 01 and Stage 02.
+2. Create root project configuration.
+3. Create React client.
+4. Create Node.js + Express server.
+5. Configure environment variables.
+6. Select and configure MySQL access/migration solution.
+7. Create database schema/migrations.
+8. Create core database relationships.
+9. Configure Express.
+10. Configure CORS.
+11. Configure database connection.
+12. Implement GET /api/v1/health.
+13. Connect React to the health endpoint.
+14. Verify client/server/database communication.
+15. Run build/start checks.
+16. Document the resulting foundation.
+17. Create docs/stage 03 review.txt.
+
+============================================================
+38. STAGE 03 ACCEPTANCE CRITERIA
+============================================================
+
+Stage 03 is complete only when:
+
+[ ] client/ exists as a working React application.
+
+[ ] server/ exists as a working Node.js + Express application.
+
+[ ] React does not directly access MySQL.
+
+[ ] Express is configured as the backend API.
+
+[ ] /api/v1 is used consistently.
+
+[ ] MySQL connection is configured.
+
+[ ] Database schema/migrations exist.
+
+[ ] Core database relationships are implemented.
+
+[ ] Users and roles are represented.
+
+[ ] Datasets and indicators are represented.
+
+[ ] Reporting periods are represented.
+
+[ ] Submissions are represented.
+
+[ ] Data values are represented.
+
+[ ] Submission history is represented.
+
+[ ] Notifications are represented.
+
+[ ] Audit logs are represented.
+
+[ ] Submission status values are represented correctly.
+
+[ ] One active submission per Dataset + Reporting Period is
+    protected.
+
+[ ] Foreign keys and important constraints exist.
+
+[ ] Environment configuration exists.
+
+[ ] .env is protected from Git.
+
+[ ] Express error handling foundation exists.
+
+[ ] CORS is configured.
+
+[ ] GET /api/v1/health works.
+
+[ ] React can communicate with the backend.
+
+[ ] Backend can communicate with MySQL.
+
+[ ] README.md exists.
+
+[ ] No Stage 04 feature implementation has been started.
+
+============================================================
+39. STAGE 03 REVIEW DOCUMENT
+============================================================
+
+After implementation, create:
+
+docs/stage 03 review.txt
+
+The review must document:
+
+1. What was created.
+2. React setup.
+3. Node.js/Express setup.
+4. MySQL setup.
+5. Database technology/library selected.
+6. Database schema.
+7. Tables created.
+8. Relationships.
+9. Constraints.
+10. Migration/schema process.
+11. Environment configuration.
+12. Health endpoint.
+13. Client-server connection.
+14. Database connectivity.
+15. Commands used to run the project.
+16. Tests performed.
+17. Problems encountered.
+18. Problems fixed.
+19. Remaining issues.
+20. Confirmation that Stage 04 was not started.
+21. Final Stage 03 readiness assessment.
+
+============================================================
+40. IMPORTANT IMPLEMENTATION RULES
+============================================================
+
+Do not invent business requirements.
+
+Do not modify docs/stage 01.txt.
+
+Do not modify the business decisions from Stage 01.
+
+Do not weaken security requirements.
+
+Do not bypass database constraints simply to make development easier.
+
+Do not create fake data that could be mistaken for real hospital
+data.
+
+If seed data is required for technical testing, clearly identify it
+as DEVELOPMENT TEST DATA.
+
+Do not create production hospital information.
+
+============================================================
+41. FINAL STAGE 03 GOAL
+============================================================
+
+At the end of Stage 03 we should have a real technical foundation:
+
+                    React
+                   client/
+                      |
+                      | REST
+                      v
+              Node.js + Express
+                   server/
+                      |
+                      | Database access
+                      v
+                    MySQL
+
+The application does not yet need to perform the full hospital
+health-data workflow.
+
+The purpose of Stage 03 is to establish the foundation correctly so
+that Stage 04 can implement authentication and RBAC without having
+to restructure the entire project.
+
+============================================================
+END OF STAGE 03
+============================================================

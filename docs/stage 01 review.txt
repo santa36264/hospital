@@ -1,0 +1,377 @@
+============================================================
+STAGE 01 — REQUIREMENTS REVIEW DOCUMENT
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEWED DOCUMENT: docs/stage 01.txt
+REVIEW DATE: 2026-10-02
+REVIEW TYPE: Stage 01 requirements review (no implementation performed)
+
+IMPORTANT:
+- This review does NOT modify docs/stage 01.txt.
+- No code, database schema, migrations, routes, or components were created.
+- Items are labeled as: CONFIRMED / PROPOSED / ASSUMPTION / QUESTION.
+
+============================================================
+1. STAGE 01 REVIEW SUMMARY
+============================================================
+
+The Stage 01 document is comprehensive and generally well structured. It clearly states:
+
+- The system is a SINGLE-HOSPITAL health data management, reporting, and analysis system.
+- It is NOT a multi-hospital or full EMR/patient-management system.
+- The technology stack (React client/, Node.js + Express server/, MySQL, JWT auth, REST API).
+- Four roles (Admin, Data Entry, Reporting, Manager) and their responsibilities.
+- Core concepts: Dataset, Indicator, Reporting Period, Data Entry, Submission.
+- Draft -> Submission -> Review -> Approve/Return -> Correct -> Resubmit -> Approve workflow.
+- Validation, business rules (BR-001..BR-022), audit logs, notifications, dashboards,
+  analysis, exports, NFRs, out-of-scope list, proposed entities, and stage mapping.
+
+Overall the document is internally CONSISTENT on the major points and provides a strong
+foundation. However, several requirements are ambiguous or conflicting (detailed in
+sections 4 and 5 below) and must be resolved before Stage 02/Stage 03.
+
+============================================================
+2. CONFIRMED PROJECT DECISIONS
+============================================================
+
+C-01  Single-hospital scope. No region/zone/woreda/facility selection. (Section 3)
+C-02  Frontend: React, in client/.
+C-03  Backend: Node.js + Express.js, in server/.
+C-04  Database: MySQL.
+C-05  React frontend never connects directly to MySQL; all access via Express REST API. (Section 5, BR-022)
+C-06  JWT-based authentication. (Section 5, Section 23)
+C-07  Four primary roles: Admin, Data Entry, Reporting, Manager. (Section 6)
+C-08  Data Entry creates drafts, submits, corrects returned submissions, resubmits.
+C-09  Reporting reviews, returns (with mandatory reason), and approves submissions.
+C-10  Approved data is the official source for reports and analysis (BR-014, BR-021).
+C-11  Managers primarily consume approved data; they do not enter raw data or configure/approve. (Section 6.4, BR table)
+C-12  Admin manages users, roles, datasets, indicators, periods, settings; views audit logs.
+C-13  Inactive datasets/indicators and closed reporting periods do not accept new data (BR-004, BR-005, BR-015, BR-016, BR-017).
+C-14  Backend validation is authoritative; frontend validation is for usability. (Section 14)
+C-15  Reports/exports use approved data unless explicitly a review/status report (BR-021).
+C-16  Notifications are in-system only; email/SMS are out of scope (Section 26, Section 29).
+C-17  Proposed entities list (users, roles, permissions, datasets, indicators, reporting_periods, submissions, data_values, audit_logs, notifications) is requirements-level only; final schema in Stage 03 (Section 30).
+C-18  Incremental staged development; no future-stage implementation during the current stage (Section 36).
+C-19  First implementation primarily supports monthly reporting; data model must allow other period types (Section 11).
+
+============================================================
+3. REQUIREMENTS THAT ARE SUFFICIENTLY DEFINED
+============================================================
+
+S-01  Project type, objective, and out-of-scope list (Sections 2, 29).
+S-02  Technology stack and architecture direction (Section 5).
+S-03  Role responsibilities for each of the four roles (Section 6).
+S-04  High-level permission table (Section 7) — sufficient as a business guide, with
+      the caveat that asterisked entries need refinement (see Section 4).
+S-05  Dataset, indicator, and reporting-period attributes and statuses (Sections 9–11).
+S-06  Data-entry happy-path workflow (Section 12).
+S-07  Submission status concepts DRAFT/SUBMITTED/UNDER REVIEW/RETURNED/APPROVED (Section 13).
+S-08  Validation rule categories (Section 14).
+S-09  Standard report list and custom-report selection dimensions (Sections 17–18).
+S-10  Export formats: PDF, Excel, print-friendly view (Section 19).
+S-11  Audit log content requirements (Section 22).
+S-12  Authentication and user-management requirements (Sections 23–25).
+S-13  Business rules BR-001 through BR-022 (Section 27).
+S-14  NFR categories: security, performance, usability, reliability, maintainability, scalability (Section 28).
+S-15  Stage mapping/traceability and acceptance criteria (Sections 33–34).
+
+============================================================
+4. AMBIGUOUS REQUIREMENTS
+============================================================
+
+A-01  Submission granularity (IMPORTANT)
+      It is not defined whether a submission is per dataset+period, per dataset+period+user,
+      or a user-chosen bundle. The duplicate-prevention rule (Section 15) references
+      "relevant submission/data-entry context" but does not define it.
+      Impact: uniqueness constraints and workflow ownership cannot be designed.
+
+A-02  Data ownership chain diagram vs. text (Section 8)
+      Section 8 text says a data entry stores the value for an indicator during a specific
+      reporting period, but the diagram shows Data Entry connected to Dataset, Reporting
+      Period, and Submission — and does NOT show the link to Indicator.
+      The chain Dataset -> Indicator -> Reporting Period -> Data Entry -> Submission ->
+      Review -> Approval -> Report -> Analysis is implied in text but not diagrammed.
+
+A-03  DRAFT as a submission status (Section 13)
+      It is unclear whether a Submission record is created at draft time or only at
+      submission time. "DRAFT" is listed as a submission status, implying a submission
+      row may exist while still a draft. The relationship between submissions and
+      data_values during draft editing is undefined.
+
+A-04  Transition SUBMITTED -> UNDER REVIEW (Section 13)
+      Who/what moves a submission from SUBMITTED to UNDER REVIEW? Is it automatic,
+      or does a Reporting user explicitly claim/pick it up? Not defined.
+
+A-05  RESUBMITTED status not described (Section 13)
+      The workflow diagram includes RESUBMITTED -> REVIEW -> APPROVED, but the status
+      descriptions below the diagram only cover DRAFT, SUBMITTED, UNDER REVIEW,
+      RETURNED, APPROVED. Is RESUBMITTED a distinct persistent status, or does a
+      correction move the submission back to SUBMITTED/UNDER REVIEW? Also, the diagram
+      uses "REVIEW" while the status name elsewhere is "UNDER REVIEW".
+
+A-06  Correction scope after RETURNED (Section 13)
+      When a returned submission is corrected, is the same submission updated in place
+      (new version/revision), or is a new submission created? Is there a resubmission
+      count or revision history requirement? Not defined.
+
+A-07  Correcting APPROVED data
+      The document defines handling for returned submissions but not for errors found
+      AFTER approval, or for corrections needed in a closed period. No amendment or
+      re-open process is defined.
+
+A-08  Business rule for who can submit what (Section 14, rule 12; BR-002)
+      "Users cannot submit data they are not authorized to submit" and Data Entry has
+      "assigned/available datasets". No dataset/period assignment entity or rule is
+      defined (no user_dataset_assignment concept in Section 30).
+
+A-09  Permission table asterisks (Section 7)
+      - Admin "Enter data / Save draft / Submit data" = YES* conflicts in spirit with
+        Section 6.1 ("Admin should not be required to perform ordinary data entry").
+        Should Admin be able, but not expected, or should they be excluded?
+      - "View analysis" for Data Entry = LIMITED* — what is included in "limited"?
+      - "View audit logs" for Reporting = YES* — is this intended (Admin is the stated
+        audit log viewer in Section 6.1)?
+      - "Enter data" for Admin = YES* and Manager = NO is clear, but the asterisk
+        means the permission may change; the business meaning must be fixed.
+
+A-10  Reporting period lifecycle (Section 11)
+      Only OPEN and CLOSED statuses are defined. No "upcoming/future" period state,
+      no rule for when a period opens, no period lock/grace-period rules, and no rule
+      defining what "ordinary new data entry" excludes (e.g., late corrections).
+
+A-11  Multiple users / concurrency
+      Can two Data Entry users enter data for the same dataset+period? Who owns the
+      draft? What happens if a period is closed while a draft is in progress? Not defined.
+
+A-12  Drafts and dataset/period deactivation
+      If a dataset or indicator is deactivated while drafts exist, or a period is closed
+      while drafts exist, are existing drafts editable? Submittable? Not defined.
+
+A-13  Custom report structure (Section 18)
+      The columns/filters/criteria model is not defined (e.g., is the output a
+      indicator-by-period matrix only, or free-form?). Preview-before-export is required,
+      but the preview format is not defined.
+
+A-14  "Report History" (Section 17)
+      Is the report history a standard report type or a feature (list of previously
+      generated reports with who/when/parameters)? Not clearly defined.
+
+A-15  Notifications (Section 26)
+      In-system notification architecture is deferred, but it is not defined whether
+      notifications are persisted per user, whether they are read/unread, or which
+      events trigger them for which roles (e.g., who is notified on submission,
+      return, approval).
+
+A-16  Audit coverage (Section 22)
+      "Report generation where appropriate" is vague. No retention policy for audit
+      logs, no definition of who can delete (should be none), and no requirement for
+      immutable storage.
+
+A-17  Password policy / session security (Sections 23–24, 28)
+      No minimum password length/complexity, no token expiry, no lockout/rate-limit
+      requirement stated.
+
+A-18  Data types and validation specifics (Section 10)
+      BOOLEAN/DATE/TEXT validation rules and "configured percentage rules" /
+      min/max limits are named but not specified per indicator (e.g., is percentage
+      0–100 always or configurable?). Acceptable, but must be fixed at indicator
+      design time.
+
+A-19  Reference to source screenshots (Section 4)
+      Contains a broken artifact: ":contentReference[oaicite:0]{index=0}".
+      The actual reference file is not embedded or path-specified.
+
+============================================================
+5. POTENTIAL REQUIREMENT CONFLICTS
+============================================================
+
+K-01  Admin data-entry ability (Section 7 vs Section 6.1)
+      Section 7 grants Admin YES* to Enter data/Save draft/Submit data, while Section
+      6.1 says Admin "should not be required to perform ordinary data entry".
+      Also BR-002/BR-010 give Reporting approval rights, but the permission table
+      leaves Admin's review rights as YES, which is consistent; the data-entry asterisk
+      is the conflict to resolve.
+
+K-02  Reviewer can approve own data? (Implied)
+      Section 6.2 says Data Entry users should not approve their own submitted data,
+      and the table grants Approve = YES to Admin and Reporting. However, if Admin can
+      also enter data (K-01), an Admin could enter and approve their own data unless a
+      separation-of-duties rule is added. BR does not explicitly prohibit self-approval
+      for Admin/Reporting entries.
+
+K-03  Submission status naming (Section 13)
+      Diagram uses SUBMITTED -> UNDER REVIEW -> APPROVED/RETURNED, and RESUBMITTED ->
+      REVIEW -> APPROVED. "REVIEW" and "UNDER REVIEW" appear to be the same step but
+      are named differently; RESUBMITTED is not in the status list. This is a naming
+      conflict that will confuse state-machine implementation.
+
+K-04  BR-016 vs draft editing (Sections 9, 13, BR table)
+      "Inactive datasets cannot accept new submissions" (BR-016) is clear, but it does
+      not state whether existing DRAFT submissions for now-inactive datasets can still
+      be edited/submitted. Same concern for closed periods (BR-015) vs in-progress
+      drafts (see A-12).
+
+K-05  "View audit logs" for Reporting = YES* (Section 7) vs Section 6.1
+      Section 6.1 assigns audit-log viewing to Admin; Section 7 gives Reporting YES*.
+      If both are true, the audit-log access policy must be clarified.
+
+K-06  Manager dashboard vs Manager data access (Section 6.4, Section 21)
+      Manager should view approved data, statistics, and trends. This is consistent
+      with BR-014/BR-021, but the document does not explicitly state whether Manager
+      can drill into individual submitted (unapproved) values. Table says view analysis
+      YES; the boundary between "approved summaries" and "raw unapproved records" is
+      not pinned.
+
+K-07  Closed period "ordinary new data entry" wording (Section 11, BR-015)
+      "must not accept ordinary new data entry" implies exceptions exist, but no
+      exception process (e.g., Admin override, late submission approval) is defined.
+      This is a gap rather than a direct contradiction, but it affects BR design.
+
+============================================================
+6. ASSUMPTIONS
+============================================================
+
+AS-01  A "submission" groups all indicator values for one dataset and one reporting
+       period created by one Data Entry user (proposed, not confirmed).
+AS-02  A draft belongs to the Data Entry user who created it and only that user edits it.
+AS-03  Returned submissions are corrected by the same Data Entry user who originally
+       submitted them (no reassignment workflow is described).
+AS-04  Only approved submissions are queryable by Manager-facing analysis/reports.
+AS-05  One Reporting user reviews a submission at a time (under review), but the
+       document does not forbid multiple reviewers sequentially.
+AS-06  Period types beyond monthly are supported by the data model but not required in
+       Stage 05; monthly is the primary path.
+AS-07  A reporting period, once CLOSED, stays closed; reopening is exceptional and not
+       specified.
+AS-08  Audit logs are insert-only for ordinary users and cannot be edited through the UI.
+AS-09  Dates are stored in a standard format (e.g., ISO) and displayed per hospital locale;
+       not specified, so assumed configurable later.
+AS-10  The four roles are mutually exclusive per user at a time? Not specified; assumed a
+       user has one primary role unless explicitly extended. (NEEDS CONFIRMATION)
+
+============================================================
+7. QUESTIONS THAT SHOULD BE CONFIRMED BEFORE IMPLEMENTATION
+============================================================
+
+Q-01  What exactly is a "submission": per dataset+period, per dataset+period+user, or
+      another grouping? (See A-01)
+Q-02  Does a Submission record exist while in DRAFT state, or is it created on submit?
+Q-03  Who/what transitions SUBMITTED to UNDER REVIEW — automatic or Reporting-claimed?
+Q-04  Is RESUBMITTED a persistent status or an action back to SUBMITTED/UNDER REVIEW?
+Q-05  When a returned submission is corrected, is the previous version retained
+      (revision history) and is there a max resubmission count?
+Q-06  Is there any process to correct or amend APPROVED data, and how does it interact
+      with closed periods and official reports?
+Q-07  How are Data Entry users assigned to datasets/periods, and is assignment enforced?
+      Should a user_dataset_assignment concept exist?
+Q-08  Should Admin be allowed to enter data and approve it, or should separation of
+      duties prohibit Admin from approving their own entries?
+Q-09  What should "View analysis" mean for Data Entry (LIMITED*)?
+Q-10  Should Reporting users really view audit logs (YES*), or is that Admin-only?
+Q-11  Can drafts in a dataset/period that later becomes inactive/closed still be
+      edited and submitted?
+Q-12  Can two users work on the same dataset+period simultaneously? If so, how are
+      conflicts resolved?
+Q-13  Is a reporting period's OPEN/CLOSED lifecycle manual by Admin, and can a CLOSED
+      period be reopened?
+Q-14  Is "Report History" a standard report or a generated-reports log?
+Q-15  Should notifications be persisted per user with read/unread state?
+Q-16  Is there a session timeout / token expiry requirement and a password policy?
+Q-17  Are the data-type validation specifics (e.g., percentage range) fixed globally or
+      configurable per indicator?
+Q-18  Is one role per user sufficient, or can a user hold multiple roles?
+
+============================================================
+8. RECOMMENDED REQUIREMENT CLARIFICATIONS
+============================================================
+
+R-01  Add an explicit definition of submission scope (one submission = one dataset +
+      one reporting period + one submitting user, or as confirmed).
+R-02  Define the full state machine with allowed transitions and the actor responsible
+      for each: DRAFT -> SUBMITTED -> UNDER_REVIEW -> APPROVED/RETURNED ->
+      (correction) -> RESUBMITTED/SUBMITTED -> UNDER_REVIEW -> APPROVED.
+R-03  Specify whether RETURNED corrections update the same submission (with revision
+      history) and whether resubmissions are counted/limited.
+R-04  Define policy for drafts when datasets/indicators become inactive or periods
+      close (e.g., drafts remain editable but not submittable, or read-only).
+R-05  Clarify Admin's role in data entry/review (allowed but not expected; recommend
+      prohibiting self-approval for separation of duties).
+R-06  Clarify Reporting's access to audit logs, or restrict to Admin.
+R-07  Define "View analysis" scope for Data Entry.
+R-08  Define custom-report output shape (indicator x period matrix vs free-form) and
+      preview format.
+R-09  Distinguish "Report History" (generated report log) from a "Submission Status
+      Report".
+R-10  Define notification persistence and which role gets which event.
+R-11  Add a password policy, token expiry, and session-timeout requirement.
+R-12  Specify timezone/date handling and percentage validation range policy.
+R-13  Define duplicate-prevention uniqueness key explicitly (recommended:
+      dataset_id + indicator_id + reporting_period_id + submission_id/data_value_id).
+R-14  Fix the broken screenshot reference in Section 4.
+R-15  Define dataset/period assignment for Data Entry users or state that all active
+      datasets/periods are available to all Data Entry users.
+
+============================================================
+9. FINAL STAGE 01 READINESS ASSESSMENT
+============================================================
+
+Stage 01 is SUBSTANTIALLY COMPLETE but NOT yet ready to move to Stage 02 without
+resolving the high-impact ambiguities.
+
+Ready aspects:
+- Scope, stack, roles, core concepts, workflows, validation, audit, NFRs, and stage
+  mapping are documented and mostly consistent.
+
+Not yet ready aspects (block Stage 02/03):
+- Submission ownership/granularity is undefined (A-01).
+- Submission state machine actor/transitions and RESUBMITTED are not fully defined (A-04, A-05, K-03).
+- Fate of drafts on inactive dataset/indicator/closed period is undefined (A-12, K-04).
+- Correction-after-approval process is undefined (A-07).
+- Data Entry assignment model is undefined (A-08).
+- Permission-table asterisks create conflicts (K-01, K-05, A-09).
+
+Recommendation: obtain answers to Q-01 through Q-18, apply clarifications R-01 through
+R-15, and update docs/stage 01.txt before beginning Stage 02.
+
+============================================================
+10. EXPLICIT LIST OF CHANGES REQUIRED IN docs/stage 01.txt
+============================================================
+
+The following items must be changed/added in docs/stage 01.txt before Stage 02.
+(This review did NOT modify the file.)
+
+1. Define submission granularity and ownership (dataset + period + user) — A-01/Q-01.
+2. Fix the Section 8 diagram so Data Entry explicitly links to Indicator, and state
+   the chain Dataset -> Indicator -> Reporting Period -> Data Entry -> Submission ->
+   Review -> Approval -> Report -> Analysis — A-02.
+3. Clarify whether DRAFT is a persistent submission record or a pre-submission state — A-03.
+4. Define who performs SUBMITTED -> UNDER REVIEW transition — A-04.
+5. Either add RESUBMITTED as a defined status or remove it from the diagram, and unify
+   "REVIEW"/"UNDER REVIEW" naming — A-05/K-03.
+6. Define whether returned corrections update the same submission (revision history,
+   resubmission count) — A-06.
+7. Define an approval-after-correction correction/amendment process for APPROVED data
+   and its interaction with closed periods — A-07.
+8. Define Data Entry dataset/period assignment or state it is not restricted — A-08/Q-07.
+9. Resolve Admin YES* data-entry vs "not required" and add a separation-of-duties rule
+   preventing self-approval — K-01/K-02.
+10. Resolve Reporting YES* audit-log access vs Admin ownership — K-05/Q-10.
+11. Define "LIMITED*" view-analysis scope for Data Entry — A-09.
+12. Define draft behavior when dataset/indicator is deactivated or period is closed —
+    A-12/K-04.
+13. Define the reporting-period lifecycle, whether CLOSED periods can be reopened, and
+    what "ordinary new data entry" excludes — A-10/K-07.
+14. Define concurrency/ownership of drafts for the same dataset+period — A-11.
+15. Define custom-report output shape and preview format — A-13.
+16. Define "Report History" precisely — A-14.
+17. Define notification persistence and per-role triggers — A-15.
+18. Define audit retention and prohibition of edits/deletes by ordinary users — A-16.
+19. Add password policy, token expiry, and session timeout requirements — A-17.
+20. Specify percentage-range and data-type validation policies — A-18.
+21. Repair the broken screenshot reference in Section 4 — A-19.
+22. State explicitly whether a user may hold multiple roles — AS-10.
+
+============================================================
+END OF STAGE 01 REQUIREMENTS REVIEW
+============================================================

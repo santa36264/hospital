@@ -1,0 +1,527 @@
+============================================================
+STAGE 02 — ARCHITECTURE REVIEW DOCUMENT
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEWED DOCUMENTS:
+  - docs/stage 01.txt (updated with final project decisions)
+  - docs/stage 01 review.txt
+  - docs/stage 02.txt
+REVIEW TYPE: Stage 02 architecture review (no implementation performed)
+
+IMPORTANT:
+- This review does NOT modify docs/stage 01.txt.
+- No application code, database tables, migrations, React files,
+  Express files, authentication, or dependencies were created.
+- Stage 03 was not started.
+
+============================================================
+1. STAGE 02 REVIEW SUMMARY
+============================================================
+
+docs/stage 02.txt is a comprehensive architecture document that
+generally aligns well with docs/stage 01.txt.
+
+It correctly fixes the stack (React, Node.js + Express, MySQL,
+REST, JWT), enforces a client/server boundary, defines layered
+backend responsibilities (Route -> Middleware -> Controller ->
+Service -> Repository -> MySQL), role-based frontend/backend
+security, a consistent API response standard, centralized error
+handling, environment-based configuration, append-only audit
+concepts, persisted notifications, approved-data reporting, and
+document boundaries between Stage 02 and Stage 03.
+
+A small number of inconsistencies and missing explicit decisions
+were found (detailed in sections 19 and 20). None are severe enough
+to block Stage 03, but they should be corrected in
+docs/stage 02.txt before Stage 03 begins.
+
+============================================================
+2. TECHNOLOGY STACK VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 consistently specifies:
+- Frontend: React (client/)
+- Backend: Node.js + Express.js (server/)
+- Database: MySQL
+- API: REST API
+- Authentication: JWT-based authentication
+- Client/server architecture: React -> REST API -> Express -> MySQL
+
+No references to Laravel, Vue, PostgreSQL, MongoDB, Django, PHP, or
+Next.js as the primary stack were found.
+
+============================================================
+3. SINGLE-HOSPITAL SCOPE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 does not introduce a hospital hierarchy, zone/woreda/
+region structure, multiple facilities, or facility selection.
+The architecture is consistent with the single-hospital decision
+in Stage 01.
+
+============================================================
+4. ROLE/RBAC VERIFICATION
+============================================================
+
+MOSTLY PASS.
+
+Stage 02 architecture supports exactly four primary roles:
+ADMIN, DATA_ENTRY, REPORTING, MANAGER, consistent with Stage 01.
+
+Backend authorization is independent of frontend route protection
+(Sections 18, 39, 40). Every protected operation must check
+server-side role/permission/resource/state rules.
+
+Each user has ONE primary role in Stage 01; Stage 02 role-based
+navigation implies a single active role per user but does not
+explicitly restate this. Recommend a one-line clarification.
+
+The permission table from Stage 01 is preserved: Admin manages
+configuration; Data Entry owns draft/submit/resubmit; Reporting
+reviews/approves/returns; Manager consumes approved data.
+
+One Stage 01 requirement is not explicitly restated in Stage 02:
+- Admin cannot approve data they personally entered
+  (separation of duties).
+Audit-log access being Admin-only is implied by frontend navigation
+and Stage 01, but not explicitly restated in Stage 02.
+
+============================================================
+5. BACKEND ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 defines:
+Route -> Authentication Middleware -> Authorization Middleware ->
+Request Validation -> Controller -> Service -> Data Access Layer ->
+MySQL.
+
+Responsibilities are correctly separated:
+- Routes: thin, no business logic.
+- Controllers: HTTP concerns only.
+- Services: business logic (workflow, validation, approval,
+  reporting, notifications, audit).
+- Repositories/data access: database operations, parameterized
+  queries/ORM/query builder.
+
+Transactions are required where multiple writes must succeed or
+fail together (submission, approval, audit, notification).
+
+============================================================
+6. FRONTEND ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 organizes React around business features:
+auth, users, datasets, indicators, reportingPeriods, submissions,
+reports, customReports, dashboard, analysis, notifications,
+auditLogs.
+
+The React client communicates only through the centralized API
+layer, has no database credentials, and never connects directly to
+MySQL.
+
+Role-aware navigation and route protection are defined, but
+explicitly do not replace backend authorization.
+
+============================================================
+7. API ARCHITECTURE VERIFICATION
+============================================================
+
+MOSTLY PASS, with one inconsistency.
+
+Stage 02 requires the final API base to be /api/v1 (Section 14,
+AD-11). However:
+- Section 11 lists endpoints under /api (e.g., /api/auth,
+  /api/submissions).
+- Section 13 example endpoints use /api/... instead of /api/v1/....
+- Section 307 example uses POST /api/submissions/:id/submit.
+
+Recommend standardizing all examples to /api/v1/....
+
+The proposed modules/endpoints cover authentication, users, roles,
+datasets, indicators, reporting periods, submissions, reports,
+custom reports, dashboard, analysis, notifications, audit logs, and
+settings. The final endpoint list can be refined during
+implementation.
+
+============================================================
+8. AUTHENTICATION ARCHITECTURE VERIFICATION
+============================================================
+
+MOSTLY PASS.
+
+Stage 02 supports:
+- Login / Logout / current authenticated user (/api/v1/auth/*)
+- Password verification in the authentication service
+- JWT generation and expiration
+- JWT middleware
+- Protected API requests
+- Secure handling of secrets
+
+Stage 01 additionally requires:
+- Password hashing: Stage 02 includes password hashing.
+- Authentication failure protection/rate limiting: Stage 02 includes
+  rate limiting for authentication-sensitive endpoints.
+- Session/inactivity timeout: NOT explicitly defined in Stage 02.
+  Recommend adding an explicit inactivity/session timeout
+  requirement.
+- Secure logout/token invalidation strategy: Stage 02 says this
+  "will be finalized during the authentication implementation
+  stage." Acceptable, but should be tracked as a decision.
+
+Authentication must not be implemented during Stage 02.
+
+============================================================
+9. AUTHORIZATION ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 requires every protected API operation to enforce:
+1. Is the user authenticated?
+2. Is the account active?
+3. What role does the user have?
+4. Does the role have permission?
+5. Does the user own/have access to the resource?
+6. Is the requested business operation valid?
+7. Is the resource in a valid state?
+
+Frontend route protection alone is not sufficient.
+
+============================================================
+10. SUBMISSION WORKFLOW VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 consistently supports the Stage 01 finalized model:
+
+DRAFT -> SUBMITTED -> UNDER_REVIEW -> APPROVED
+
+or:
+
+UNDER_REVIEW -> RETURNED -> SUBMITTED -> UNDER_REVIEW
+
+No separate persistent RESUBMITTED status is used. The term
+UNDER_REVIEW is used consistently.
+
+Stage 02 correctly places draft creation, submit, start review,
+return, resubmit, approve, and amendment rules in the
+SubmissionService. Backend validation of state transitions is
+required; the React client cannot force invalid transitions.
+
+Stage 02 Section 26 submission flow checks DRAFT status, period
+status, dataset status, indicator values, transaction, history/
+audit, and notification before moving to SUBMITTED. Consistent.
+
+============================================================
+11. REPORTING ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 supports:
+- Dataset reports
+- Monthly/period reports
+- Indicator reports
+- Period comparison reports
+- Submission status reports
+- Report history
+- Preview
+- PDF preparation
+- Excel preparation
+- Print-friendly output
+
+Official reports must respect the approved-data requirement.
+Unapproved data must not silently become official reporting data.
+
+============================================================
+12. ANALYSIS ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 separates analysis from CRUD and states that analysis uses
+approved data:
+Approved Data -> Analysis Service -> Totals/Percentages/Period
+Comparison/Trends/Indicator Statistics -> Analysis API -> React
+charts/tables/statistics.
+
+Manager-facing analysis must use approved data per Stage 01; Stage
+02 is consistent with this direction.
+
+============================================================
+13. NOTIFICATION ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Notifications are persisted in MySQL.
+Architecture supports recipient, type, message, created time,
+read/unread status, and read time.
+
+Important events are consistent with Stage 01:
+- Submission submitted -> Reporting users notified.
+- Submission returned -> Data Entry owner notified.
+- Submission approved -> Data Entry owner notified.
+
+Email/SMS remain out of scope.
+
+============================================================
+14. AUDIT ARCHITECTURE VERIFICATION
+============================================================
+
+MOSTLY PASS.
+
+Stage 02 separates application logs from audit logs.
+Audit records capture who, what, which resource, when, and relevant
+old/new values.
+
+Audit records are append-only from the application perspective.
+No ordinary delete endpoint is exposed for audit logs.
+Historical health data should not be casually deleted.
+
+Stage 01 additionally requires:
+- Audit logs are Admin-only in the initial version.
+- Ordinary users cannot edit or delete audit records.
+
+Stage 02 implies this through Admin-only UI and append-only rules,
+but it does not explicitly state "GET /api/v1/audit-logs is
+Admin-only." Recommend adding that explicit rule.
+
+============================================================
+15. SECURITY ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 includes:
+- Password hashing
+- JWT authentication and expiration
+- Authorization middleware
+- Request validation
+- SQL injection protection
+- Secure environment variables
+- CORS configuration
+- Rate limiting for auth-sensitive endpoints
+- Secure HTTP configuration
+- Appropriate error handling
+- Resource authorization
+- Server-side business-rule enforcement
+- Audit logging
+- Input sanitization/validation
+
+No over-engineering beyond the project scope is proposed.
+
+============================================================
+16. DATABASE ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 correctly states that the detailed MySQL schema is NOT
+finalized in Stage 02 and belongs to Stage 03.
+
+It defines the architectural boundary:
+React -X-> MySQL is forbidden.
+React -> REST API -> Express -> Repository/Data Access -> MySQL.
+
+Database credentials must be server-side only.
+
+Stage 02 includes revision history and notifications as supported
+relationships and mentions candidate additional entities during
+Stage 03. This is consistent with Stage 01.
+
+============================================================
+17. ENVIRONMENT/CONFIGURATION VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 defines backend environment variables:
+NODE_ENV, PORT, DATABASE_HOST, DATABASE_PORT, DATABASE_NAME,
+DATABASE_USER, DATABASE_PASSWORD, JWT_SECRET, JWT_EXPIRES_IN,
+CLIENT_URL.
+
+Frontend configuration uses environment-based API base URL.
+.env must not be committed; .env.example must be provided.
+Development and production configuration must be separated.
+
+============================================================
+18. TESTING ARCHITECTURE VERIFICATION
+============================================================
+
+PASS.
+
+Stage 02 leaves room for:
+- Backend tests (authentication, authorization, validation,
+  services, business rules, API endpoints, state transitions)
+- Frontend tests (forms, components, routes, role-based UI,
+  data-entry workflow, report interfaces)
+- End-to-end tests for complete workflows
+
+Detailed testing is deferred to Stage 13. No testing implementation
+is required in Stage 02.
+
+============================================================
+19. CONTRADICTIONS FOUND
+============================================================
+
+C-01  API base path inconsistency.
+      Stage 02 Section 11 lists API groups under /api, and Section 13
+      examples use /api/..., while Section 14 and AD-11 fix the final
+      base as /api/v1. This is a documentation inconsistency, not a
+      requirements contradiction. All examples should be standardized
+      to /api/v1/....
+
+C-02  Inactivity/session timeout not explicitly carried over from
+      Stage 01 PD-20 into Stage 02. Stage 02 mentions JWT expiration
+      and rate limiting but not an explicit session/inactivity
+      timeout policy.
+
+C-03  Admin-only audit log access is not explicitly stated in
+      Stage 02, although it is required by Stage 01 PD-10 and is
+      implied by Admin-only UI navigation.
+
+C-04  Separation of duties / no self-approval is not explicitly
+      restated in Stage 02, although it is required by Stage 01
+      PD-09 and permission table notes.
+
+C-05  Custom report initial format (indicator-by-period table) from
+      Stage 01 PD-16 is not explicitly referenced in Stage 02.
+      Stage 02 supports dataset/indicators/periods/filters/columns,
+      preview, and export, but does not explicitly name the
+      indicator-by-period table format.
+
+No hard contradiction between Stage 01 and Stage 02 was found that
+would require changing Stage 01.
+
+============================================================
+20. MISSING ARCHITECTURAL DECISIONS
+============================================================
+
+M-01  Explicit session/inactivity timeout policy and mechanism.
+M-02  Explicit statement that audit log API endpoints are Admin-only.
+M-03  Explicit statement that self-approval is prohibited
+      (separation of duties).
+M-04  Explicit reference to the indicator-by-period custom report
+      format required by Stage 01.
+M-05  Explicit statement that each user has ONE primary role.
+M-06  Exact JWT token storage strategy is deferred; this is
+      acceptable, but remains a tracked decision for Stage 04/12.
+M-07  Exact logout/token invalidation strategy is deferred;
+      acceptable, but remains a tracked decision.
+M-08  Exact MySQL access library (ORM/query builder/driver) is
+      deferred to Stage 03; acceptable.
+M-09  State-management library for React is deferred; acceptable.
+M-10  Exact amendment workflow implementation is deferred to
+      architecture/database stages; acceptable per Stage 01.
+
+============================================================
+21. RECOMMENDED CHANGES TO docs/stage 02.txt
+============================================================
+
+1. Standardize all API examples to /api/v1/....
+   - Section 11: use /api/v1/auth, /api/v1/users, etc.
+   - Section 13: use /api/v1/datasets, /api/v1/submissions, etc.
+   - Section 307 example: use /api/v1/submissions/:id/submit.
+
+2. Add an explicit security requirement for session/inactivity
+   timeout in Section 17 or Section 33.
+
+3. Add an explicit statement that audit-log endpoints are
+   Admin-only in Sections 11/13/31.
+
+4. Add an explicit separation-of-duties statement in Section 38:
+   Admin does not perform ordinary data entry and cannot approve
+   data personally entered by the Admin.
+
+5. Add explicit reference in Section 29 or a custom-report note to
+   the Stage 01 indicator-by-period custom report format and
+   preview-before-export requirement.
+
+6. Add a one-line RBAC clarification in Section 18 or Section 19:
+   each user has one primary role in the initial version.
+
+============================================================
+22. FINAL STAGE 02 READINESS ASSESSMENT
+============================================================
+
+Stage 02 is SUBSTANTIALLY COMPLETE and is architecturally ready
+for Stage 03, provided the documentation inconsistencies in
+Section 19 are corrected in docs/stage 02.txt.
+
+Blocking contradictions: NONE.
+
+Non-blocking required clarifications before implementation:
+- Standardize /api/v1 across the document.
+- Explicitly state inactivity/session timeout.
+- Explicitly state Admin-only audit log access.
+- Explicitly state no self-approval / separation of duties.
+- Explicitly reference indicator-by-period custom report format.
+- Explicitly state one primary role per user.
+
+Stage 03 may proceed after these documentation corrections.
+No Stage 01 changes are required.
+
+============================================================
+STAGE 02 FINAL REVIEW
+============================================================
+
+The six documentation issues identified in this review have been
+corrected in docs/stage 02.txt:
+
+1. API BASE PATH
+   All API examples and references now use /api/v1. No example
+   uses only /api. AD-11 remains: "The API base version is
+   /api/v1."
+
+2. SESSION / INACTIVITY TIMEOUT
+   Stage 02 now explicitly states that authenticated sessions
+   require an inactivity/session timeout in Section 17 and
+   Section 33. The exact duration remains a later implementation
+   decision.
+
+3. AUDIT-LOG AUTHORIZATION
+   Stage 02 now explicitly states that audit-log endpoints are
+   ADMIN-ONLY in the initial version (Section 13, Section 31,
+   Section 38). Reporting users must not have general access to
+   audit-log endpoints. Workflow history required for submission
+   review remains separate from the Admin audit-log interface.
+
+4. SEPARATION OF DUTIES
+   Stage 02 now explicitly states (Section 38) that:
+   - Data Entry cannot approve submissions.
+   - A user cannot approve data they personally entered.
+   - Admin does not perform ordinary data entry.
+   - Frontend restrictions are not sufficient.
+   - Backend authorization/business rules must enforce this.
+
+5. CUSTOM REPORT FORMAT
+   Stage 02 now explicitly states (Section 13) that the initial
+   custom report structure supports an indicator-by-period table:
+   Indicator | January | February | March, with preview before
+   export.
+
+6. ONE PRIMARY ROLE
+   Stage 02 now explicitly states (Section 18) that each user has
+   ONE primary role in the initial version: ADMIN, DATA_ENTRY,
+   REPORTING, MANAGER. Multi-role users are out of scope.
+
+No application implementation was performed.
+No Stage 03 work was performed.
+No Stage 01 changes were made.
+
+Stage 02 is now READY for Stage 03.
+
+============================================================
+END OF STAGE 02 REVIEW
+============================================================

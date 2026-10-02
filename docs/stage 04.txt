@@ -1,0 +1,1520 @@
+============================================================
+STAGE 04 — AUTHENTICATION, USERS & RBAC
+============================================================
+
+PROJECT TITLE
+Hospital Health Data Management, Reporting and Analysis System
+
+STAGE
+04 — Authentication, Users & Role-Based Access Control
+
+============================================================
+1. PURPOSE
+============================================================
+
+Stage 03 created the React frontend foundation, Node.js +
+Express backend foundation, MySQL database foundation, migrations,
+and basic client-server connectivity.
+
+Stage 04 now implements the authentication and authorization
+foundation of the actual application.
+
+Stage 04 MUST implement:
+
+1. User authentication
+2. Login
+3. Logout
+4. Password hashing
+5. JWT-based authentication
+6. Secure token/session handling
+7. Session/inactivity timeout
+8. Authentication middleware
+9. Role-based authorization
+10. Four system roles
+11. Protected backend routes
+12. Protected React routes
+13. Role-aware frontend navigation
+14. Current-user/profile functionality
+15. Basic user account status handling
+16. Authentication-related validation
+17. Authentication error handling
+18. Authentication audit events where required
+
+Stage 04 MUST NOT implement the later business modules.
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+Frontend:
+
+React
+
+UI:
+
+Tailwind CSS
+
+Frontend directory:
+
+client/
+
+Backend:
+
+Node.js + Express.js
+
+Backend directory:
+
+server/
+
+Database:
+
+MySQL / MariaDB-compatible MySQL environment
+
+Database access:
+
+Knex.js + mysql2
+
+API:
+
+REST
+
+API base:
+
+/api/v1
+
+Authentication:
+
+JWT
+
+============================================================
+3. EXISTING PROJECT FOUNDATION
+============================================================
+
+Stage 03 already created:
+
+client/
+server/
+
+and the existing MySQL database:
+
+hospital_health_data
+
+Do NOT rebuild the project from scratch.
+
+Do NOT replace:
+
+React
+Express
+Knex
+MySQL
+
+Do NOT introduce:
+
+Laravel
+Vue
+MongoDB
+PostgreSQL
+Django
+Firebase authentication
+Supabase authentication
+
+The Stage 03 architecture must remain intact.
+
+============================================================
+4. FOUR PRIMARY ROLES
+============================================================
+
+The system has exactly four primary roles:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Each user has ONE primary role.
+
+Multi-role users are OUT OF SCOPE.
+
+Role names must be treated consistently throughout:
+
+Database
+Backend
+API
+Authorization middleware
+Frontend
+Navigation
+UI
+
+============================================================
+5. ROLE RESPONSIBILITIES
+============================================================
+
+ADMIN
+
+Admin manages the system.
+
+Admin responsibilities include:
+
+- Manage users
+- Activate/deactivate user accounts
+- Assign the user's primary role
+- Manage datasets later
+- Manage indicators later
+- Manage reporting periods later
+- View audit logs
+- Manage system settings later
+
+Admin does NOT perform ordinary health-data entry.
+
+Admin must NOT approve data they personally entered.
+
+Separation of duties must be enforced by the backend.
+
+------------------------------------------------------------
+
+DATA_ENTRY
+
+Data Entry users will later:
+
+- Enter health data
+- Save drafts
+- Submit data
+- View their own submission status
+- Correct returned submissions
+- Resubmit returned submissions
+
+Stage 04 only implements their authenticated identity and access
+control.
+
+------------------------------------------------------------
+
+REPORTING
+
+Reporting users will later:
+
+- Review submissions
+- Start review
+- Return submissions with a reason
+- Approve submissions
+- Generate reports
+
+Stage 04 only implements authenticated identity and authorization.
+
+Reporting users do NOT have general audit-log access.
+
+------------------------------------------------------------
+
+MANAGER
+
+Managers will later:
+
+- View approved reports
+- View approved statistics
+- View approved trends
+- View dashboards
+- View analysis
+
+Managers must not access unapproved raw submission data.
+
+Stage 04 only implements authenticated identity and authorization.
+
+============================================================
+6. AUTHENTICATION ARCHITECTURE
+============================================================
+
+Authentication flow:
+
+React
+  |
+  | Login credentials
+  v
+POST /api/v1/auth/login
+  |
+  v
+Express
+  |
+  v
+Authentication Service
+  |
+  v
+Users Repository
+  |
+  v
+MySQL
+  |
+  v
+Password verification
+  |
+  v
+JWT/session creation
+  |
+  v
+Authenticated response
+
+Subsequent protected request:
+
+React
+  |
+  v
+/ api/v1/...
+  |
+  v
+Authentication Middleware
+  |
+  v
+JWT verification
+  |
+  v
+User lookup/session validation
+  |
+  v
+Role Authorization
+  |
+  v
+Controller
+  |
+  v
+Service
+  |
+  v
+Repository
+  |
+  v
+MySQL
+
+The backend is the authoritative security boundary.
+
+Frontend route protection is NOT sufficient.
+
+============================================================
+7. PASSWORD SECURITY
+============================================================
+
+Passwords MUST NEVER be stored as plaintext.
+
+Use a strong password hashing algorithm suitable for Node.js.
+
+Preferred implementation:
+
+Argon2id
+
+If Argon2id cannot be used reliably in the current Windows
+environment, use bcrypt with an appropriate cost factor and
+document the reason.
+
+The database must store only the password hash.
+
+Never return:
+
+- password
+- password hash
+- password reset secrets
+
+through normal API responses.
+
+Initial password requirement:
+
+- minimum 12 characters
+- reject empty passwords
+- reject passwords that fail the configured password policy
+
+Do not expose password policy details unnecessarily in error
+responses.
+
+============================================================
+8. JWT AUTHENTICATION DESIGN
+============================================================
+
+Use JWT for authenticated sessions.
+
+The JWT must contain only the minimum required claims.
+
+Recommended claims:
+
+- sub — authenticated user ID
+- role — primary role
+- iat
+- exp
+- jti where required
+
+Do NOT place sensitive hospital information inside the JWT.
+
+Do NOT place:
+
+- password
+- password hash
+- health data
+- patient data
+- confidential business data
+
+inside the token.
+
+============================================================
+9. TOKEN STORAGE
+============================================================
+
+For the initial implementation, use secure HttpOnly cookies for
+JWT/session tokens rather than storing authentication tokens in
+localStorage.
+
+The authentication cookie should use appropriate security settings:
+
+- HttpOnly
+- Secure in production
+- SameSite appropriate for the deployment
+- Explicit expiration
+
+The React application must not need to read the JWT directly.
+
+Axios/API requests must send credentials when required.
+
+Express CORS must be configured to allow credentials from the
+configured frontend origin.
+
+============================================================
+10. ACCESS TOKEN / SESSION EXPIRATION
+============================================================
+
+Use a short-lived access JWT.
+
+Initial implementation target:
+
+Access token:
+15 minutes
+
+The exact value must be configurable through environment variables.
+
+Do not hardcode the expiration into business logic.
+
+Example:
+
+JWT_ACCESS_EXPIRES_IN=15m
+
+============================================================
+11. SESSION / INACTIVITY TIMEOUT
+============================================================
+
+Stage 01 requires authenticated sessions to have an inactivity
+timeout.
+
+Implement an inactivity timeout.
+
+Initial implementation target:
+
+30 minutes of inactivity.
+
+The timeout must be configurable.
+
+Example:
+
+SESSION_INACTIVITY_TIMEOUT_MINUTES=30
+
+The system must not silently keep an inactive session alive
+indefinitely.
+
+A request from an expired/inactive session must require
+reauthentication or a valid refresh/session mechanism.
+
+============================================================
+12. REFRESH SESSION
+============================================================
+
+Implement a refresh mechanism suitable for the JWT architecture.
+
+Recommended approach:
+
+- Short-lived access JWT
+- Longer-lived refresh/session token
+- Refresh token stored in HttpOnly cookie
+- Refresh token rotation
+- Server-side refresh/session record where necessary
+- Logout invalidates the active refresh session
+
+The refresh mechanism must not expose refresh tokens to normal
+React JavaScript.
+
+Recommended initial refresh lifetime:
+
+7 days
+
+Make the value configurable.
+
+Example:
+
+JWT_REFRESH_EXPIRES_IN=7d
+
+============================================================
+13. LOGOUT
+============================================================
+
+Implement:
+
+POST /api/v1/auth/logout
+
+Logout must:
+
+1. Invalidate the active refresh/session token where applicable.
+2. Clear authentication cookies.
+3. Prevent the same refresh session from being reused.
+
+Do not treat merely deleting a frontend variable as logout.
+
+The backend must participate in logout.
+
+============================================================
+14. AUTHENTICATION ENDPOINTS
+============================================================
+
+Implement these endpoints:
+
+POST /api/v1/auth/login
+
+POST /api/v1/auth/logout
+
+POST /api/v1/auth/refresh
+
+GET /api/v1/auth/me
+
+The endpoint responsibilities are:
+
+------------------------------------------------------------
+
+POST /api/v1/auth/login
+
+Input:
+
+email/username
+password
+
+Successful result:
+
+authenticated user session
+
+Must not return password information.
+
+------------------------------------------------------------
+
+POST /api/v1/auth/logout
+
+Terminates the current authenticated session.
+
+------------------------------------------------------------
+
+POST /api/v1/auth/refresh
+
+Creates a new valid access token/session from a valid refresh
+session.
+
+Invalid, expired, revoked, or reused refresh tokens must be
+rejected.
+
+------------------------------------------------------------
+
+GET /api/v1/auth/me
+
+Returns the currently authenticated user's safe account information.
+
+Example conceptual response:
+
+{
+    "success": true,
+    "message": "Authenticated user retrieved successfully.",
+    "data": {
+        "id": "...",
+        "name": "...",
+        "email": "...",
+        "role": "DATA_ENTRY",
+        "status": "ACTIVE"
+    }
+}
+
+Do not expose sensitive fields.
+
+============================================================
+15. LOGIN VALIDATION
+============================================================
+
+Login must validate:
+
+- Required email/username
+- Required password
+- Correct credential format where applicable
+
+Authentication failures should return a generic message.
+
+Do not reveal whether:
+
+- The account exists
+- The password was wrong
+- The account exists but another credential was wrong
+
+in a way that creates unnecessary account enumeration.
+
+============================================================
+16. ACCOUNT STATUS
+============================================================
+
+Users have an account status.
+
+Initial statuses:
+
+ACTIVE
+INACTIVE
+
+Only ACTIVE users may authenticate.
+
+An INACTIVE user attempting login must not receive an authenticated
+session.
+
+Administrators will manage account status in a later
+administration stage.
+
+Stage 04 only needs the authentication layer to enforce status.
+
+============================================================
+17. AUTHENTICATION MIDDLEWARE
+============================================================
+
+Create backend authentication middleware.
+
+Responsibilities:
+
+1. Read authentication credentials.
+2. Validate authentication token/session.
+3. Verify token signature.
+4. Verify expiration.
+5. Verify session validity where applicable.
+6. Resolve the authenticated user.
+7. Verify the user is still ACTIVE.
+8. Attach authenticated user information to the request.
+
+Conceptually:
+
+request.user
+
+must be available to protected controllers after successful
+authentication.
+
+Unauthenticated requests must be rejected.
+
+============================================================
+18. ROLE AUTHORIZATION MIDDLEWARE
+============================================================
+
+Create reusable backend role authorization middleware.
+
+Example conceptual usage:
+
+requireRole('ADMIN')
+
+requireRole('REPORTING')
+
+requireRole('MANAGER')
+
+requireRole('DATA_ENTRY')
+
+The backend must enforce authorization independently from React.
+
+Example:
+
+A Manager calling an Admin-only endpoint directly through Postman
+must receive an authorization error.
+
+Hiding the button in React is NOT security.
+
+============================================================
+19. ROLE ACCESS RULES
+============================================================
+
+Initial role boundaries:
+
+ADMIN
+
+Allowed:
+- authenticated admin functionality
+- future user management
+- future dataset configuration
+- future indicator configuration
+- future reporting-period configuration
+- audit logs
+
+DATA_ENTRY
+
+Allowed:
+- authenticated Data Entry functionality
+- future data-entry functionality
+- future own submission functionality
+
+REPORTING
+
+Allowed:
+- authenticated Reporting functionality
+- future review functionality
+- future reporting functionality
+
+MANAGER
+
+Allowed:
+- authenticated Manager functionality
+- future approved-data analysis functionality
+
+No role may access another role's restricted backend endpoints
+unless explicitly authorized by requirements.
+
+============================================================
+20. SELF-APPROVAL PROTECTION
+============================================================
+
+The system has a separation-of-duties rule:
+
+A user cannot approve data they personally entered.
+
+This is a backend business/security rule.
+
+Stage 04 must establish the authorization foundation required for
+this rule.
+
+The actual submission approval implementation belongs to Stage 07.
+
+Do not implement the complete approval workflow in Stage 04.
+
+============================================================
+21. ADMIN AUDIT ACCESS
+============================================================
+
+Audit logs are ADMIN-ONLY.
+
+The authentication/authorization architecture must support:
+
+GET /api/v1/audit-logs
+
+as an Admin-only protected endpoint when the audit functionality
+is implemented.
+
+Reporting users must not receive general audit-log access.
+
+The full audit-log interface belongs to Stage 11.
+
+Stage 04 may only establish the authorization rule.
+
+============================================================
+22. USER PROFILE
+============================================================
+
+Implement the authenticated user's basic profile endpoint through:
+
+GET /api/v1/auth/me
+
+The initial React application should display:
+
+- User name
+- Email
+- Primary role
+- Account status
+
+Do not implement complete user administration yet.
+
+Do not implement:
+
+- Admin user CRUD
+- Role assignment UI
+- Password reset workflow
+- User activation/deactivation UI
+
+Those belong to later stages.
+
+============================================================
+23. REACT AUTHENTICATION STATE
+============================================================
+
+Create a clean authentication state architecture.
+
+The React application must know whether the user is:
+
+- Loading authentication state
+- Authenticated
+- Unauthenticated
+
+The authentication state must support:
+
+- current user
+- authentication loading
+- login
+- logout
+- refresh/session handling
+- authentication error state
+
+Because authentication tokens are HttpOnly, React must not directly
+read the JWT.
+
+Use the selected React state approach consistently.
+
+Do not introduce unnecessary state-management libraries if React
+Context/hooks are sufficient.
+
+============================================================
+24. REACT ROUTING
+============================================================
+
+Create public and protected route concepts.
+
+Public:
+
+/login
+
+Protected:
+
+/app
+
+Role-protected areas may later include:
+
+/app/admin
+/app/data-entry
+/app/reporting
+/app/manager
+
+Do not build the complete role-specific application pages yet.
+
+Stage 04 only establishes the route protection foundation.
+
+============================================================
+25. PROTECTED ROUTE BEHAVIOR
+============================================================
+
+If an unauthenticated user attempts to access:
+
+/app
+
+the React application should redirect to:
+
+/login
+
+If an authenticated user attempts to access a route outside their
+role permissions, display an appropriate unauthorized page or
+redirect.
+
+Frontend route protection is for user experience.
+
+Backend authorization remains authoritative.
+
+============================================================
+26. LOGIN UI
+============================================================
+
+Create a professional login page using:
+
+React
++
+Tailwind CSS
+
+The login page should contain:
+
+- Application name
+- Email/username field
+- Password field
+- Show/hide password control if appropriate
+- Login button
+- Loading state
+- Validation messages
+- Authentication error message
+
+Do not make the UI overly complex.
+
+Use the project's hospital health-data-management identity.
+
+Do not invent hospital branding that was not provided.
+
+============================================================
+27. TAILWIND CSS REQUIREMENT
+============================================================
+
+Tailwind CSS is now the required styling system for the React
+frontend.
+
+All new Stage 04 UI must use Tailwind CSS.
+
+Do NOT introduce another CSS framework such as:
+
+- Bootstrap
+- Material UI
+- Bulma
+- Chakra UI
+
+Do not create large custom CSS files when Tailwind utilities
+provide the required styling.
+
+Keep the UI clean, professional, accessible, and responsive.
+
+============================================================
+28. AUTHENTICATED APPLICATION SHELL
+============================================================
+
+After successful login, create a basic authenticated application
+shell.
+
+It may include:
+
+- Sidebar/navigation
+- Top/header area
+- Current user information
+- Role display
+- Logout button
+- Main content area
+
+The shell should be role-aware.
+
+For example:
+
+ADMIN sees Admin navigation placeholders.
+
+DATA_ENTRY sees Data Entry navigation placeholders.
+
+REPORTING sees Reporting navigation placeholders.
+
+MANAGER sees Manager navigation placeholders.
+
+Do NOT implement the future modules behind those navigation items.
+
+Placeholders are acceptable.
+
+============================================================
+29. API CLIENT
+============================================================
+
+Configure the existing Axios client to support:
+
+- API base URL
+- credentials/cookies
+- consistent API responses
+- authentication errors
+- 401 handling
+- refresh flow where appropriate
+
+Do not put authentication logic directly into every component.
+
+Centralize it through API/client utilities and authentication
+services/hooks/context.
+
+============================================================
+30. 401 HANDLING
+============================================================
+
+When the backend returns:
+
+401 Unauthorized
+
+the client should:
+
+1. Attempt an appropriate refresh when the session can be refreshed.
+2. If refresh fails, clear authentication state.
+3. Redirect the user to /login.
+
+Do not create infinite refresh loops.
+
+Do not retry requests indefinitely.
+
+============================================================
+31. AUTHENTICATION API RESPONSE STANDARD
+============================================================
+
+Continue using the Stage 03 API response structure.
+
+Successful example:
+
+{
+    "success": true,
+    "message": "...",
+    "data": {}
+}
+
+Validation/authentication error example:
+
+{
+    "success": false,
+    "message": "...",
+    "errors": {}
+}
+
+Do not expose internal stack traces.
+
+============================================================
+32. HTTP STATUS CODES
+============================================================
+
+Use appropriate HTTP status codes.
+
+Examples:
+
+200
+Successful request
+
+201
+Resource creation where applicable
+
+400
+Bad request
+
+401
+Unauthenticated
+
+403
+Authenticated but unauthorized
+
+404
+Resource not found
+
+422
+Validation failure where appropriate
+
+429
+Rate limited
+
+500
+Unexpected server error
+
+============================================================
+33. RATE LIMITING
+============================================================
+
+Protect the login endpoint against repeated brute-force attempts.
+
+Implement appropriate rate limiting for authentication requests.
+
+The exact limits should be configurable.
+
+Do not implement an overly aggressive limit that prevents normal
+hospital users from logging in.
+
+============================================================
+34. AUTHENTICATION AUDIT EVENTS
+============================================================
+
+Authentication-related security events should be recorded through
+the existing audit architecture where appropriate.
+
+Examples:
+
+- successful login
+- failed login attempt where appropriate
+- logout
+- refresh/session termination
+- account authentication blocked because inactive
+
+Do not store plaintext passwords in audit logs.
+
+Do not store authentication secrets in audit logs.
+
+============================================================
+35. DATABASE CHANGES
+============================================================
+
+Inspect the Stage 03 database before changing it.
+
+If the selected authentication architecture requires additional
+database structures, create them through a new migration.
+
+Possible additional authentication structure:
+
+sessions
+or
+refresh_tokens
+
+The structure must support:
+
+- user
+- session/token identifier
+- expiration
+- revocation
+- created timestamp
+- updated/last-used timestamp
+- optional IP/user-agent metadata where justified
+
+Do not duplicate the users or roles tables.
+
+Do not destroy existing Stage 03 data.
+
+============================================================
+36. USER SEED DATA
+============================================================
+
+Stage 03 seeded the four roles as development data.
+
+For Stage 04, create development test users only if required for
+authentication testing.
+
+If test users are created:
+
+- clearly mark them as development/test accounts
+- use safe development credentials
+- never present them as real hospital staff
+- never commit production passwords
+
+Recommended test accounts:
+
+admin
+data entry
+reporting
+manager
+
+Each test user must have exactly one role.
+
+============================================================
+37. SECURITY REQUIREMENTS
+============================================================
+
+The implementation must:
+
+- Hash passwords
+- Never store plaintext passwords
+- Never return password hashes
+- Use signed JWTs
+- Validate token expiration
+- Validate session/refresh validity
+- Enforce account status
+- Enforce backend role authorization
+- Protect cookies
+- Configure CORS correctly
+- Protect login with rate limiting
+- Avoid sensitive information in errors
+- Avoid sensitive information in JWT claims
+- Avoid authentication secrets in Git
+- Use environment variables for secrets
+- Prevent unauthorized direct API access
+
+============================================================
+38. ENVIRONMENT VARIABLES
+============================================================
+
+Update server/.env.example as required.
+
+Expected configuration should include concepts such as:
+
+NODE_ENV
+PORT
+CLIENT_URL
+
+DATABASE_HOST
+DATABASE_PORT
+DATABASE_NAME
+DATABASE_USER
+DATABASE_PASSWORD
+
+JWT_ACCESS_SECRET
+JWT_ACCESS_EXPIRES_IN
+
+JWT_REFRESH_SECRET
+JWT_REFRESH_EXPIRES_IN
+
+SESSION_INACTIVITY_TIMEOUT_MINUTES
+
+AUTH_RATE_LIMIT configuration where appropriate
+
+Actual secret values must never be committed.
+
+============================================================
+39. STAGE 04 API ROUTE STRUCTURE
+============================================================
+
+Authentication routes:
+
+/api/v1/auth/login
+/api/v1/auth/logout
+/api/v1/auth/refresh
+/api/v1/auth/me
+
+Future protected route namespaces may include:
+
+/api/v1/users
+/api/v1/datasets
+/api/v1/indicators
+/api/v1/reporting-periods
+/api/v1/submissions
+/api/v1/reports
+/api/v1/notifications
+/api/v1/audit-logs
+
+Do not implement the future modules in Stage 04.
+
+Only create authentication-related routes and any minimal test
+endpoint needed to prove authorization.
+
+============================================================
+40. TEST PROTECTED ENDPOINT
+============================================================
+
+Create a minimal protected test endpoint if necessary to verify
+authentication and RBAC.
+
+For example:
+
+GET /api/v1/auth/test
+
+or another clearly named internal development endpoint.
+
+It must demonstrate:
+
+Unauthenticated
+→ 401
+
+Authenticated with wrong role
+→ 403
+
+Authenticated with correct role
+→ 200
+
+Remove or appropriately classify the endpoint before production
+if it is not part of the final product.
+
+============================================================
+41. AUTHENTICATION TEST CASES
+============================================================
+
+Test at minimum:
+
+1. Valid login.
+
+2. Invalid password.
+
+3. Invalid user.
+
+4. Inactive user.
+
+5. Missing credentials.
+
+6. Expired access token.
+
+7. Invalid access token.
+
+8. Invalid refresh token.
+
+9. Revoked refresh/session.
+
+10. Logout.
+
+11. Refresh after valid session.
+
+12. Refresh after revoked session.
+
+13. Access protected endpoint without authentication.
+
+14. Access protected endpoint with authentication.
+
+15. Access Admin endpoint as Admin.
+
+16. Access Admin endpoint as Manager.
+
+17. Access Admin endpoint as Data Entry.
+
+18. Access Admin endpoint as Reporting.
+
+19. Verify each user has exactly one role.
+
+20. Verify frontend redirects unauthenticated users to /login.
+
+21. Verify role-protected frontend navigation.
+
+22. Verify React cannot directly access MySQL.
+
+23. Verify password hashes are stored rather than plaintext.
+
+============================================================
+42. ACCEPTANCE CRITERIA
+============================================================
+
+Stage 04 is complete only when:
+
+[ ] React authentication state exists.
+
+[ ] Login page exists.
+
+[ ] Login UI uses Tailwind CSS.
+
+[ ] User can successfully authenticate.
+
+[ ] Passwords are securely hashed.
+
+[ ] JWT authentication works.
+
+[ ] Tokens/session credentials are handled securely.
+
+[ ] Logout works.
+
+[ ] Refresh/session mechanism works.
+
+[ ] Session inactivity timeout is enforced.
+
+[ ] Active users can authenticate.
+
+[ ] Inactive users cannot authenticate.
+
+[ ] GET /api/v1/auth/me works for authenticated users.
+
+[ ] Unauthenticated requests receive 401.
+
+[ ] Unauthorized role access receives 403.
+
+[ ] Backend role authorization exists.
+
+[ ] Frontend protected routes exist.
+
+[ ] Role-aware navigation exists.
+
+[ ] Four roles are supported:
+
+    ADMIN
+    DATA_ENTRY
+    REPORTING
+    MANAGER
+
+[ ] Each user has one primary role.
+
+[ ] Admin-only access can be enforced.
+
+[ ] Reporting users do not receive general audit-log access.
+
+[ ] Self-approval authorization foundation exists.
+
+[ ] Login rate limiting exists.
+
+[ ] Authentication errors are handled safely.
+
+[ ] JWT secrets are environment-based.
+
+[ ] Authentication cookies are appropriately protected.
+
+[ ] CORS supports authenticated requests correctly.
+
+[ ] Authentication events are integrated with audit architecture
+    where appropriate.
+
+[ ] No Stage 05 functionality was implemented.
+
+============================================================
+43. WHAT MUST NOT BE IMPLEMENTED
+============================================================
+
+Do NOT implement:
+
+- Dataset CRUD
+- Indicator CRUD
+- Reporting-period CRUD
+- Data-entry forms
+- Submission creation
+- Submission review
+- Submission approval
+- Submission return
+- Reports
+- Custom report builder
+- Dashboard analytics
+- Data analysis
+- Notification UI
+- Full audit-log UI
+- Production deployment
+
+These belong to later stages.
+
+============================================================
+44. STAGE 04 IMPLEMENTATION ORDER
+============================================================
+
+Implement in this order:
+
+1. Read and verify:
+
+   docs/stage 01.txt
+   docs/stage 02.txt
+   docs/stage 03.txt
+   docs/stage 03 review.txt
+   docs/stage 04.txt
+
+2. Inspect the existing users and roles schema.
+
+3. Decide and document the authentication session/refresh database
+   addition if required.
+
+4. Create required migration(s).
+
+5. Configure password hashing.
+
+6. Implement authentication service.
+
+7. Implement JWT/session service.
+
+8. Implement login.
+
+9. Implement refresh.
+
+10. Implement logout.
+
+11. Implement current-user endpoint.
+
+12. Implement authentication middleware.
+
+13. Implement role authorization middleware.
+
+14. Implement authentication rate limiting.
+
+15. Implement authentication audit events.
+
+16. Configure CORS credentials.
+
+17. Configure React authentication state.
+
+18. Configure React protected routes.
+
+19. Create Tailwind login page.
+
+20. Create basic authenticated application shell.
+
+21. Create role-aware navigation placeholders.
+
+22. Implement 401/403 handling.
+
+23. Create authentication test coverage.
+
+24. Test all four roles.
+
+25. Verify security behavior.
+
+26. Build client.
+
+27. Start server.
+
+28. Verify client/server/database authentication flow.
+
+29. Create:
+
+   docs/stage 04 review.txt
+
+30. Confirm Stage 05 has NOT been started.
+
+============================================================
+45. ARCHITECTURE TO PRESERVE
+============================================================
+
+Backend:
+
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+Knex
+  ↓
+MySQL
+
+Authentication:
+
+Request
+  ↓
+Authentication Middleware
+  ↓
+JWT / Session Validation
+  ↓
+User Resolution
+  ↓
+Role Authorization
+  ↓
+Controller
+
+Frontend:
+
+React
+  ↓
+Router
+  ↓
+Auth State
+  ↓
+API Client
+  ↓
+Express REST API
+
+React NEVER connects directly to MySQL.
+
+============================================================
+46. STAGE 04 REVIEW DOCUMENT
+============================================================
+
+After implementation create:
+
+docs/stage 04 review.txt
+
+The review must contain:
+
+1. What was implemented.
+2. Authentication architecture.
+3. Password hashing technology.
+4. JWT architecture.
+5. Token/session storage approach.
+6. Access-token expiration.
+7. Refresh-session expiration.
+8. Inactivity timeout.
+9. Logout/invalidation behavior.
+10. Authentication endpoints.
+11. Authentication middleware.
+12. RBAC middleware.
+13. Four roles.
+14. Role restrictions.
+15. Self-approval authorization foundation.
+16. Tailwind CSS integration.
+17. Login UI.
+18. React authentication state.
+19. Protected routes.
+20. API client authentication behavior.
+21. Database migrations added.
+22. Development test users.
+23. Rate limiting.
+24. Audit/security events.
+25. Tests performed.
+26. Problems encountered.
+27. Problems fixed.
+28. Remaining issues.
+29. Confirmation that Stage 05 was NOT started.
+30. Final Stage 04 readiness assessment.
+
+============================================================
+47. FINAL STAGE 04 GOAL
+============================================================
+
+At the end of Stage 04, the system must have a real secure
+authentication and authorization foundation.
+
+A user should be able to:
+
+    Open the React application
+            ↓
+         /login
+            ↓
+      Enter credentials
+            ↓
+        POST /auth/login
+            ↓
+      Express authenticates
+            ↓
+       JWT/session created
+            ↓
+       Authenticated shell
+            ↓
+      Role-aware application
+
+The backend must independently enforce:
+
+    Authentication
+          +
+    Role authorization
+          +
+    Account status
+          +
+    Session validity
+
+The four roles must be ready for the business modules that will
+be implemented in Stages 05 onward.
+
+============================================================
+END OF STAGE 04
+============================================================

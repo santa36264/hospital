@@ -1,0 +1,251 @@
+============================================================
+STAGE 03 — DATABASE DESIGN & PROJECT FOUNDATION REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 03 implementation review (no Stage 04 features)
+
+This review documents what was created in Stage 03.
+
+============================================================
+1. WHAT WAS CREATED
+============================================================
+
+- React frontend foundation in client/ (Vite + React).
+- Node.js + Express backend foundation in server/.
+- MySQL/MariaDB database foundation (database: hospital_health_data).
+- Database schema design and Knex migration.
+- Seed of the four primary roles (development test data only).
+- Environment configuration for client and server.
+- Root .gitignore and README.md.
+- GET /api/v1/health endpoint with database connectivity check.
+
+============================================================
+2. REACT SETUP
+============================================================
+
+- Tooling: Vite react template (npm create vite@latest client).
+- Dependencies added: react-router-dom, axios.
+- Structure: src/{api,assets,components,constants,context,features,
+  hooks,layouts,pages,routes,services,types,utils}.
+- App.jsx renders AppRoutes; pages/HomePage.jsx calls GET
+  /api/v1/health via src/api/healthApi.js and src/api/client.js.
+- API base URL from VITE_API_BASE_URL (client/.env, client/.env.example).
+- No login, dashboard, dataset management, or business UI.
+- `npm run build` succeeds.
+
+============================================================
+3. NODE.JS/EXPRESS SETUP
+============================================================
+
+- server/package.json with scripts: start, dev (node --watch),
+  migrate, migrate:rollback, seed.
+- src/app.js: Express app with CORS, JSON parsing, /api/v1 router,
+  404 handler, centralized error handler.
+- src/server.js: startup with database connection check.
+- Structure: src/{config,controllers,services,repositories,routes,
+  middleware,validators,models,utils,constants,errors}, tests/,
+  migrations/, seeds/.
+
+============================================================
+4. MYSQL SETUP
+============================================================
+
+- Local MySQL-compatible server: XAMPP MariaDB 10.4.32
+  (C:\xampp\mysql), started via mysql_start.bat.
+- Database created: hospital_health_data.
+- Connection tested: knex migration and mysql CLI.
+
+============================================================
+5. DATABASE TECHNOLOGY / LIBRARY SELECTED
+============================================================
+
+Selected: Knex.js (knex) + mysql2 driver.
+
+Rationale: single controlled migration solution, parameterized
+queries, MySQL support, transaction support, maintainable, and no
+heavy ORM overhead. Prisma/Sequelize/multiple ORMs were not used.
+
+============================================================
+6. DATABASE SCHEMA
+============================================================
+
+Single migration: server/migrations/001_core_schema.js.
+
+============================================================
+7. TABLES CREATED
+============================================================
+
+- roles
+- users
+- datasets
+- indicators
+- reporting_periods
+- submissions
+- data_values
+- submission_history
+- submission_amendments
+- notifications
+- audit_logs
+
+============================================================
+8. RELATIONSHIPS
+============================================================
+
+- roles 1---* users
+- datasets 1---* indicators
+- datasets 1---* submissions
+- reporting_periods 1---* submissions
+- users 1---* submissions (owner)
+- submissions 1---* data_values
+- indicators 1---* data_values
+- submissions 1---* submission_history
+- users 1---* submission_history
+- submissions 1---* submission_amendments
+- users 1---* notifications (recipient)
+- users 1---* audit_logs
+
+============================================================
+9. CONSTRAINTS
+============================================================
+
+- Primary keys on all tables.
+- Foreign keys on all relationships (no destructive cascades).
+- Unique: roles.name, users.email, datasets.code,
+  indicators(dataset_id, code), submissions(dataset_id,
+  reporting_period_id) [one submission per Dataset + Period],
+  data_values(submission_id, indicator_id).
+- NOT NULL on required fields.
+- Enums: user status (ACTIVE/INACTIVE), dataset status, indicator
+  status, data_type, period status (OPEN/CLOSED), submission status
+  (DRAFT/SUBMITTED/UNDER_REVIEW/RETURNED/APPROVED), notification
+  status, history action.
+- Index on audit_logs(resource_type, resource_id).
+
+============================================================
+10. MIGRATION / SCHEMA PROCESS
+============================================================
+
+- `cd server && npx knex migrate:latest` — applied 1 migration.
+- `npx knex seed:run` — seeded 4 roles.
+- Migrations table: knex_migrations.
+
+============================================================
+11. ENVIRONMENT CONFIGURATION
+============================================================
+
+- server/.env and server/.env.example: NODE_ENV, PORT, CLIENT_URL,
+  DATABASE_HOST, DATABASE_PORT, DATABASE_NAME, DATABASE_USER,
+  DATABASE_PASSWORD, JWT_SECRET, JWT_EXPIRES_IN.
+- client/.env and client/.env.example: VITE_API_BASE_URL.
+- .env is git-ignored at root, server, and client levels.
+- Real JWT secret not committed (placeholder only).
+
+============================================================
+12. HEALTH ENDPOINT
+============================================================
+
+GET /api/v1/health returns:
+
+{
+  "success": true,
+  "message": "Hospital Health Data Management API is running.",
+  "data": { "status": "ok", "database": "ok" }
+}
+
+No credentials or internal details exposed.
+
+============================================================
+13. CLIENT-SERVER CONNECTION
+============================================================
+
+- React client configured with axios base URL
+  http://localhost:5000/api/v1.
+- HomePage requests GET /health and displays status.
+
+============================================================
+14. DATABASE CONNECTIVITY
+============================================================
+
+- Server startup performs SELECT 1 via knex.
+- Health endpoint reports database: ok.
+- Verified against local MariaDB.
+
+============================================================
+15. COMMANDS USED TO RUN THE PROJECT
+============================================================
+
+- C:\xampp\mysql_start.bat  (start MariaDB)
+- cd server && npx knex migrate:latest
+- cd server && npx knex seed:run
+- cd server && npm run dev / npm start
+- cd client && npm run dev / npm run build
+
+============================================================
+16. TESTS PERFORMED
+============================================================
+
+- MySQL connection via mysql CLI (SELECT VERSION()).
+- Migration applied successfully; tables verified with SHOW TABLES.
+- Seed inserted 4 roles; verified with SELECT.
+- GET /api/v1/health returned success=true, database=ok.
+- client `npm run build` completed successfully.
+
+============================================================
+17. PROBLEMS ENCOUNTERED
+============================================================
+
+- MySQL service was not running initially (error 2002); started via
+  XAMPP mysql_start.bat.
+- nodemon postinstall failed on Windows (PowerShell error); replaced
+  with Node's built-in `node --watch`.
+
+============================================================
+18. PROBLEMS FIXED
+============================================================
+
+- Started local MySQL/MariaDB.
+- Switched dev script from nodemon to node --watch.
+
+============================================================
+19. REMAINING ISSUES
+============================================================
+
+- Automated tests not yet implemented (Stage 13).
+- JWT authentication belongs to Stage 04.
+- Amendment workflow details to be finalized in a later stage.
+- data_values.value stores values in a serialized text form; service-
+  layer validation per indicator data_type is a later-stage concern.
+
+============================================================
+20. CONFIRMATION — STAGE 04 NOT STARTED
+============================================================
+
+No login, registration, JWT authentication flow, password reset, RBAC
+middleware, user/dataset/indicator/period management UI, data-entry
+forms, submission/review/approval workflow, reports, custom reports,
+dashboard, analysis, notification UI, audit-log UI, or production
+deployment was implemented.
+
+============================================================
+21. FINAL STAGE 03 READINESS ASSESSMENT
+============================================================
+
+Stage 03 is complete:
+
+- client/ is a working React application.
+- server/ is a working Node.js + Express application.
+- React never accesses MySQL directly.
+- /api/v1 used consistently.
+- MySQL connection configured and verified.
+- Core schema and relationships migrated.
+- One active submission per Dataset + Period enforced by unique key.
+- Environment configuration exists; .env protected.
+- Centralized error handling, CORS, and health endpoint exist.
+- README.md documents the foundation.
+
+Stage 03 is READY for Stage 04.
+
+============================================================
+END OF STAGE 03 REVIEW
+============================================================
