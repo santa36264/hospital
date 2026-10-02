@@ -1,0 +1,994 @@
+STAGE 07 — REVIEW, APPROVAL & DATA QUALITY WORKFLOW
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+
+============================================================
+1. STAGE PURPOSE
+============================================================
+
+Implement the Reporting workflow for submitted health-data
+submissions.
+
+Stage 07 adds:
+
+SUBMITTED
+    ↓
+UNDER_REVIEW
+    ↓
+APPROVED
+
+or
+
+UNDER_REVIEW
+    ↓
+RETURNED
+    ↓
+DATA_ENTRY CORRECTION
+    ↓
+SUBMITTED
+
+The Reporting role is responsible for reviewing submissions.
+
+The stage must include both:
+
+1. Backend workflow/business rules
+2. Complete usable Reporting UI/UX
+
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+
+Backend:
+- Node.js
+- Express.js
+
+Database:
+- MySQL / MariaDB
+
+Database:
+- Knex.js
+- mysql2
+
+API:
+- REST
+- /api/v1
+
+Authentication:
+- Existing JWT authentication/session system
+
+
+============================================================
+3. EXISTING SYSTEM MUST BE PRESERVED
+============================================================
+
+Before implementation inspect:
+
+- docs/stage 01.txt
+- docs/stage 02.txt
+- docs/stage 03 review.txt
+- docs/stage 04 review.txt
+- docs/stage 05.txt
+- docs/stage 05 review.txt
+- docs/stage 06.txt
+- docs/stage 06 review.txt
+
+Inspect the actual implementation.
+
+Do not rebuild previous stages.
+
+Do not replace authentication.
+
+Do not replace the existing submission workflow.
+
+Do not break Stage 03, 04, 05 or 06.
+
+Reuse existing architecture and components.
+
+
+============================================================
+4. ROLES
+============================================================
+
+ADMIN
+- Existing administrative configuration responsibilities.
+
+DATA_ENTRY
+- Creates and submits data.
+- Corrects RETURNED submissions.
+- Cannot review/approve.
+
+REPORTING
+- Reviews SUBMITTED submissions.
+- Starts review.
+- Checks data quality.
+- Approves valid submissions.
+- Returns invalid submissions with a mandatory reason.
+
+MANAGER
+- Consumes approved data later.
+- No approval functionality in this stage.
+
+
+============================================================
+5. REPORTING SUBMISSION QUEUE
+============================================================
+
+Create a Reporting submission list.
+
+Suggested route:
+
+/app/reporting/submissions
+
+The page should show submissions available for Reporting review.
+
+Default useful statuses:
+
+SUBMITTED
+UNDER_REVIEW
+
+Useful filters:
+
+- Dataset
+- Reporting Period
+- Status
+- Search
+- Date
+
+Table columns:
+
+Dataset
+Reporting Period
+Data Entry User
+Status
+Submitted Date
+Last Updated
+Action
+
+Actions:
+
+SUBMITTED:
+[ Start Review ]
+
+UNDER_REVIEW:
+[ Continue Review ]
+
+
+============================================================
+6. REPORTING UI/UX REQUIREMENTS
+============================================================
+
+The Reporting interface must feel like a professional
+health-data reporting application.
+
+Do not build only raw tables and buttons.
+
+Use:
+
+- Existing AppShell
+- Existing sidebar
+- Consistent page header
+- Breadcrumbs where useful
+- Summary cards
+- Consistent filters
+- Professional tables
+- Status badges
+- Loading states
+- Empty states
+- Error states
+- Success feedback
+- Confirmation dialogs
+- Responsive layout
+
+Reuse existing shared components whenever possible.
+
+Do not introduce another CSS framework.
+
+
+============================================================
+7. REVIEW SUMMARY DASHBOARD
+============================================================
+
+The Reporting landing page may include summary cards:
+
+SUBMITTED
+UNDER REVIEW
+RETURNED
+APPROVED
+
+The counts must come from the backend.
+
+Do not implement advanced analytics here.
+
+This is workflow summary, not the Manager analytics dashboard.
+
+
+============================================================
+8. START REVIEW
+============================================================
+
+Endpoint:
+
+POST
+/api/v1/submissions/:id/review/start
+
+Rules:
+
+- REPORTING only.
+- Submission must exist.
+- Submission must currently be SUBMITTED.
+- Change status:
+
+SUBMITTED → UNDER_REVIEW
+
+- Set appropriate review timestamp.
+- Record submission history.
+- Record audit event.
+
+If already UNDER_REVIEW:
+
+Return controlled conflict or allow continue-review behavior
+according to the established workflow.
+
+Do not allow DATA_ENTRY to call this endpoint.
+
+
+============================================================
+9. REVIEW DETAIL PAGE
+============================================================
+
+Suggested route:
+
+/app/reporting/submissions/:id
+
+The page should clearly display:
+
+--------------------------------------------------
+Review Submission
+--------------------------------------------------
+
+Dataset:
+Monthly Common Dataset
+
+Reporting Period:
+September 2026
+
+Submitted By:
+Data Entry User
+
+Submitted:
+October 1, 2026
+
+Status:
+UNDER_REVIEW
+
+--------------------------------------------------
+INDICATOR DATA
+--------------------------------------------------
+
+Indicator              Value       Requirement
+
+OPD Visits              1250       Integer
+Female Visits           640        Integer
+Male Visits             610        Integer
+Coverage                72.5%      0–100
+
+--------------------------------------------------
+
+Review actions:
+
+[ Return for Correction ]
+[ Approve Submission ]
+
+
+============================================================
+10. DATA QUALITY REVIEW
+============================================================
+
+Reporting must be able to inspect:
+
+- Indicator name
+- Indicator type
+- Entered value
+- Required status
+- Min/max configuration
+- Precision configuration where applicable
+
+Highlight validation/data-quality problems clearly.
+
+Do not silently modify submitted values.
+
+Reporting is reviewing submitted data, not editing the
+DATA_ENTRY user's values directly.
+
+
+============================================================
+11. APPROVE
+============================================================
+
+Endpoint:
+
+POST
+/api/v1/submissions/:id/approve
+
+Rules:
+
+- REPORTING only.
+- Submission must be UNDER_REVIEW.
+- Approve the submission.
+- Status:
+
+UNDER_REVIEW → APPROVED
+
+- Set approved timestamp.
+- Record submission history.
+- Record audit event.
+
+Approved submissions become permanently read-only through
+ordinary workflow.
+
+Return clear success response.
+
+
+============================================================
+12. RETURN FOR CORRECTION
+============================================================
+
+Endpoint:
+
+POST
+/api/v1/submissions/:id/return
+
+Rules:
+
+- REPORTING only.
+- Submission must be UNDER_REVIEW.
+- A return reason is mandatory.
+- Status:
+
+UNDER_REVIEW → RETURNED
+
+- Store return reason.
+- Set returned timestamp.
+- Record submission history.
+- Record audit event.
+
+Do not allow an empty return reason.
+
+
+============================================================
+13. RETURN REASON
+============================================================
+
+The return reason must be visible to DATA_ENTRY.
+
+Example:
+
+"Female and male OPD totals do not match total OPD visits.
+Please verify the reported figures."
+
+The reason must be stored in the database.
+
+If the existing submissions table has a suitable return/review
+reason field, reuse it.
+
+Only create a migration if the existing schema is insufficient.
+
+
+============================================================
+14. DATA ENTRY RETURNED WORKFLOW
+============================================================
+
+Stage 06 already supports:
+
+RETURNED + OPEN period
+
+as editable.
+
+Stage 07 must integrate with that existing behavior.
+
+After Reporting returns:
+
+UNDER_REVIEW → RETURNED
+
+DATA_ENTRY can:
+
+1. Open submission.
+2. Read return reason.
+3. Correct values.
+4. Save.
+5. Submit again.
+
+Then:
+
+RETURNED → SUBMITTED
+
+The DATA_ENTRY user must not be able to directly change
+RETURNED → APPROVED.
+
+
+============================================================
+15. SUBMISSION HISTORY
+============================================================
+
+Use existing submission_history.
+
+Record:
+
+REVIEW_STARTED
+RETURNED
+APPROVED
+RESUBMITTED
+
+Use the existing Stage 06 infrastructure.
+
+Do not create a separate workflow-history table unless the
+existing schema is genuinely insufficient.
+
+
+============================================================
+16. AUDIT LOGGING
+============================================================
+
+Use existing audit infrastructure.
+
+Record appropriate events such as:
+
+SUBMISSION_REVIEW_STARTED
+SUBMISSION_RETURNED
+SUBMISSION_APPROVED
+
+Do not expose unrestricted audit logs to Reporting.
+
+Admin remains responsible for audit-log access.
+
+
+============================================================
+17. NOTIFICATIONS
+============================================================
+
+When Reporting:
+
+returns a submission
+
+the DATA_ENTRY owner should receive a persisted notification.
+
+When Reporting:
+
+approves a submission
+
+the DATA_ENTRY owner should receive a persisted notification.
+
+Use the existing notifications table.
+
+Do not implement external email/SMS in this stage.
+
+In-system notifications only.
+
+
+============================================================
+18. NOTIFICATION UI
+============================================================
+
+If the existing AppShell/header does not already have a
+notification area, add a reusable notification UI.
+
+It should support:
+
+- unread count
+- notification list
+- read/unread state
+- clear message
+- timestamp
+
+Keep the UI simple and professional.
+
+Do not build a separate notification application.
+
+
+============================================================
+19. AUTHORIZATION
+============================================================
+
+All Reporting endpoints require:
+
+requireAuth
++
+requireRole('REPORTING')
+
+Anonymous:
+401
+
+Wrong role:
+403
+
+DATA_ENTRY cannot review.
+
+MANAGER cannot review.
+
+ADMIN does not become a Reporting reviewer merely because
+Admin has broad configuration privileges.
+
+
+============================================================
+20. REPORTING DATA ACCESS
+============================================================
+
+Reporting may view submissions required for review.
+
+Reporting must NOT:
+
+- modify indicator values directly
+- change submitted values
+- approve its own data entry
+- bypass workflow states
+- create arbitrary APPROVED submissions
+- directly set status through request body
+
+Status transitions must be controlled by dedicated operations.
+
+
+============================================================
+21. WORKFLOW STATE MACHINE
+============================================================
+
+Allowed:
+
+SUBMITTED → UNDER_REVIEW
+
+UNDER_REVIEW → APPROVED
+
+UNDER_REVIEW → RETURNED
+
+RETURNED → SUBMITTED
+
+Not allowed:
+
+SUBMITTED → APPROVED
+
+SUBMITTED → RETURNED
+
+DRAFT → APPROVED
+
+DRAFT → UNDER_REVIEW
+
+RETURNED → APPROVED
+
+APPROVED → anything
+
+DATA_ENTRY cannot perform Reporting transitions.
+
+
+============================================================
+22. PERIOD RULES
+============================================================
+
+Reporting review must consider the reporting period state.
+
+If a period is CLOSED:
+
+Existing submitted data may still be reviewed and approved.
+
+Closing a period must NOT automatically destroy or invalidate
+existing submissions.
+
+Do not allow DATA_ENTRY to modify a returned submission if
+the period is CLOSED.
+
+Existing Stage 06 behavior remains authoritative for
+DATA_ENTRY editing.
+
+
+============================================================
+23. TRANSACTION SAFETY
+============================================================
+
+Review state changes must use database transactions.
+
+Example approve:
+
+BEGIN
+
+verify current status
+update submission
+record submission history
+record audit event
+create notification
+
+COMMIT
+
+On failure:
+
+ROLLBACK
+
+
+============================================================
+24. CONCURRENCY / STATE SAFETY
+============================================================
+
+Do not blindly update status.
+
+Example:
+
+If two Reporting users attempt to start review simultaneously,
+only a valid current-state transition may succeed.
+
+The service must verify the current state before transition.
+
+Return a controlled conflict when the transition is no longer
+valid.
+
+
+============================================================
+25. REPORTING API
+============================================================
+
+Implement appropriate REST endpoints:
+
+GET
+/api/v1/reporting/submissions
+
+GET
+/api/v1/reporting/submissions/:id
+
+POST
+/api/v1/submissions/:id/review/start
+
+POST
+/api/v1/submissions/:id/approve
+
+POST
+/api/v1/submissions/:id/return
+
+Use the project's existing API architecture.
+
+Do not duplicate business logic between controllers.
+
+
+============================================================
+26. REPORTING FRONTEND ROUTES
+============================================================
+
+Add:
+
+/app/reporting
+/app/reporting/submissions
+/app/reporting/submissions/:id
+
+The reporting root may redirect to submissions or provide a
+small workflow summary dashboard.
+
+
+============================================================
+27. SIDEBAR / APPLICATION SHELL
+============================================================
+
+IMPORTANT:
+
+The existing sidebar and overall application shell must be
+reviewed as part of this stage.
+
+Do not simply add one more link.
+
+Improve the shared navigation if necessary.
+
+The interface should have:
+
+- clear role-based navigation
+- active route highlighting
+- logical grouping
+- consistent icons
+- readable labels
+- appropriate spacing
+- responsive sidebar behavior
+- consistent header
+- page title area
+
+DATA_ENTRY should see its own relevant navigation.
+
+REPORTING should see:
+
+Dashboard
+Submissions
+Notifications if applicable
+
+ADMIN should continue seeing:
+
+Datasets
+Indicators
+Reporting Periods
+and existing Admin functionality.
+
+Do not expose unrelated role functions.
+
+
+============================================================
+28. VISUAL CONSISTENCY
+============================================================
+
+All new pages must follow the existing application's visual
+system.
+
+Use shared:
+
+- buttons
+- inputs
+- cards
+- tables
+- badges
+- modals/dialogs
+- alerts
+- page headers
+
+If equivalent shared components do not exist, create reusable
+components rather than duplicating markup.
+
+Avoid inconsistent colors, spacing and typography.
+
+
+============================================================
+29. RESPONSIVE UX
+============================================================
+
+The application must work reasonably on:
+
+- desktop
+- laptop
+- tablet
+- smaller screens
+
+Tables should have horizontal scrolling or responsive
+presentation where necessary.
+
+Do not allow important actions to disappear on smaller screens.
+
+
+============================================================
+30. LOADING / EMPTY / ERROR STATES
+============================================================
+
+Every Reporting page must handle:
+
+Loading
+Empty
+Error
+Success
+
+Examples:
+
+"No submissions are currently waiting for review."
+
+"Unable to load submissions. Please try again."
+
+"Submission approved successfully."
+
+
+============================================================
+31. CONFIRMATION DIALOGS
+============================================================
+
+Approve:
+
+Ask for confirmation before approval.
+
+Example:
+
+Approve this submission?
+
+This will make the submitted health data approved and
+read-only.
+
+[Cancel] [Approve]
+
+
+Return:
+
+Require a return reason.
+
+Example:
+
+Return Submission
+
+Reason:
+[ textarea ]
+
+[Cancel] [Return for Correction]
+
+
+============================================================
+32. STATUS VISUALIZATION
+============================================================
+
+Reuse the existing SubmissionStatusBadge.
+
+It must clearly support:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Do not create conflicting status badge styles.
+
+
+============================================================
+33. SEARCH AND FILTERING
+============================================================
+
+Reporting submission list should support:
+
+- Search
+- Dataset filter
+- Reporting period filter
+- Status filter
+
+Keep filters usable and visually organized.
+
+Do not implement complex analytics filtering.
+
+
+============================================================
+34. MANAGER SCOPE
+============================================================
+
+Do NOT build the full Manager dashboard in Stage 07.
+
+Manager analytics belong to Stage 10.
+
+Only ensure the APPROVED state is correctly persisted for
+future Manager functionality.
+
+
+============================================================
+35. TESTING
+============================================================
+
+Test:
+
+1. Anonymous Reporting endpoint → 401
+2. DATA_ENTRY → 403
+3. MANAGER → 403
+4. REPORTING can list submissions
+5. REPORTING can view submitted submission
+6. REPORTING can start review
+7. SUBMITTED → UNDER_REVIEW
+8. Reporting cannot approve SUBMITTED directly
+9. Reporting can approve UNDER_REVIEW
+10. UNDER_REVIEW → APPROVED
+11. Reporting can return UNDER_REVIEW
+12. Return reason required
+13. UNDER_REVIEW → RETURNED
+14. DATA_ENTRY can see returned submission
+15. Return reason visible to DATA_ENTRY
+16. DATA_ENTRY can correct returned submission
+17. DATA_ENTRY can resubmit
+18. RETURNED → SUBMITTED
+19. Approved submission is read-only
+20. Invalid state transitions rejected
+21. History recorded
+22. Audit events recorded
+23. Notifications created
+24. Notification visible to recipient
+25. Stage 04 auth still works
+26. Stage 05 configuration still works
+27. Stage 06 submission workflow still works
+28. Client build succeeds
+
+
+============================================================
+36. UI/UX ACCEPTANCE CRITERIA
+============================================================
+
+[x] Reporting has a dedicated workflow interface.
+
+[x] Reporting submission queue is clear.
+
+[x] Review detail page clearly presents submitted data.
+
+[x] Workflow status is obvious.
+
+[x] Approve and Return actions are clearly separated.
+
+[x] Return requires a reason.
+
+[x] Confirmation is required before approval.
+
+[x] Loading/empty/error/success states exist.
+
+[x] Filters/search are usable.
+
+[x] Sidebar/navigation is role-aware.
+
+[x] Shared application shell is visually consistent.
+
+[x] Existing DATA_ENTRY interface remains usable.
+
+[x] New UI uses Tailwind consistently.
+
+[x] Responsive behavior is considered.
+
+[x] Important actions are easy to locate.
+
+[x] No placeholder-style pages remain in the Reporting workflow.
+
+
+============================================================
+37. STAGE BOUNDARY
+============================================================
+
+DO NOT IMPLEMENT:
+
+- Manager analytics dashboard
+- advanced data analysis
+- custom reports
+- PDF export
+- Excel export
+- full audit-log UI
+- external SMS
+- external email
+- deployment
+
+Those belong to later stages.
+
+
+============================================================
+38. REQUIRED REVIEW DOCUMENT
+============================================================
+
+Create:
+
+docs/stage 07 review.txt
+
+Include:
+
+1. Implementation summary
+2. Backend changes
+3. Frontend changes
+4. Database changes
+5. API endpoints
+6. Workflow state transitions
+7. Authorization verification
+8. Validation verification
+9. Notification implementation
+10. UI/UX implementation
+11. Sidebar/AppShell changes
+12. Tests performed
+13. Regression tests
+14. Problems encountered
+15. Problems fixed
+16. Remaining issues
+17. Confirmation Stage 08+ was not implemented
+18. Readiness for Stage 08
+
+
+============================================================
+39. FINAL IMPLEMENTATION RULE
+============================================================
+
+Do not only analyze this document.
+
+Actually implement Stage 07.
+
+Before coding, inspect the existing application.
+
+Do not replace working functionality.
+
+Do not silently implement future stages.
+
+Prioritize BOTH:
+
+1. Correct backend workflow
+2. Professional, consistent and usable UI/UX
+
+
+============================================================
+END OF STAGE 07
+============================================================

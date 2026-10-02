@@ -8,7 +8,10 @@ const NAV_BY_ROLE = {
     { to: '/app/admin/indicators', label: 'Indicators' },
     { to: '/app/admin/reporting-periods', label: 'Reporting Periods' },
   ],
-  DATA_ENTRY: [{ to: '/app/data-entry', label: 'Data Entry' }],
+  DATA_ENTRY: [
+    { to: '/app/data-entry/submissions', label: 'My Submissions' },
+    { to: '/app/data-entry/submissions/new', label: 'New Submission' },
+  ],
   REPORTING: [{ to: '/app/reporting', label: 'Reporting' }],
   MANAGER: [{ to: '/app/manager', label: 'Manager' }],
 };

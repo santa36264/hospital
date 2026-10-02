@@ -1,0 +1,463 @@
+============================================================
+STAGE 06 — DATA ENTRY & SUBMISSION WORKFLOW REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 06 implementation review
+
+============================================================
+1. IMPLEMENTATION SUMMARY
+============================================================
+
+Stage 06 implements the full DATA_ENTRY submission workflow:
+create DRAFT, save values, submit, view own submissions, and
+read-only display of SUBMITTED/RETURNED/APPROVED submissions.
+
+All Stage 03–05 functionality is preserved unchanged.
+No Stage 07 review/approval functionality was implemented.
+
+============================================================
+2. FILES CREATED
+============================================================
+
+SERVER
+------
+
+server/src/repositories/submissionRepository.js
+  - findById (JOIN datasets + reporting_periods)
+  - findByOwner (filtered list for one user)
+  - findByDatasetAndPeriod (duplicate check)
+  - create (trx-aware, post-insert select via same connection)
+  - update (trx-aware, post-update select via same connection)
+  - getDataValues
+  - upsertDataValue / upsertDataValues (loop upsert, no dup)
+  - addHistory / getHistory
+
+server/src/services/submissionService.js
+  - validateIndicatorValue helper (all 6 types:
+    numeric, decimal, percentage, date, yes/no, text)
+  - listMySubmissions
+  - getSubmission (returns submission + indicators + values map)
+  - createSubmission (dataset ACTIVE check, period OPEN check,
+    duplicate check, transaction: insert + history + audit)
+  - saveDraft (ownership, editable status, period OPEN,
+    draft-mode validation, upsert transaction)
+  - submitSubmission (full validation incl. required fields,
+    type, min/max, precision, percentage range; transaction:
+    update status + history SUBMITTED/RESUBMITTED + audit)
+
+server/src/controllers/submissionController.js
+  - listMy, getById, create, saveDraft, submit
+  - Thin HTTP handlers; all business logic in service
+
+server/src/routes/submissionsRoutes.js
+  - requireAuth + requireRole('DATA_ENTRY') on all routes
+  - GET    /api/v1/submissions/my
+  - GET    /api/v1/submissions/:id
+  - POST   /api/v1/submissions
+  - PATCH  /api/v1/submissions/:id
+  - POST   /api/v1/submissions/:id/submit
+
+CLIENT
+------
+
+client/src/api/submissionApi.js
+  - getMySubmissions, getSubmission, createSubmission,
+    saveDraft, submitSubmission
+
+client/src/pages/data-entry/MySubmissionsPage.jsx
+  - Lists own submissions with status/dataset/period filters
+  - Status-coloured SubmissionStatusBadge (exported for reuse)
+  - Action labels: Continue (DRAFT), Correct (RETURNED), View
+  - Link to New Submission
+
+client/src/pages/data-entry/NewSubmissionPage.jsx
+  - Shows only ACTIVE datasets and OPEN periods in dropdowns
+  - Empty-state warnings when no active datasets / open periods
+  - Creates DRAFT and redirects to submission form
+
+client/src/pages/data-entry/SubmissionFormPage.jsx
+  - Loads submission + indicators + stored values via GET
+  - IndicatorField renders all 6 data types with correct input
+    controls (number, textarea, date, yes/no select)
+  - Shows min/max/precision/required hints per indicator
+  - Editable when status=DRAFT|RETURNED AND period=OPEN
+  - Read-only for SUBMITTED, UNDER_REVIEW, APPROVED, CLOSED period
+  - Save Draft (partial values allowed)
+  - Submit (auto-saves then submits; confirm dialog)
+  - Field-level validation errors from server displayed inline
+  - Period-closed and status banners (RETURNED notice ready for
+    Stage 07 return reason display)
+
+test_stage06.ps1
+  - Full PowerShell API test script (29 tests)
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/src/routes/index.js
+  - Registered submissionsRoutes at /submissions
+
+client/src/routes/AppRoutes.jsx
+  - Removed DataEntryPlaceholder route
+  - Added /app/data-entry/submissions        (MySubmissionsPage)
+  - Added /app/data-entry/submissions/new    (NewSubmissionPage)
+  - Added /app/data-entry/submissions/:id    (SubmissionFormPage)
+  - /app/data-entry index redirects to /app/data-entry/submissions
+  - All DATA_ENTRY routes guarded by RequireRole('DATA_ENTRY')
+
+client/src/layouts/AppShell.jsx
+  - DATA_ENTRY NAV_BY_ROLE updated:
+    was: [{ to: '/app/data-entry', label: 'Data Entry' }]
+    now: My Submissions + New Submission links
+
+============================================================
+4. DATABASE CHANGES
+============================================================
+
+No new migrations required.
+
+The Stage 03 schema already contains all required tables:
+
+  submissions         — used as-is
+  data_values         — used as-is
+  submission_history  — used for CREATED / SUBMITTED /
+                        RESUBMITTED events
+  audit_logs          — used for SUBMISSION_CREATED /
+                        SUBMISSION_UPDATED / SUBMISSION_SUBMITTED
+
+The Stage 03 unique constraint on (dataset_id, reporting_period_id)
+in submissions enforces the one-submission-per-combination rule
+at the database level as a final safeguard.
+
+============================================================
+5. API ENDPOINTS
+============================================================
+
+All require authentication (401) and DATA_ENTRY role (403).
+
+GET    /api/v1/submissions/my
+  Returns authenticated user's own submissions.
+  Optional query params: status, dataset_id, reporting_period_id.
+
+GET    /api/v1/submissions/:id
+  Returns one submission (owner-only, 404 for other users).
+  Response: { submission, indicators (ACTIVE only), values map }
+
+POST   /api/v1/submissions
+  Body: { dataset_id, reporting_period_id }
+  Validates: dataset ACTIVE, period OPEN, no duplicate.
+  Returns: created DRAFT submission (201).
+  Duplicate returns 409. Invalid dataset/period returns 422.
+
+PATCH  /api/v1/submissions/:id
+  Body: { values: [{ indicator_id, value }] }
+  Validates: ownership, DRAFT|RETURNED status, period OPEN,
+  type/min/max/precision/percentage per indicator (draft = partial OK).
+  Upserts data_values, touches updated_at.
+  Returns: { submission, indicators, values }
+
+POST   /api/v1/submissions/:id/submit
+  Validates: ownership, DRAFT|RETURNED status, period OPEN,
+  dataset ACTIVE, all required indicators filled, full type
+  and range validation.
+  On success: status -> SUBMITTED, submitted_at set.
+  History: SUBMITTED or RESUBMITTED (from RETURNED).
+  Returns: updated submission.
+
+============================================================
+6. FRONTEND ROUTES
+============================================================
+
+/app/data-entry                     -> redirect to submissions list
+/app/data-entry/submissions         -> MySubmissionsPage
+/app/data-entry/submissions/new     -> NewSubmissionPage
+/app/data-entry/submissions/:id     -> SubmissionFormPage
+
+All protected by RequireAuth + RequireRole('DATA_ENTRY').
+
+============================================================
+7. AUTHORIZATION
+============================================================
+
+- Anonymous -> 401 on all submission endpoints.
+- ADMIN, REPORTING, MANAGER -> 403 on all submission endpoints.
+- DATA_ENTRY can only access own submissions (404 for others).
+- owner_user_id is always taken from req.user (never trusted
+  from request body).
+- Status transitions are enforced server-side.
+
+============================================================
+8. VALIDATION
+============================================================
+
+CREATION
+- dataset_id required, dataset must exist and be ACTIVE -> 422
+- reporting_period_id required, period must exist and be OPEN -> 422
+- Duplicate (dataset_id, reporting_period_id) -> 409
+
+SAVE DRAFT (partial OK)
+- Ownership -> 404 (leaks no info about other users)
+- Status must be DRAFT or RETURNED -> 409
+- Period must be OPEN -> 409
+- Invalid typed values rejected (wrong number format, date, etc.)
+- Required fields NOT enforced (draft may be incomplete)
+
+SUBMIT (full)
+- All of the above
+- Dataset must still be ACTIVE -> 409
+- All required ACTIVE indicators must have a value -> 422
+- Values validated per indicator type and config:
+  - numeric: whole number, min/max
+  - decimal: number, min/max, precision
+  - percentage: 0-100 (or configured range), precision
+  - date: valid date string
+  - yes/no: yes/no/true/false/1/0
+  - text: any non-empty string
+- Field-level errors keyed as indicator_{id} -> 422
+
+============================================================
+9. TRANSACTION SAFETY
+============================================================
+
+createSubmission:
+  BEGIN -> INSERT submission -> INSERT history (CREATED)
+        -> INSERT audit log -> COMMIT
+
+saveDraft:
+  BEGIN -> upsertDataValues (loop) -> UPDATE submission.updated_at
+        -> COMMIT
+
+submitSubmission:
+  BEGIN -> UPDATE submission status/submitted_at
+        -> INSERT history (SUBMITTED|RESUBMITTED)
+        -> INSERT audit log -> COMMIT
+
+All transactions use Knex db.transaction(trx => ...).
+Repository create/update receive the trx and use it for all
+queries including post-operation selects to ensure visibility
+within the transaction.
+
+============================================================
+10. SUBMISSION HISTORY
+============================================================
+
+submission_history rows written for:
+  CREATED     — on new DRAFT creation
+  SUBMITTED   — on first submit (DRAFT -> SUBMITTED)
+  RESUBMITTED — on resubmit (RETURNED -> SUBMITTED)
+
+RETURNED history will be written by Stage 07 (Reporting review).
+
+============================================================
+11. AUDIT LOGGING
+============================================================
+
+audit_logs rows written for:
+  SUBMISSION_CREATED  — new draft
+  SUBMISSION_UPDATED  — save draft
+  SUBMISSION_SUBMITTED — submit
+
+Uses existing auditLogRepository.log() from Stage 04/05.
+
+============================================================
+12. RETURNED SUBMISSION COMPATIBILITY
+============================================================
+
+The frontend SubmissionFormPage fully supports RETURNED status:
+  - Editable when status=RETURNED AND period=OPEN
+  - Shows a "Returned for correction" banner
+  - Save Draft and Submit buttons visible
+  - Resubmit writes RESUBMITTED history event
+
+Stage 07 will create the RETURNED status via the Reporting
+review workflow. Stage 06 does not create RETURNED submissions,
+but fully handles them when they exist.
+
+============================================================
+13. TESTS PERFORMED
+============================================================
+
+API / security tests (PowerShell, test_stage06.ps1):
+
+  PASS  GET /health
+  PASS  Stage 05 datasets accessible
+  PASS  Stage 04 auth /me works
+  PASS  Anonymous -> 401
+  PASS  ADMIN -> 403 on POST /submissions
+  PASS  REPORTING -> 403 on POST /submissions
+  PASS  MANAGER -> 403 on POST /submissions
+  PASS  Create DRAFT submission (active dataset + open period)
+  PASS  Inactive/nonexistent dataset -> 422
+  PASS  Closed period -> 422
+  PASS  Duplicate Dataset+Period -> 409
+  PASS  GET own submission succeeds
+  PASS  Response includes indicators
+  PASS  Response includes values map
+  PASS  My submissions list not empty
+  PASS  Submission in list
+  PASS  Cannot view nonexistent/other submission -> 404
+  PASS  Fresh DRAFT created (new period)
+  PASS  Save draft succeeds
+  PASS  Status stays DRAFT after save
+  PASS  Partial/null save allowed in draft
+  PASS  Submit succeeds (DRAFT -> SUBMITTED)
+  PASS  Status becomes SUBMITTED
+  PASS  Cannot PATCH SUBMITTED submission -> 409
+  PASS  Cannot re-submit SUBMITTED -> 409
+  PASS  /health still works
+  PASS  Stage 05 indicators accessible
+  PASS  Stage 05 periods still accessible
+  PASS  Stage 04 login confirmed
+
+  Total: 29 passed / 0 failed
+
+Client build:
+  npm run build -> 97 modules, 0 errors, 0 warnings — PASS
+
+Server module load:
+  node -e "require('./src/app')" -> OK — PASS
+
+Regression (Stage 03-05):
+  /api/v1/health                      — PASS
+  /api/v1/auth/login (all 4 users)    — PASS
+  /api/v1/auth/me                     — PASS
+  /api/v1/datasets (ADMIN)            — PASS
+  /api/v1/indicators (ADMIN)          — PASS
+  /api/v1/reporting-periods (ADMIN)   — PASS
+
+============================================================
+14. PROBLEMS ENCOUNTERED AND FIXED
+============================================================
+
+PROBLEM 1: submissionRepository.create / update used `db`
+(global connection) instead of `trx` for the post-operation
+SELECT. Inside a transaction, the newly inserted row is not
+yet visible on the global connection, causing the service
+layer to receive `undefined` and throw
+"Cannot read properties of undefined (reading 'id')".
+
+FIX: Both create() and update() now use the same connection
+(`trx || db`) for the post-operation SELECT, ensuring the
+row is always visible within the active transaction.
+
+PROBLEM 2: PowerShell Invoke-RestMethod sends a Content-Type
+and body on GET requests when the helper function always
+set Body. This caused a ProtocolViolationException.
+
+FIX: Separated ApiGet / ApiPost / ApiPatch helper functions
+so GET calls never set a body or ContentType.
+
+PROBLEM 3: PowerShell's Where-Object on a single-item array
+returns a scalar (not an array), so .Count returns 1 on the
+object itself rather than 0/1 as expected from a filter.
+
+FIX: Wrapped Where-Object output in @() to force array
+before calling .Count.
+
+PROBLEM 4: In-memory rate limiter (15 min / 20 req) hit
+during repeated test runs. Sessions for some test users
+came back null, causing cascading test failures.
+
+FIX: Added 500ms delays between logins; Login() function
+made non-throwing on rate-limit errors; 403 checks guard
+against null sessions; rate limiter resets on server restart.
+
+============================================================
+15. REMAINING ISSUES
+============================================================
+
+- No automated test suite (planned Stage 13); all testing
+  was manual API-level.
+- RETURNED submission UI is ready but cannot be fully end-to-end
+  tested until Stage 07 implements the Reporting return action.
+- Return reason is not yet displayed in the form (no reason
+  field in the RETURNED status until Stage 07 populates it).
+- The test script (test_stage06.ps1) creates test periods
+  (Oct 2026 Test, Nov 2026 Test) in the development database
+  on each clean run; these are dev artifacts only.
+- Rate limiter window is 15 minutes (in-memory); the test
+  script must be run on a fresh server instance to avoid
+  hitting the 20-login limit.
+
+============================================================
+16. CONFIRMATION — STAGE 07 NOT IMPLEMENTED
+============================================================
+
+The following Stage 07 functionality was NOT implemented:
+
+- No UNDER_REVIEW status transitions.
+- No start-review endpoint.
+- No return endpoint (UNDER_REVIEW -> RETURNED).
+- No approve endpoint (UNDER_REVIEW -> APPROVED).
+- No Reporting user submission list.
+- No Reporting UI pages.
+- No return reason creation.
+- No manager dashboard or analytics.
+
+The DATA_ENTRY workflow (DRAFT -> SUBMITTED and
+RETURNED -> SUBMITTED) is complete and correct.
+The Reporting side of the workflow (SUBMITTED -> UNDER_REVIEW
+-> RETURNED/APPROVED) is strictly Stage 07 scope.
+
+============================================================
+17. STAGE 06 ACCEPTANCE CRITERIA STATUS
+============================================================
+
+[x] DATA_ENTRY can create a submission.
+[x] Submission starts as DRAFT.
+[x] Only ACTIVE datasets can be selected.
+[x] Only OPEN reporting periods can be selected.
+[x] Dataset + Period duplicate is rejected (409).
+[x] Active indicators load dynamically.
+[x] Indicator types render correctly (all 6 types).
+[x] Values can be saved.
+[x] Drafts may be incomplete (partial save allowed).
+[x] Invalid values are rejected.
+[x] Required values are enforced during submission.
+[x] DRAFT can become SUBMITTED.
+[x] SUBMITTED is read-only.
+[x] DATA_ENTRY can see own submissions.
+[x] DATA_ENTRY cannot access another user's submissions (404).
+[x] DATA_ENTRY cannot approve submissions (no endpoint).
+[x] Closed periods block editing/submission (409).
+[x] RETURNED submissions compatible with Stage 07 (UI ready).
+[x] Submission history recorded (CREATED/SUBMITTED/RESUBMITTED).
+[x] Audit events recorded (SUBMISSION_CREATED/UPDATED/SUBMITTED).
+[x] API authorization enforced (401/403).
+[x] Transactions protect critical operations.
+[x] Stage 04 authentication still works.
+[x] Stage 05 configuration still works.
+[x] Client build succeeds (97 modules, 0 errors).
+[x] No Stage 07+ functionality was implemented.
+
+============================================================
+18. READINESS FOR STAGE 07
+============================================================
+
+Stage 06 is COMPLETE and ready for Stage 07.
+
+Stage 07 can implement the Reporting review workflow without
+modifying any Stage 06 code. The following hooks exist for
+Stage 07 to build on:
+
+- submission_history table ready for REVIEW_STARTED / RETURNED /
+  APPROVED events.
+- submissions.status enum already contains UNDER_REVIEW,
+  RETURNED, APPROVED.
+- submissions.reviewed_at / approved_at / returned_at columns
+  exist in the schema.
+- SubmissionFormPage displays RETURNED status and shows a
+  correction banner — Stage 07 only needs to add the return
+  reason display once Reporting populates it.
+- SubmissionStatusBadge component exported and styled for all
+  five statuses.
+- assertOwnership pattern in submissionService can be reused
+  for Reporting ownership/authorization checks.
+- auditLogRepository and submission_history infrastructure
+  already in use.
+
+============================================================
+END OF STAGE 06 REVIEW
+============================================================
