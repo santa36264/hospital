@@ -1,0 +1,1918 @@
+============================================================
+STAGE 05 — DATASET, INDICATOR & REPORTING PERIOD MANAGEMENT
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+STAGE:
+05 — Dataset, Indicator & Reporting Period Management
+
+============================================================
+1. PURPOSE
+============================================================
+
+Stage 04 implemented authentication, JWT/session handling,
+four-role RBAC, protected React routes, Tailwind CSS, and the
+authenticated application shell.
+
+Stage 05 now implements the configuration layer required before
+hospital health data can be entered.
+
+The three major configuration concepts are:
+
+1. DATASET
+2. INDICATOR
+3. REPORTING PERIOD
+
+The relationship is:
+
+DATASET
+   |
+   +---- INDICATOR
+   |
+   +---- INDICATOR
+   |
+   +---- INDICATOR
+
+REPORTING PERIOD
+   |
+   +---- January 2026
+   +---- February 2026
+   +---- March 2026
+   +---- ...
+
+Later stages will use these configurations for:
+
+Dataset
+    +
+Indicators
+    +
+Reporting Period
+    ↓
+Data Entry
+    ↓
+Submission
+    ↓
+Review
+    ↓
+Approval
+    ↓
+Reports
+    ↓
+Analysis
+
+Stage 05 MUST implement the actual configuration functionality.
+
+Stage 05 MUST NOT implement the data-entry/submission workflow.
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+Frontend:
+
+React
+Vite
+Tailwind CSS
+
+Backend:
+
+Node.js
+Express.js
+
+Database:
+
+MySQL / MariaDB-compatible MySQL
+
+Database access:
+
+Knex.js
+mysql2
+
+API:
+
+REST
+
+API base:
+
+/api/v1
+
+Authentication:
+
+JWT/session architecture implemented in Stage 04.
+
+============================================================
+3. EXISTING PROJECT
+============================================================
+
+DO NOT rebuild the project.
+
+Stage 03 already created:
+
+client/
+server/
+
+and the database:
+
+hospital_health_data
+
+Stage 03 already created these relevant tables:
+
+datasets
+indicators
+reporting_periods
+
+Stage 04 implemented:
+
+authentication
+users
+roles
+RBAC
+
+Inspect the existing implementation before making changes.
+
+Do NOT delete or recreate the existing tables.
+
+Do NOT break Stage 04 authentication.
+
+Do NOT replace the existing architecture.
+
+============================================================
+4. STAGE 05 SCOPE
+============================================================
+
+Stage 05 implements:
+
+DATASETS
+
+- Dataset listing
+- Dataset creation
+- Dataset viewing
+- Dataset editing
+- Dataset activation
+- Dataset deactivation
+- Dataset validation
+- Dataset → Indicator relationship
+
+INDICATORS
+
+- Indicator listing
+- Indicator creation
+- Indicator viewing
+- Indicator editing
+- Indicator activation
+- Indicator deactivation
+- Indicator validation
+- Indicator data types
+- Required/optional configuration
+- Minimum value
+- Maximum value
+- Decimal precision
+- Percentage validation
+- Dataset relationship
+
+REPORTING PERIODS
+
+- Period listing
+- Period creation
+- Period viewing
+- Period editing where permitted
+- Open period
+- Close period
+- Period validation
+- Period type
+- Period start date
+- Period end date
+- Period status
+
+ADMIN UI
+
+- Dataset management
+- Indicator management
+- Reporting-period management
+
+The configuration must be usable by later Data Entry stages.
+
+============================================================
+5. ROLE ACCESS
+============================================================
+
+Only ADMIN users can create, edit, activate, deactivate, open,
+and close configuration records.
+
+ADMIN:
+
+Dataset management       YES
+Indicator management     YES
+Period management        YES
+
+DATA_ENTRY:
+
+Dataset management       NO
+Indicator management     NO
+Period management        NO
+
+REPORTING:
+
+Dataset management       NO
+Indicator management     NO
+Period management        NO
+
+MANAGER:
+
+Dataset management       NO
+Indicator management     NO
+Period management        NO
+
+Backend authorization MUST enforce these permissions.
+
+Frontend hiding the pages is NOT sufficient.
+
+A non-admin user manually calling an Admin configuration API must
+receive:
+
+403 Forbidden
+
+============================================================
+6. DATASET
+============================================================
+
+A Dataset represents a logical group of health indicators that
+are collected/reported together.
+
+Examples may include categories such as:
+
+- Monthly Common Dataset
+- Maternal/Child Health
+- Nutrition
+- HIV
+- TB
+- EPI
+
+These are examples for development/configuration only.
+
+Do NOT claim that these are confirmed datasets of the hospital.
+
+The Admin must be able to create the hospital's actual datasets.
+
+============================================================
+7. DATASET ATTRIBUTES
+============================================================
+
+A dataset should support at minimum:
+
+id
+code
+name
+description
+status
+created_at
+updated_at
+
+Status:
+
+ACTIVE
+INACTIVE
+
+Dataset code must be unique.
+
+Dataset name is required.
+
+Dataset code is required.
+
+Description may be optional.
+
+============================================================
+8. DATASET CODE
+============================================================
+
+Dataset code:
+
+- required
+- unique
+- stable
+- suitable for API/database references
+- should not contain unnecessary whitespace
+- should be normalized consistently
+
+Example:
+
+MONTHLY_COMMON
+
+MATERNAL_HEALTH
+
+NUTRITION
+
+The exact codes are configurable by Admin.
+
+Do not hardcode hospital-specific dataset codes into application
+logic.
+
+============================================================
+9. DATASET STATUS
+============================================================
+
+ACTIVE:
+
+The dataset is available for future data-entry operations.
+
+INACTIVE:
+
+The dataset is no longer available for new data-entry operations.
+
+Important:
+
+Deactivation does NOT delete historical data.
+
+Historical submissions and reports must remain preserved.
+
+============================================================
+10. DATASET DEACTIVATION RULE
+============================================================
+
+When a dataset becomes INACTIVE:
+
+- Existing historical data remains.
+- Existing approved submissions remain.
+- Existing reports remain possible.
+- The dataset must not be available for new data entry.
+- The dataset must not be available for new submissions.
+
+Stage 05 must enforce the configuration status.
+
+The actual submission/data-entry enforcement will also be enforced
+again in later stages.
+
+============================================================
+11. DATASET REACTIVATION
+============================================================
+
+An Admin may reactivate an inactive dataset.
+
+ACTIVE
+  ↓
+INACTIVE
+  ↓
+ACTIVE
+
+Reactivation does not modify historical data.
+
+============================================================
+12. INDICATORS
+============================================================
+
+An Indicator represents a specific measurable health-data value
+collected within a Dataset.
+
+Example:
+
+Dataset:
+Monthly Common Dataset
+
+Indicators might conceptually include:
+
+- Total outpatient visits
+- Total admissions
+- Total discharges
+
+These are examples only.
+
+Do not present example indicators as confirmed hospital requirements.
+
+The Admin must configure the actual indicators.
+
+============================================================
+13. INDICATOR ATTRIBUTES
+============================================================
+
+An indicator should support at minimum:
+
+id
+dataset_id
+code
+name
+description
+data_type
+is_required
+status
+min_value
+max_value
+decimal_precision
+created_at
+updated_at
+
+Where applicable.
+
+The exact database representation must respect the existing
+Stage 03 schema.
+
+Do not unnecessarily redesign the database.
+
+============================================================
+14. INDICATOR → DATASET RELATIONSHIP
+============================================================
+
+Every indicator belongs to exactly one dataset.
+
+Relationship:
+
+Dataset 1
+   |
+   +---- Indicator A
+   +---- Indicator B
+   +---- Indicator C
+
+An indicator cannot exist without its dataset.
+
+When an Admin creates an indicator, a valid dataset must be selected.
+
+The backend must verify that the dataset exists.
+
+============================================================
+15. INDICATOR CODE
+============================================================
+
+Indicator code must:
+
+- be required
+- be unique within its dataset
+- be normalized consistently
+- not contain unnecessary whitespace
+
+The existing Stage 03 database has a uniqueness requirement for:
+
+(dataset_id, code)
+
+Preserve this rule.
+
+Two different datasets may have the same indicator code if the
+existing schema allows it.
+
+Within the same dataset, duplicate indicator codes are forbidden.
+
+============================================================
+16. INDICATOR NAME
+============================================================
+
+Indicator name:
+
+- required
+- human-readable
+- must not be empty
+- should be trimmed
+
+The name is displayed during future data entry and reporting.
+
+============================================================
+17. INDICATOR DESCRIPTION
+============================================================
+
+Description is optional.
+
+It should explain the meaning of the indicator when necessary.
+
+Example:
+
+"Total number of outpatient visits recorded during the reporting
+period."
+
+Do not force descriptions for indicators where they are unnecessary.
+
+============================================================
+18. INDICATOR DATA TYPES
+============================================================
+
+The system must support the indicator data types defined by the
+Stage 01 requirements and existing schema.
+
+At minimum support:
+
+INTEGER / NUMERIC
+DECIMAL
+TEXT
+DATE
+BOOLEAN
+PERCENTAGE
+
+Use the exact existing database enum/type representation where
+already defined.
+
+Do not create inconsistent duplicate data-type names.
+
+The backend must validate indicator configuration according to
+the selected type.
+
+============================================================
+19. INTEGER / NUMERIC INDICATORS
+============================================================
+
+Numeric indicators may have:
+
+minimum value
+maximum value
+decimal precision
+
+Examples:
+
+minimum:
+0
+
+maximum:
+100000
+
+decimal precision:
+0
+
+The exact limits are configurable per indicator.
+
+Do not hardcode universal health-indicator limits unless required
+by the indicator configuration.
+
+============================================================
+20. DECIMAL INDICATORS
+============================================================
+
+Decimal indicators may support:
+
+minimum value
+maximum value
+decimal precision
+
+Example:
+
+decimal precision = 2
+
+The backend must reject values that violate configured
+constraints when the indicator is later used for data entry.
+
+Stage 05 primarily stores/configures these rules.
+
+============================================================
+21. PERCENTAGE INDICATORS
+============================================================
+
+Percentage indicators default to:
+
+0 through 100
+
+unless the indicator configuration explicitly requires another
+validated range where supported.
+
+Percentage configuration must be validated.
+
+The Admin UI should make percentage configuration understandable.
+
+Do not allow nonsensical minimum/maximum combinations.
+
+For example:
+
+minimum > maximum
+
+must be rejected.
+
+============================================================
+22. TEXT INDICATORS
+============================================================
+
+Text indicators store textual information.
+
+They should not use numeric min/max validation as if they were
+numeric indicators.
+
+The configuration UI should only display relevant validation
+fields for the selected data type.
+
+============================================================
+23. DATE INDICATORS
+============================================================
+
+Date indicators represent a date value.
+
+Numeric minimum/maximum controls should not be presented as if
+they were numeric validation fields.
+
+Use appropriate date configuration only if supported by the
+existing requirements/schema.
+
+Do not invent complex date-range requirements.
+
+============================================================
+24. BOOLEAN INDICATORS
+============================================================
+
+Boolean indicators represent:
+
+TRUE / FALSE
+
+or an equivalent controlled boolean representation.
+
+Do not treat BOOLEAN as arbitrary text.
+
+============================================================
+25. REQUIRED INDICATORS
+============================================================
+
+Each indicator must support:
+
+required
+or
+optional
+
+Configuration:
+
+is_required = true/false
+
+Required indicators will later be mandatory during data entry.
+
+Stage 05 configures the rule.
+
+Stage 06 will enforce it during actual data entry.
+
+============================================================
+26. INDICATOR STATUS
+============================================================
+
+Indicators have:
+
+ACTIVE
+INACTIVE
+
+ACTIVE:
+
+Available for future data-entry forms.
+
+INACTIVE:
+
+Not available for new data-entry operations.
+
+Historical values using the indicator must remain preserved.
+
+============================================================
+27. INDICATOR DEACTIVATION
+============================================================
+
+When an indicator becomes inactive:
+
+- Historical data remains.
+- Existing approved submissions remain.
+- Historical reports remain possible.
+- The indicator must not be available for new data entry.
+
+Do NOT delete the indicator.
+
+Do NOT cascade-delete historical data.
+
+============================================================
+28. INDICATOR REACTIVATION
+============================================================
+
+An Admin may reactivate an inactive indicator.
+
+ACTIVE
+  ↓
+INACTIVE
+  ↓
+ACTIVE
+
+Historical values remain unchanged.
+
+============================================================
+29. REPORTING PERIOD
+============================================================
+
+A Reporting Period defines the time period for which health data
+is collected.
+
+The initial implementation primarily supports monthly reporting.
+
+The database/model should remain capable of supporting other period
+types in the future.
+
+============================================================
+30. REPORTING PERIOD ATTRIBUTES
+============================================================
+
+A reporting period should support:
+
+id
+name/label
+period_type
+start_date
+end_date
+status
+created_at
+updated_at
+
+Use the existing Stage 03 schema where possible.
+
+Do not duplicate columns unnecessarily.
+
+============================================================
+31. REPORTING PERIOD TYPES
+============================================================
+
+The initial primary period type is:
+
+MONTHLY
+
+The model may support future types such as:
+
+QUARTERLY
+YEARLY
+CUSTOM
+
+However:
+
+Stage 05 must primarily implement MONTHLY.
+
+Do not build unnecessary complex period-generation features.
+
+============================================================
+32. MONTHLY PERIOD
+============================================================
+
+A monthly period represents one calendar month.
+
+Examples:
+
+January 2026
+February 2026
+March 2026
+
+The system must store an unambiguous start and end date.
+
+Example:
+
+January 2026:
+
+start_date:
+2026-01-01
+
+end_date:
+2026-01-31
+
+The implementation must correctly handle:
+
+28-day February
+29-day leap-year February
+30-day months
+31-day months
+
+Do not calculate period dates incorrectly.
+
+============================================================
+33. PERIOD STATUS
+============================================================
+
+Only:
+
+OPEN
+CLOSED
+
+are required.
+
+OPEN:
+
+The reporting period is available for ordinary future data entry.
+
+CLOSED:
+
+The period is locked for ordinary new data entry/submission.
+
+============================================================
+34. OPEN PERIOD
+============================================================
+
+Admin may open a reporting period.
+
+A period must be valid before it can be opened.
+
+Opening a period does not create submissions automatically.
+
+It simply makes the period available to later data-entry workflows.
+
+============================================================
+35. CLOSE PERIOD
+============================================================
+
+Admin may close a reporting period.
+
+Once CLOSED:
+
+- New ordinary data entry must not be accepted.
+- New ordinary submissions must not be accepted.
+- Existing historical data remains.
+- Approved data remains.
+- Reports can still use approved data.
+
+The exact amendment/correction process for approved data belongs
+to a later stage.
+
+============================================================
+36. CLOSED PERIOD DRAFT RULE
+============================================================
+
+Stage 01 finalized this rule:
+
+If a reporting period is closed while a DRAFT exists:
+
+The draft becomes READ-ONLY.
+
+It cannot be submitted.
+
+Do not delete the draft.
+
+Do not silently modify its values.
+
+Preserve it for historical/accountability purposes.
+
+The detailed data-entry implementation belongs to Stage 06.
+
+Stage 05 must ensure its configuration/API behavior does not
+contradict this requirement.
+
+============================================================
+37. REOPENING CLOSED PERIODS
+============================================================
+
+The Stage 01 project decision is that a closed period remains closed
+under ordinary operation.
+
+Reopening is exceptional and must be auditable.
+
+Stage 05 does NOT need to build a general reopen workflow.
+
+If the existing requirements/schema provide a mechanism for
+reopening, it must be restricted appropriately and documented.
+
+Do not invent an unrestricted reopen button.
+
+============================================================
+38. DATASET / INDICATOR / PERIOD VALIDATION
+============================================================
+
+Backend validation is authoritative.
+
+Frontend validation is for usability.
+
+The backend must reject invalid configuration requests.
+
+Examples:
+
+Dataset without name
+→ reject
+
+Dataset without code
+→ reject
+
+Duplicate dataset code
+→ reject
+
+Indicator without dataset
+→ reject
+
+Indicator without code
+→ reject
+
+Duplicate indicator code within dataset
+→ reject
+
+Invalid data type
+→ reject
+
+Invalid minimum/maximum configuration
+→ reject
+
+Invalid decimal precision
+→ reject
+
+Period without valid dates
+→ reject
+
+End date before start date
+→ reject
+
+Invalid period type
+→ reject
+
+Invalid status transition
+→ reject
+
+============================================================
+39. STATUS TRANSITIONS
+============================================================
+
+Dataset:
+
+ACTIVE ↔ INACTIVE
+
+Indicator:
+
+ACTIVE ↔ INACTIVE
+
+Reporting period:
+
+OPEN → CLOSED
+
+Closed periods should not be reopened through ordinary operation.
+
+Any exceptional reopening capability must be explicitly controlled
+and audited.
+
+============================================================
+40. ADMIN API — DATASETS
+============================================================
+
+Implement protected Admin-only endpoints.
+
+Suggested REST structure:
+
+GET
+/api/v1/datasets
+
+POST
+/api/v1/datasets
+
+GET
+/api/v1/datasets/:id
+
+PUT/PATCH
+/api/v1/datasets/:id
+
+PATCH
+/api/v1/datasets/:id/status
+
+The exact method choice must remain consistent with the Stage 02
+API architecture.
+
+Requirements:
+
+GET list
+→ Admin may view configuration.
+
+POST
+→ Admin creates dataset.
+
+GET by ID
+→ Admin views dataset.
+
+PUT/PATCH
+→ Admin updates dataset.
+
+Status endpoint
+→ Admin activates/deactivates dataset.
+
+Non-admin users:
+
+403
+
+============================================================
+41. ADMIN API — INDICATORS
+============================================================
+
+Implement protected Admin-only endpoints.
+
+Suggested:
+
+GET
+/api/v1/indicators
+
+POST
+/api/v1/indicators
+
+GET
+/api/v1/indicators/:id
+
+PUT/PATCH
+/api/v1/indicators/:id
+
+PATCH
+/api/v1/indicators/:id/status
+
+Filtering by dataset should be supported.
+
+For example:
+
+GET /api/v1/indicators?dataset_id=...
+
+The backend must validate dataset ownership/existence.
+
+============================================================
+42. ADMIN API — REPORTING PERIODS
+============================================================
+
+Implement protected Admin-only endpoints.
+
+Suggested:
+
+GET
+/api/v1/reporting-periods
+
+POST
+/api/v1/reporting-periods
+
+GET
+/api/v1/reporting-periods/:id
+
+PUT/PATCH
+/api/v1/reporting-periods/:id
+
+PATCH
+/api/v1/reporting-periods/:id/status
+
+The API must enforce:
+
+Admin-only configuration access.
+
+============================================================
+43. LIST API FEATURES
+============================================================
+
+List endpoints should support appropriate basic functionality:
+
+- pagination where the existing architecture supports it
+- filtering
+- search where useful
+- sorting where useful
+
+Do not over-engineer.
+
+At minimum:
+
+Datasets:
+- search by name/code
+- filter by status
+
+Indicators:
+- filter by dataset
+- search by name/code
+- filter by status
+
+Reporting periods:
+- filter by status
+- filter by period type
+- search by period label/name where appropriate
+
+============================================================
+44. API RESPONSE FORMAT
+============================================================
+
+Continue the existing standard.
+
+Success:
+
+{
+    "success": true,
+    "message": "...",
+    "data": {}
+}
+
+Error:
+
+{
+    "success": false,
+    "message": "...",
+    "errors": {}
+}
+
+Do not expose stack traces.
+
+Do not expose database implementation details.
+
+============================================================
+45. BACKEND ARCHITECTURE
+============================================================
+
+Preserve:
+
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+Knex
+  ↓
+MySQL
+
+Do not put all logic inside route files.
+
+Dataset business logic belongs in the Dataset service.
+
+Indicator business logic belongs in the Indicator service.
+
+Reporting-period business logic belongs in the Reporting Period
+service.
+
+Repository code handles database access.
+
+Controllers handle HTTP concerns.
+
+============================================================
+46. TRANSACTION REQUIREMENTS
+============================================================
+
+Use database transactions where a configuration operation modifies
+multiple related records and atomicity is required.
+
+Do not introduce unnecessary transactions for simple reads.
+
+If dataset deletion is considered:
+
+DO NOT hard-delete datasets.
+
+Use activation/deactivation instead.
+
+Historical data must be protected.
+
+============================================================
+47. DATASET DELETE POLICY
+============================================================
+
+There is NO ordinary hard-delete operation for datasets.
+
+Datasets contain indicators and will eventually contain historical
+health data.
+
+Therefore:
+
+DELETE dataset
+→ not allowed as an ordinary operation
+
+Use:
+
+ACTIVE
+INACTIVE
+
+instead.
+
+The UI should not display a normal destructive "Delete Dataset"
+action.
+
+============================================================
+48. INDICATOR DELETE POLICY
+============================================================
+
+There is NO ordinary hard-delete operation for indicators.
+
+Use:
+
+ACTIVE
+INACTIVE
+
+instead.
+
+Historical indicator values must remain preserved.
+
+============================================================
+49. REPORTING PERIOD DELETE POLICY
+============================================================
+
+Do not hard-delete reporting periods that may have associated
+submissions or historical records.
+
+The implementation should prevent destructive deletion.
+
+If a newly created unused period requires correction, use controlled
+editing according to the implemented validation rules rather than
+blind deletion.
+
+============================================================
+50. ADMIN DATASET UI
+============================================================
+
+Create a Tailwind CSS Admin configuration area.
+
+Suggested route:
+
+/app/admin/datasets
+
+UI should include:
+
+- Page title
+- Dataset list
+- Search
+- Status filter
+- Create Dataset button
+- Edit action
+- Activate/deactivate action
+- Dataset status badge
+- Empty state
+- Loading state
+- Error state
+
+Dataset form:
+
+- Code
+- Name
+- Description
+- Status where appropriate
+
+Use reusable React components.
+
+============================================================
+51. ADMIN INDICATOR UI
+============================================================
+
+Suggested route:
+
+/app/admin/indicators
+
+UI should include:
+
+- Indicator list
+- Dataset filter
+- Search
+- Status filter
+- Create Indicator
+- Edit
+- Activate/deactivate
+- Indicator status
+- Data type
+- Required/optional
+
+Indicator form:
+
+- Dataset
+- Code
+- Name
+- Description
+- Data type
+- Required
+- Minimum
+- Maximum
+- Decimal precision
+
+Only show relevant validation fields based on data type.
+
+Example:
+
+INTEGER:
+min/max/precision
+
+DECIMAL:
+min/max/precision
+
+PERCENTAGE:
+min/max/precision with 0–100 default
+
+TEXT:
+no numeric min/max controls
+
+BOOLEAN:
+no numeric min/max controls
+
+DATE:
+appropriate date configuration only where supported
+
+============================================================
+52. ADMIN REPORTING PERIOD UI
+============================================================
+
+Suggested route:
+
+/app/admin/reporting-periods
+
+UI should include:
+
+- Period list
+- Period type filter
+- Status filter
+- Search
+- Create period
+- Edit where allowed
+- Open/close action
+- Status badge
+- Period start
+- Period end
+
+Monthly period creation should be simple and clear.
+
+Example:
+
+Period:
+January 2026
+
+Type:
+MONTHLY
+
+Start:
+2026-01-01
+
+End:
+2026-01-31
+
+Status:
+OPEN
+
+============================================================
+53. TAILWIND CSS
+============================================================
+
+All Stage 05 UI must use Tailwind CSS.
+
+Do NOT introduce:
+
+Bootstrap
+Material UI
+Chakra
+Bulma
+another CSS framework
+
+Use the existing Tailwind setup from Stage 04.
+
+Maintain consistent visual language with the authenticated shell.
+
+Use:
+
+- cards
+- tables
+- badges
+- forms
+- buttons
+- dialogs/modals where appropriate
+- responsive layouts
+- loading states
+- empty states
+- error states
+
+Do not make the interface unnecessarily complicated.
+
+============================================================
+54. FORM VALIDATION
+============================================================
+
+Frontend:
+
+Provide immediate user-friendly validation.
+
+Backend:
+
+Perform authoritative validation.
+
+Never rely only on React validation.
+
+Examples:
+
+Required field missing
+→ validation message
+
+Duplicate code
+→ backend error displayed to user
+
+Invalid min/max
+→ validation error
+
+End date before start date
+→ validation error
+
+Unauthorized user
+→ 403
+
+============================================================
+55. ERROR HANDLING
+============================================================
+
+Handle:
+
+400
+Bad request
+
+401
+Unauthenticated
+
+403
+Unauthorized
+
+404
+Not found
+
+409
+Conflict/duplicate configuration
+
+422
+Validation error where appropriate
+
+500
+Unexpected server error
+
+Display safe human-readable messages.
+
+Do not display raw SQL errors.
+
+============================================================
+56. AUDIT REQUIREMENTS
+============================================================
+
+Configuration changes are important administrative actions.
+
+Use the existing audit architecture.
+
+Where appropriate, record:
+
+Dataset created
+Dataset updated
+Dataset activated
+Dataset deactivated
+
+Indicator created
+Indicator updated
+Indicator activated
+Indicator deactivated
+
+Reporting period created
+Reporting period updated
+Reporting period opened
+Reporting period closed
+
+Audit information should identify:
+
+who
+what
+when
+resource
+resource ID
+relevant action
+
+Do not implement the full Audit Log UI in Stage 05.
+
+That belongs to Stage 11.
+
+============================================================
+57. NOTIFICATIONS
+============================================================
+
+Do NOT implement the notification UI in Stage 05.
+
+Notification functionality belongs to a later stage.
+
+Do not invent notification behavior here.
+
+============================================================
+58. DATA ACCESS BOUNDARIES
+============================================================
+
+Admin:
+
+May manage configuration.
+
+Data Entry:
+
+Must not modify configuration.
+
+Reporting:
+
+Must not modify configuration.
+
+Manager:
+
+Must not modify configuration.
+
+All enforcement must happen in backend authorization.
+
+============================================================
+59. FUTURE DATA-ENTRY COMPATIBILITY
+============================================================
+
+The Stage 05 implementation must prepare the system for Stage 06.
+
+Stage 06 will need to:
+
+1. Select an active dataset.
+2. Select an OPEN reporting period.
+3. Retrieve active indicators belonging to the dataset.
+4. Display the correct data-entry fields based on indicator type.
+5. Apply required/min/max/precision validation.
+6. Create a draft submission.
+
+Therefore the APIs and data model must expose enough information
+for this future workflow.
+
+Do NOT implement the data-entry workflow now.
+
+============================================================
+60. IMPORTANT DATA-INTEGRITY RULES
+============================================================
+
+Never:
+
+- delete historical datasets
+- delete historical indicators
+- delete historical periods
+- silently change indicator meaning
+- silently change dataset identity
+- bypass backend validation
+- bypass role authorization
+
+Configuration changes must preserve historical records.
+
+============================================================
+61. API TESTING
+============================================================
+
+Test:
+
+DATASETS
+
+1. Admin can list datasets.
+2. Admin can create dataset.
+3. Admin can view dataset.
+4. Admin can update dataset.
+5. Admin can deactivate dataset.
+6. Admin can reactivate dataset.
+7. Duplicate dataset code rejected.
+8. Missing required dataset fields rejected.
+9. Non-admin cannot create dataset.
+10. Non-admin cannot update dataset.
+
+INDICATORS
+
+11. Admin can list indicators.
+12. Admin can filter indicators by dataset.
+13. Admin can create indicator.
+14. Admin can view indicator.
+15. Admin can update indicator.
+16. Admin can deactivate indicator.
+17. Admin can reactivate indicator.
+18. Duplicate indicator code within dataset rejected.
+19. Invalid data type rejected.
+20. Invalid validation configuration rejected.
+21. Non-admin cannot modify indicators.
+
+REPORTING PERIODS
+
+22. Admin can list periods.
+23. Admin can create monthly period.
+24. Admin can view period.
+25. Admin can update permitted period fields.
+26. Admin can open period.
+27. Admin can close period.
+28. Invalid date range rejected.
+29. Invalid period type rejected.
+30. Non-admin cannot modify periods.
+31. Closed-period restrictions are enforced at configuration level.
+
+SECURITY
+
+32. Unauthenticated configuration request → 401.
+33. Authenticated non-admin request → 403.
+34. Admin request → allowed.
+35. Existing /api/v1/health remains working.
+36. Stage 04 authentication remains working.
+
+============================================================
+62. FRONTEND TESTING
+============================================================
+
+Verify:
+
+1. Admin can open Dataset Management.
+2. Admin can create a dataset.
+3. Admin can edit a dataset.
+4. Admin can activate/deactivate a dataset.
+5. Admin can open Indicator Management.
+6. Admin can create an indicator.
+7. Indicator form changes according to data type.
+8. Admin can edit an indicator.
+9. Admin can activate/deactivate an indicator.
+10. Admin can open Reporting Period Management.
+11. Admin can create a monthly period.
+12. Admin can open/close a period.
+13. Validation errors display correctly.
+14. API errors display correctly.
+15. Loading states work.
+16. Empty states work.
+17. Tailwind UI is responsive.
+18. Data Entry cannot access Admin configuration pages.
+19. Reporting cannot access Admin configuration pages.
+20. Manager cannot access Admin configuration pages.
+
+============================================================
+63. STAGE 05 OUT OF SCOPE
+============================================================
+
+DO NOT IMPLEMENT:
+
+- Data Entry forms
+- Draft submission creation
+- Submission editing
+- Submission submission
+- Submission review
+- Submission approval
+- Submission return
+- Resubmission
+- Amendment workflow
+- Dataset reports
+- Custom reports
+- Dashboard
+- Data analysis
+- Notification UI
+- Full audit-log UI
+- Production deployment
+
+These belong to later stages.
+
+============================================================
+64. IMPLEMENTATION ORDER
+============================================================
+
+Follow this order:
+
+1. Read all Stage 01–05 documentation.
+
+2. Inspect the existing Stage 03 database.
+
+3. Inspect the Stage 04 authentication/RBAC implementation.
+
+4. Inspect existing datasets, indicators, and reporting_periods
+   schema.
+
+5. Identify whether migration changes are actually required.
+
+6. Create only necessary migration(s).
+
+7. Implement Dataset repository.
+
+8. Implement Dataset service.
+
+9. Implement Dataset controller.
+
+10. Implement Dataset routes.
+
+11. Apply Admin authorization.
+
+12. Implement Indicator repository.
+
+13. Implement Indicator service.
+
+14. Implement Indicator controller.
+
+15. Implement Indicator routes.
+
+16. Apply Admin authorization.
+
+17. Implement Reporting Period repository.
+
+18. Implement Reporting Period service.
+
+19. Implement Reporting Period controller.
+
+20. Implement Reporting Period routes.
+
+21. Apply Admin authorization.
+
+22. Implement backend validation.
+
+23. Implement audit events.
+
+24. Implement Dataset React API/service.
+
+25. Implement Dataset Management UI.
+
+26. Implement Indicator React API/service.
+
+27. Implement Indicator Management UI.
+
+28. Implement Reporting Period React API/service.
+
+29. Implement Reporting Period Management UI.
+
+30. Connect all forms to the backend.
+
+31. Test Admin functionality.
+
+32. Test non-admin restrictions.
+
+33. Test validation.
+
+34. Test status transitions.
+
+35. Test historical-data protection.
+
+36. Run client build.
+
+37. Run backend.
+
+38. Verify API health.
+
+39. Verify Stage 04 login/authentication.
+
+40. Create docs/stage 05 review.txt.
+
+41. Confirm Stage 06 was NOT started.
+
+============================================================
+65. STAGE 05 ACCEPTANCE CRITERIA
+============================================================
+
+Stage 05 is complete only when:
+
+[ ] Dataset management is implemented.
+
+[ ] Dataset CRUD/configuration works.
+
+[ ] Dataset codes are unique.
+
+[ ] Dataset status works.
+
+[ ] Dataset deactivation works.
+
+[ ] Dataset reactivation works.
+
+[ ] Historical dataset records are preserved.
+
+[ ] Indicator management is implemented.
+
+[ ] Indicator belongs to a dataset.
+
+[ ] Indicator codes are unique within dataset.
+
+[ ] Indicator data types are configurable.
+
+[ ] Required/optional configuration works.
+
+[ ] Numeric validation configuration works.
+
+[ ] Percentage validation defaults to 0–100.
+
+[ ] Decimal precision configuration works.
+
+[ ] Indicator activation/deactivation works.
+
+[ ] Historical indicators are preserved.
+
+[ ] Reporting-period management is implemented.
+
+[ ] Monthly reporting periods work.
+
+[ ] Period start/end dates are validated.
+
+[ ] OPEN/CLOSED status works.
+
+[ ] Closing a period is protected.
+
+[ ] Admin-only backend authorization works.
+
+[ ] Data Entry cannot modify configuration.
+
+[ ] Reporting cannot modify configuration.
+
+[ ] Manager cannot modify configuration.
+
+[ ] Frontend Admin pages use Tailwind CSS.
+
+[ ] Dataset UI works.
+
+[ ] Indicator UI works.
+
+[ ] Reporting Period UI works.
+
+[ ] Loading states exist.
+
+[ ] Empty states exist.
+
+[ ] Error states exist.
+
+[ ] Backend validation is authoritative.
+
+[ ] Duplicate configuration is rejected.
+
+[ ] Audit events are generated where appropriate.
+
+[ ] Stage 04 authentication still works.
+
+[ ] Existing health endpoint still works.
+
+[ ] Client build succeeds.
+
+[ ] No Stage 06 functionality was implemented.
+
+============================================================
+66. STAGE 05 REVIEW DOCUMENT
+============================================================
+
+After implementation create:
+
+docs/stage 05 review.txt
+
+The review must contain:
+
+1. What was implemented.
+2. Dataset implementation.
+3. Indicator implementation.
+4. Reporting-period implementation.
+5. Database changes.
+6. API endpoints.
+7. Authorization.
+8. Validation.
+9. Status transitions.
+10. Audit events.
+11. React components/pages.
+12. Tailwind UI.
+13. Tests performed.
+14. Problems encountered.
+15. Problems fixed.
+16. Remaining issues.
+17. Confirmation Stage 06 was NOT started.
+18. Final Stage 05 readiness assessment.
+
+Do not claim functionality was implemented unless it was actually
+implemented and verified.
+
+============================================================
+67. FINAL ARCHITECTURE
+============================================================
+
+Backend:
+
+Route
+  ↓
+Authentication Middleware
+  ↓
+Role Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+Knex
+  ↓
+MySQL
+
+Frontend:
+
+React
+  ↓
+Protected Admin Route
+  ↓
+Dataset/Indicator/Period Page
+  ↓
+API Service
+  ↓
+Axios
+  ↓
+Express REST API
+
+Database concept:
+
+DATASET
+   |
+   +---- INDICATORS
+
+REPORTING_PERIOD
+
+Later:
+
+DATASET
+   +
+REPORTING_PERIOD
+   +
+INDICATORS
+   ↓
+SUBMISSION
+   ↓
+DATA_VALUES
+
+============================================================
+68. FINAL STAGE 05 GOAL
+============================================================
+
+At the end of Stage 05, an Admin must be able to configure the
+health-data collection structure before any health data is entered.
+
+The complete configuration flow should be:
+
+ADMIN LOGIN
+    ↓
+ADMIN DASHBOARD/SHELL
+    ↓
+DATASETS
+    ↓
+Create Dataset
+    ↓
+Create Indicators
+    ↓
+Configure indicator types/validation
+    ↓
+REPORTING PERIODS
+    ↓
+Create Monthly Period
+    ↓
+Open Period
+    ↓
+READY FOR DATA ENTRY
+
+The Data Entry user will use these configurations in Stage 06.
+
+Do NOT implement Stage 06 during this stage.
+
+============================================================
+END OF STAGE 05
+============================================================

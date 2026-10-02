@@ -2,7 +2,12 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_BY_ROLE = {
-  ADMIN: [{ to: '/app/admin', label: 'Admin' }],
+  ADMIN: [
+    { to: '/app/admin', label: 'Admin Home' },
+    { to: '/app/admin/datasets', label: 'Datasets' },
+    { to: '/app/admin/indicators', label: 'Indicators' },
+    { to: '/app/admin/reporting-periods', label: 'Reporting Periods' },
+  ],
   DATA_ENTRY: [{ to: '/app/data-entry', label: 'Data Entry' }],
   REPORTING: [{ to: '/app/reporting', label: 'Reporting' }],
   MANAGER: [{ to: '/app/manager', label: 'Manager' }],

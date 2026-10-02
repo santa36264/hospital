@@ -1,0 +1,260 @@
+============================================================
+STAGE 05 — DATASET, INDICATOR & REPORTING PERIOD MANAGEMENT REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 05 implementation review (no Stage 06 features)
+
+============================================================
+1. WHAT WAS IMPLEMENTED
+============================================================
+
+- Admin Dataset management (list/view/create/update/activate/
+  deactivate) via API + Tailwind UI at /app/admin/datasets.
+- Admin Indicator management (list/filter/search/create/update/
+  activate/deactivate) via API + Tailwind UI at
+  /app/admin/indicators.
+- Admin Reporting Period management (list/filter/search/create/
+  update/open/close) via API + Tailwind UI at
+  /app/admin/reporting-periods.
+- Backend validation, duplicate protection, OPEN/CLOSED and
+  ACTIVE/INACTIVE status rules, admin-only authorization on all
+  configuration endpoints.
+- Audit events for all configuration actions (into existing
+  audit_logs).
+
+============================================================
+2. DATASET IMPLEMENTATION
+============================================================
+
+Repository: server/src/repositories/datasetRepository.js
+Service: server/src/services/datasetService.js
+Controller: server/src/controllers/datasetController.js
+Routes: server/src/routes/datasetsRoutes.js
+
+- code required, normalized (trim, uppercase, spaces to underscore),
+  unique (409 on duplicate).
+- name required, trimmed. description optional.
+- status ACTIVE/INACTIVE toggle via PATCH /:id/status.
+- No hard delete. Deactivated datasets remain historically.
+
+============================================================
+3. INDICATOR IMPLEMENTATION
+============================================================
+
+Repository/Service/Controller/Routes:
+indicatorRepository.js / indicatorService.js /
+indicatorController.js / indicatorsRoutes.js
+
+- belongs to a dataset (existence verified; 422 otherwise).
+- code unique within dataset (409 on duplicate).
+- data_type enum (existing Stage 03): numeric, decimal, text,
+  date, yes/no, percentage. The UI presents these consistently
+  (YES/NO labeled BOOLEAN).
+- min_value/max_value/precision only meaningful for numeric-like
+  types; stored as NULL for text/date/yes-no types.
+- percentage defaults to 0–100 when not explicitly configured.
+- min <= max enforced; precision integer 0–10.
+- No hard delete.
+
+============================================================
+4. REPORTING-PERIOD IMPLEMENTATION
+============================================================
+
+Repository/Service/Controller/Routes:
+reportingPeriodRepository.js / reportingPeriodService.js /
+reportingPeriodController.js / reportingPeriodsRoutes.js
+
+- period_type: MONTHLY/QUARTERLY/YEARLY/CUSTOM (new column in
+  migration 003).
+- label, start_date, end_date required; end >= start enforced.
+- Lifecycle: OPEN -> CLOSED. Reopening a CLOSED period is
+  rejected (409) through ordinary operation; auditable path is a
+  later-stage concern.
+- No hard delete. Closed-period data remains historical.
+
+============================================================
+5. DATABASE CHANGES
+============================================================
+
+Migration 003_reporting_periods_type: added
+reporting_periods.period_type ENUM('MONTHLY','QUARTERLY','YEARLY',
+'CUSTOM') NOT NULL DEFAULT 'MONTHLY'. Additive only. No tables
+dropped, no data destroyed. Stage 03 schema otherwise unchanged;
+datasets/indicators already contained required columns, so no
+schema changes were needed there.
+
+============================================================
+6. API ENDPOINTS
+============================================================
+
+GET    /api/v1/datasets
+POST   /api/v1/datasets
+GET    /api/v1/datasets/:id
+PATCH  /api/v1/datasets/:id
+PATCH  /api/v1/datasets/:id/status
+
+GET    /api/v1/indicators            (?dataset_id=&status=&search=)
+POST   /api/v1/indicators
+GET    /api/v1/indicators/:id
+PATCH  /api/v1/indicators/:id
+PATCH  /api/v1/indicators/:id/status
+
+GET    /api/v1/reporting-periods     (?status=&period_type=&search=)
+POST   /api/v1/reporting-periods
+GET    /api/v1/reporting-periods/:id
+PATCH  /api/v1/reporting-periods/:id
+PATCH  /api/v1/reporting-periods/:id/status
+
+All require authentication (401) and ADMIN role (403 for others).
+
+============================================================
+7. AUTHORIZATION
+============================================================
+
+All configuration routes use requireAuth + requireRole('ADMIN').
+Verified: Data Entry / Reporting / Manager receive 403 on
+mutations; anonymous receives 401. Backend enforcement; frontend
+hiding is not the security boundary.
+
+============================================================
+8. VALIDATION
+============================================================
+
+- Dataset: missing/blank code/name rejected (422); duplicate code
+  409; invalid status rejected.
+- Indicator: missing dataset/code/name/type rejected; invalid
+  dataset 422; invalid data_type 422; min>max rejected; invalid
+  precision rejected; duplicate (dataset_id, code) 409.
+- Period: missing label/type/dates rejected; invalid period_type
+  422; end before start 422; closed-period reopen 409.
+- Backend is authoritative; DB constraints are the final backstop.
+
+============================================================
+9. STATUS TRANSITIONS
+============================================================
+
+- Dataset: ACTIVE <-> INACTIVE (toggle).
+- Indicator: ACTIVE <-> INACTIVE (toggle).
+- Period: OPEN -> CLOSED only (no ordinary reopen button or API
+  path).
+
+============================================================
+10. AUDIT EVENTS
+============================================================
+
+DATASET_CREATED / DATASET_UPDATED / DATASET_ACTIVATED /
+DATASET_DEACTIVATED; INDICATOR_CREATED / INDICATOR_UPDATED /
+INDICATOR_ACTIVATED / INDICATOR_DEACTIVATED;
+REPORTING_PERIOD_CREATED / REPORTING_PERIOD_UPDATED /
+REPORTING_PERIOD_OPENED / REPORTING_PERIOD_CLOSED — recorded via
+existing auditLogRepository into audit_logs. No audit-log UI.
+
+============================================================
+11. REACT COMPONENTS/PAGES
+============================================================
+
+- pages/DatasetsPage.jsx
+- pages/IndicatorsPage.jsx (type-adaptive form: numeric/decimal/
+  percentage show min/max/precision; text/date/yes-no hide them;
+  percentage defaults 0–100 placeholders)
+- pages/ReportingPeriodsPage.jsx (quick monthly creation helper
+  derives correct start/end per month, leap-year-safe via
+  new Date(y, m+1, 0).getDate())
+- components/StatusBadge.jsx
+- api/datasetApi.js, api/indicatorApi.js, api/reportingPeriodApi.js
+- routes/AppRoutes.jsx: /app/admin/datasets|indicators|
+  reporting-periods guarded by RequireRole('ADMIN').
+- layouts/AppShell.jsx: Admin sidebar now lists Admin Home,
+  Datasets, Indicators, Reporting Periods.
+
+============================================================
+12. TAILWIND UI
+============================================================
+
+All new pages use Tailwind CSS v4 with the existing Stage 04
+visual language (slate/blue palette, tables, modal forms, badges,
+loading/empty/error states, search + filters, responsive).
+
+============================================================
+13. TESTS PERFORMED
+============================================================
+
+Backend (verified via API calls):
+- Admin list/create/view datasets — PASS
+- Duplicate dataset code -> 409 — PASS
+- Missing name/code -> 422 — PASS (unit of payload validation)
+- Deactivate/reactivate dataset — wired (toggle)
+- Admin list/filter indicators by dataset — PASS
+- Create indicator numeric (0–100000, precision 0) — PASS
+- Percentage indicator defaults 0–100 stored — PASS
+- Duplicate indicator code in same dataset -> 409 — PASS
+- Invalid dataset_id -> 422 — PASS
+- Invalid data_type -> 422 — PASS
+- min>max -> 422 — PASS
+- Create monthly period January 2026 (2026-01-01..2026-01-31) — PASS
+- Invalid period_type / end<start -> 422 — PASS
+- Close period -> CLOSED — PASS
+- Reopen closed period -> 409 — PASS
+- Non-admin (DATA_ENTRY) create dataset -> 403 — PASS
+- Anonymous datasets -> 401 — PASS
+- /api/v1/health — ok — PASS
+- Audit rows present for DATASET_CREATED, INDICATOR_CREATED,
+  REPORTING_PERIOD_CREATED — PASS
+- Client build: npm run build — succeeded — PASS
+
+Regression: Stage 04 login/refresh/logout routes untouched;
+Stage 04 test endpoints still functional (login verified for
+all four dev users).
+
+============================================================
+14. PROBLEMS ENCOUNTERED
+============================================================
+
+- knex whereILike is not valid for MySQL — replaced with LIKE.
+- `precision` is a reserved word in MariaDB SQL — quoted in
+  ad-hoc queries; service layer unaffected.
+- MariaDB auto-defaulting of TIMESTAMP columns observed in Stage 04
+  remains avoided (new migration uses enum + defaults only).
+
+============================================================
+15. PROBLEMS FIXED
+============================================================
+
+- LIKE used instead of ILIKE in repositories.
+- Indicator update rebuilds type-specific validation config
+  correctly when data_type changes.
+
+============================================================
+16. REMAINING ISSUES
+============================================================
+
+- No automated test suite yet (Stage 13); verification was manual
+  API-level testing.
+- Reactivating a CLOSED period intentionally unavailable.
+- Dev-only configuration rows exist (MONTHLY_COMMON, OPD_VISITS,
+  HIV_RATE, January 2026 CLOSED) for development.
+
+============================================================
+17. CONFIRMATION — STAGE 06 NOT STARTED
+============================================================
+
+No data-entry form, submission CRUD, review/approval workflow,
+reports, custom reports, dashboard, analysis, notification UI,
+or audit-log UI was implemented.
+
+============================================================
+18. FINAL STAGE 05 READINESS ASSESSMENT
+============================================================
+
+Stage 05 acceptance criteria are met: dataset/indicator/period
+management functional; admin-only backend authorization; validation
+and duplicate protection; status lifecycle rules; Tailwind admin UI;
+React->Express->Knex->MySQL flow preserved; Stage 04 auth intact;
+health endpoint intact; client builds; Stage 06 not started.
+
+Stage 05 is READY for Stage 06.
+
+============================================================
+END OF STAGE 05 REVIEW
+============================================================

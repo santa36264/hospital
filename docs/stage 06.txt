@@ -1,0 +1,1530 @@
+STAGE 06
+DATA ENTRY & SUBMISSION WORKFLOW
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. STAGE PURPOSE
+============================================================
+
+Stage 06 implements the operational data-entry and submission
+workflow using the configuration created in Stage 05.
+
+The purpose is to allow DATA_ENTRY users to:
+
+1. View available active datasets.
+2. View OPEN reporting periods.
+3. Start a submission for a Dataset + Reporting Period.
+4. Enter indicator values.
+5. Save incomplete work as DRAFT.
+6. Continue editing an existing DRAFT.
+7. Validate entered values.
+8. Submit the completed submission.
+9. View their own submission status/history.
+
+This stage creates the foundation required for Stage 07,
+which will implement Reporting review, RETURNED, UNDER_REVIEW
+and APPROVED workflow.
+
+============================================================
+2. FIXED TECHNOLOGY STACK
+============================================================
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+
+Backend:
+- Node.js
+- Express.js
+
+Database:
+- MySQL / MariaDB compatible
+
+Database library:
+- Knex.js
+- mysql2
+
+API:
+- REST
+- Base path: /api/v1
+
+Authentication:
+- JWT
+- Existing Stage 04 authentication/session system
+
+Architecture:
+
+React
+  ↓
+REST API
+  ↓
+Express Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+MySQL/MariaDB
+
+
+============================================================
+3. EXISTING PROJECT MUST BE PRESERVED
+============================================================
+
+Before implementing anything:
+
+Read and inspect:
+
+- docs/stage 01.txt
+- docs/stage 02.txt
+- docs/stage 03 review.txt
+- docs/stage 04 review.txt
+- docs/stage 05.txt
+- docs/stage 05 review.txt
+
+Inspect the existing:
+
+- client/
+- server/
+- migrations
+- routes
+- controllers
+- services
+- repositories
+- middleware
+- authentication
+- database schema
+- AppShell
+- routing
+- Tailwind setup
+
+Do NOT rebuild the project.
+
+Do NOT replace the existing authentication system.
+
+Do NOT replace the existing Stage 05 configuration system.
+
+Do NOT break Stage 03, Stage 04 or Stage 05 functionality.
+
+Use the existing architecture and conventions.
+
+
+============================================================
+4. ROLES INVOLVED IN THIS STAGE
+============================================================
+
+The system has four primary roles:
+
+1. ADMIN
+2. DATA_ENTRY
+3. REPORTING
+4. MANAGER
+
+Stage 06 primarily implements DATA_ENTRY functionality.
+
+ADMIN:
+- Cannot use ordinary data-entry workflow as a normal data-entry user.
+- Continues to manage configuration from Stage 05.
+
+DATA_ENTRY:
+- Can create submissions.
+- Can edit own DRAFT submissions.
+- Can edit own RETURNED submissions.
+- Can submit own submissions.
+- Can view own submission status.
+- Cannot approve submissions.
+- Cannot access management analytics.
+
+REPORTING:
+- Stage 07 will handle review/approval.
+- Do not implement Stage 07 workflow here.
+
+MANAGER:
+- No data-entry functionality in this stage.
+
+
+============================================================
+5. CORE SUBMISSION MODEL
+============================================================
+
+A submission represents:
+
+ONE Dataset
++
+ONE Reporting Period
++
+ONE Data Entry Owner
+
+The database already contains:
+
+submissions
+
+with the relationship:
+
+Dataset
+    ↓
+Submission
+    ↓
+Reporting Period
+
+and:
+
+Submission
+    ↓
+Data Values
+    ↓
+Indicators
+
+
+============================================================
+6. ONE ACTIVE SUBMISSION RULE
+============================================================
+
+There must be only one active submission for:
+
+Dataset + Reporting Period
+
+Therefore:
+
+Dataset A + January 2026
+= one submission
+
+Dataset A + February 2026
+= another submission
+
+Dataset B + January 2026
+= another submission
+
+Do not create duplicate active submissions for the same
+Dataset + Reporting Period.
+
+The existing database uniqueness rule must be respected.
+
+If a DATA_ENTRY user attempts to create a submission that
+already exists:
+
+Return a clear conflict response such as HTTP 409.
+
+Do not create another submission.
+
+
+============================================================
+7. SUBMISSION STATUSES
+============================================================
+
+The persistent submission statuses are:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Stage 06 implements:
+
+DRAFT
+SUBMITTED
+RETURNED → SUBMITTED
+
+Stage 07 will implement:
+
+SUBMITTED → UNDER_REVIEW
+UNDER_REVIEW → APPROVED
+UNDER_REVIEW → RETURNED
+
+Do NOT implement UNDER_REVIEW or APPROVED workflow logic
+in Stage 06.
+
+
+============================================================
+8. STATUS TRANSITIONS ALLOWED IN STAGE 06
+============================================================
+
+New submission:
+
+none
+  ↓
+DRAFT
+
+DRAFT:
+DRAFT → DRAFT
+DRAFT → SUBMITTED
+
+RETURNED:
+RETURNED → RETURNED
+RETURNED → SUBMITTED
+
+Not allowed in Stage 06:
+
+SUBMITTED → DRAFT
+SUBMITTED → RETURNED
+SUBMITTED → APPROVED
+
+UNDER_REVIEW → anything
+
+APPROVED → anything
+
+Once submitted, the DATA_ENTRY user cannot directly edit it.
+
+If Reporting later returns it, Stage 07 will make it available
+for correction.
+
+
+============================================================
+9. DATA ACCESS RULE
+============================================================
+
+DATA_ENTRY users may access:
+
+- Active datasets
+- OPEN reporting periods
+- Their own submissions
+
+DATA_ENTRY users must NOT:
+
+- access another user's submission
+- modify another user's submission
+- submit another user's submission
+- delete submissions
+- approve submissions
+- access management analytics
+
+
+============================================================
+10. ACTIVE DATASET RULE
+============================================================
+
+Only ACTIVE datasets may be used for creating a new submission.
+
+INACTIVE dataset:
+
+- cannot create a new submission
+
+Existing historical submissions for an inactive dataset remain
+accessible according to their existing ownership/access rules.
+
+Stage 06 must not delete historical data when a dataset is
+deactivated.
+
+
+============================================================
+11. ACTIVE INDICATOR RULE
+============================================================
+
+When a submission form is opened:
+
+Only ACTIVE indicators belonging to the selected dataset
+should be presented for new data entry.
+
+Inactive indicators must not be presented as new fields.
+
+Historical data values for inactive indicators must remain
+stored.
+
+Do not delete historical indicator values.
+
+
+============================================================
+12. REPORTING PERIOD RULE
+============================================================
+
+Only OPEN reporting periods may be used for:
+
+- creating new submissions
+- editing DRAFT submissions
+- submitting submissions
+
+CLOSED period:
+
+- cannot create new submission
+- cannot edit DRAFT
+- cannot submit DRAFT
+
+If a period becomes CLOSED while a draft exists:
+
+The draft becomes read-only.
+
+The system must clearly communicate that the reporting period
+is closed.
+
+Do not allow the frontend alone to enforce this rule.
+
+The backend must enforce it.
+
+
+============================================================
+13. SUBMISSION CREATION
+============================================================
+
+DATA_ENTRY should have a page where they can start a submission.
+
+Example:
+
+/app/data-entry/submissions/new
+
+The page should allow:
+
+Dataset:
+[ Select Dataset ]
+
+Reporting Period:
+[ Select Reporting Period ]
+
+[ Start Submission ]
+
+
+Only:
+
+ACTIVE datasets
+
+and
+
+OPEN reporting periods
+
+should be selectable.
+
+
+============================================================
+14. CREATE SUBMISSION LOGIC
+============================================================
+
+When DATA_ENTRY starts a submission:
+
+1. Authenticate user.
+2. Verify role = DATA_ENTRY.
+3. Verify dataset exists.
+4. Verify dataset is ACTIVE.
+5. Verify reporting period exists.
+6. Verify reporting period is OPEN.
+7. Check whether Dataset + Reporting Period already has
+   an active submission.
+8. If duplicate:
+   return HTTP 409.
+9. Otherwise create submission.
+10. Owner must be the authenticated DATA_ENTRY user.
+11. Initial status = DRAFT.
+12. Record created_at/updated_at correctly.
+13. Return the created submission.
+
+
+============================================================
+15. SUBMISSION DATA ENTRY FORM
+============================================================
+
+After creation, redirect to something like:
+
+/app/data-entry/submissions/:id
+
+
+The form should display:
+
+Dataset name
+Reporting period
+Submission status
+
+Then indicator fields.
+
+Example:
+
+Dataset:
+Monthly Common Dataset
+
+Reporting Period:
+September 2026
+
+Status:
+DRAFT
+
+--------------------------------
+
+Indicator 1
+Total OPD Visits
+[ 1250 ]
+
+Indicator 2
+Female OPD Visits
+[ 640 ]
+
+Indicator 3
+Male OPD Visits
+[ 610 ]
+
+Indicator 4
+Total Births
+[ 85 ]
+
+Indicator 5
+Facility Delivery Percentage
+[ 72.5 ]
+
+--------------------------------
+
+[ Save Draft ]
+[ Submit ]
+
+The actual fields must be generated from the indicators configured
+in Stage 05.
+
+
+============================================================
+16. INDICATOR TYPES
+============================================================
+
+Stage 05 supports at minimum:
+
+INTEGER
+NUMERIC
+DECIMAL
+TEXT
+DATE
+BOOLEAN
+PERCENTAGE
+
+The submission form must render appropriate controls.
+
+INTEGER:
+
+Example:
+[ 125 ]
+
+Must accept integer values only.
+
+NUMERIC:
+
+Use appropriate numeric input behavior.
+
+DECIMAL:
+
+Allow decimal values according to configured precision.
+
+TEXT:
+
+Use text input or textarea depending on the existing UI convention.
+
+DATE:
+
+Use date input.
+
+BOOLEAN:
+
+Use checkbox/toggle/select according to the UI convention.
+
+PERCENTAGE:
+
+Use numeric input.
+
+Default validation range:
+
+0–100
+
+
+============================================================
+17. INDICATOR CONFIGURATION VALIDATION
+============================================================
+
+Use Stage 05 indicator configuration.
+
+Possible rules include:
+
+- required
+- minimum
+- maximum
+- precision
+- percentage range
+
+Example:
+
+Indicator:
+
+ANC Coverage
+
+Type:
+PERCENTAGE
+
+Required:
+Yes
+
+Minimum:
+0
+
+Maximum:
+100
+
+Entered:
+
+101
+
+must be rejected.
+
+Example:
+
+Minimum:
+10
+
+Entered:
+
+5
+
+must be rejected.
+
+Example:
+
+Required:
+Yes
+
+Value:
+empty
+
+must be rejected during submission.
+
+
+============================================================
+18. DRAFT VALIDATION
+============================================================
+
+Saving a DRAFT should allow incomplete work.
+
+Therefore:
+
+Save Draft:
+
+- should preserve entered values
+- should not require all required indicators to be completed
+- should still reject obviously invalid values based on type/configuration
+
+Example:
+
+Required indicator is empty.
+
+Save Draft:
+ALLOWED
+
+Submit:
+NOT ALLOWED
+
+
+============================================================
+19. SUBMISSION VALIDATION
+============================================================
+
+When DATA_ENTRY clicks Submit:
+
+The backend must validate the complete submission.
+
+Validation must include:
+
+1. Submission exists.
+2. User owns submission.
+3. Submission status is DRAFT or RETURNED.
+4. Dataset is valid.
+5. Reporting period is valid.
+6. Reporting period is OPEN.
+7. All required ACTIVE indicators have values.
+8. Values match indicator data type.
+9. Minimum values are respected.
+10. Maximum values are respected.
+11. Decimal precision is respected.
+12. Percentage rules are respected.
+13. No unauthorized indicator is submitted.
+14. No duplicate indicator value exists within submission.
+
+If validation succeeds:
+
+status = SUBMITTED
+
+If validation fails:
+
+status remains DRAFT or RETURNED.
+
+Return clear validation errors.
+
+
+============================================================
+20. DATA VALUE STORAGE
+============================================================
+
+Use the existing:
+
+data_values
+
+table.
+
+Do not create a new table for indicator values unless the
+existing schema is genuinely insufficient.
+
+Each value belongs to:
+
+submission
++
+indicator
+
+Store values according to the existing Stage 03 schema.
+
+Preserve compatibility with the current database design.
+
+Do not destroy existing Stage 03/05 structures.
+
+
+============================================================
+21. SAVE DRAFT
+============================================================
+
+Provide an API operation for saving submission values.
+
+Possible endpoint design:
+
+PUT/PATCH
+/api/v1/submissions/:id
+
+or an equivalent REST design consistent with the existing
+project conventions.
+
+The operation must:
+
+1. Authenticate.
+2. Require DATA_ENTRY.
+3. Verify ownership.
+4. Verify editable status.
+5. Verify reporting period is OPEN.
+6. Validate values.
+7. Upsert data values.
+8. Update submission updated_at.
+9. Keep status as DRAFT or RETURNED.
+10. Return current submission data.
+
+
+============================================================
+22. SUBMIT ENDPOINT
+============================================================
+
+Provide an explicit submit operation.
+
+Suggested:
+
+POST
+/api/v1/submissions/:id/submit
+
+Rules:
+
+- DATA_ENTRY only.
+- Owner only.
+- Status must be DRAFT or RETURNED.
+- Reporting period must be OPEN.
+- Complete validation required.
+- On success status becomes SUBMITTED.
+- Cannot submit another user's submission.
+- Cannot submit already SUBMITTED.
+- Cannot submit UNDER_REVIEW.
+- Cannot submit APPROVED.
+
+
+============================================================
+23. GET SUBMISSION
+============================================================
+
+Suggested:
+
+GET
+/api/v1/submissions/:id
+
+DATA_ENTRY:
+
+- can retrieve own submission.
+
+Must reject:
+
+- another DATA_ENTRY user's submission.
+
+Return:
+
+submission metadata
++
+dataset
++
+reporting period
++
+status
++
+indicator definitions
++
+current values
++
+validation/configuration information needed by frontend.
+
+
+============================================================
+24. LIST MY SUBMISSIONS
+============================================================
+
+Provide:
+
+GET
+/api/v1/submissions/my
+
+or equivalent consistent endpoint.
+
+Return submissions owned by the authenticated DATA_ENTRY user.
+
+Useful fields:
+
+- submission ID
+- dataset
+- reporting period
+- status
+- created date
+- updated date
+- submitted date if available
+
+Support useful filtering:
+
+- status
+- dataset
+- reporting period
+
+Do not expose other users' submissions.
+
+
+============================================================
+25. FRONTEND DATA ENTRY PAGES
+============================================================
+
+Implement a Data Entry section in the existing AppShell.
+
+Suggested routes:
+
+/app/data-entry/submissions
+
+/app/data-entry/submissions/new
+
+/app/data-entry/submissions/:id
+
+
+============================================================
+26. MY SUBMISSIONS PAGE
+============================================================
+
+The page should show:
+
+My Submissions
+
+[ New Submission ]
+
+Filters:
+
+Status
+Dataset
+Reporting Period
+
+Table:
+
+Dataset
+Reporting Period
+Status
+Last Updated
+Actions
+
+Example:
+
+Monthly Common Dataset
+September 2026
+DRAFT
+Oct 1, 2026
+[ Continue ]
+
+PMTCT
+September 2026
+SUBMITTED
+Oct 1, 2026
+[ View ]
+
+Returned submission:
+
+HIV Dataset
+August 2026
+RETURNED
+Sep 30, 2026
+[ Correct ]
+
+
+============================================================
+27. NEW SUBMISSION PAGE
+============================================================
+
+Display only:
+
+ACTIVE datasets
+
+and
+
+OPEN reporting periods.
+
+Use clear form controls.
+
+Prevent invalid combinations in UI where possible.
+
+Backend remains the authoritative validation layer.
+
+
+============================================================
+28. SUBMISSION FORM UI
+============================================================
+
+Use Tailwind CSS.
+
+The page should clearly show:
+
+- dataset
+- period
+- status
+- progress if practical
+- indicator fields
+- validation errors
+- save state
+- submit action
+
+Use loading states.
+
+Use empty states.
+
+Use error states.
+
+Use success feedback.
+
+Do not introduce a different CSS framework.
+
+
+============================================================
+29. READ-ONLY STATES
+============================================================
+
+SUBMITTED:
+
+Read-only.
+
+UNDER_REVIEW:
+
+Read-only.
+
+APPROVED:
+
+Read-only.
+
+CLOSED PERIOD:
+
+Read-only.
+
+DRAFT + OPEN:
+
+Editable.
+
+RETURNED + OPEN:
+
+Editable.
+
+
+============================================================
+30. RETURNED SUBMISSION UI
+============================================================
+
+Stage 06 does not implement the Reporting return action.
+
+However, the frontend must support the RETURNED status because
+Stage 07 will create it.
+
+If a submission has:
+
+status = RETURNED
+
+and period = OPEN
+
+then DATA_ENTRY should see:
+
+- status = RETURNED
+- existing values
+- editable fields
+- correction/save functionality
+- Submit button
+
+If a return reason field already exists in the schema, display it.
+
+Do not invent a separate Stage 06 return workflow.
+
+Stage 07 will define the review/return reason behavior.
+
+
+============================================================
+31. SUBMISSION HISTORY
+============================================================
+
+The existing database contains:
+
+submission_history
+
+Use it where appropriate to record submission workflow changes.
+
+At minimum, Stage 06 should record meaningful status changes
+performed by DATA_ENTRY, such as:
+
+DRAFT creation
+DRAFT → SUBMITTED
+RETURNED → SUBMITTED
+
+Do not build the complete history UI in this stage.
+
+Stage 07 will expand workflow history.
+
+
+============================================================
+32. AUDIT LOGGING
+============================================================
+
+Use the existing audit logging architecture from Stage 04/05.
+
+Meaningful security/workflow events should be auditable.
+
+Examples:
+
+SUBMISSION_CREATED
+SUBMISSION_UPDATED
+SUBMISSION_SUBMITTED
+
+Do not create an unrestricted public audit-log UI.
+
+Admin remains the owner of audit logs.
+
+
+============================================================
+33. API AUTHORIZATION
+============================================================
+
+Every submission endpoint must use existing authentication
+middleware.
+
+Unauthenticated:
+
+401
+
+Wrong role:
+
+403
+
+DATA_ENTRY accessing another user's submission:
+
+403 or 404 according to the project's existing resource
+authorization convention.
+
+Do not leak information about unauthorized submissions.
+
+
+============================================================
+34. TRANSACTION SAFETY
+============================================================
+
+Operations involving:
+
+submission
++
+data_values
++
+submission_history
++
+audit log
+
+should use database transactions where atomicity is required.
+
+Example:
+
+Submit operation:
+
+BEGIN
+  validate
+  update submission status
+  record history
+  record audit event
+COMMIT
+
+If a required database operation fails:
+
+ROLLBACK
+
+
+============================================================
+35. CONCURRENT/DUPLICATE CREATION
+============================================================
+
+The database uniqueness constraint remains authoritative.
+
+Do not rely only on:
+
+"check first, then insert"
+
+because concurrent requests can still create a race.
+
+Handle database uniqueness errors and return a controlled
+HTTP 409 response.
+
+
+============================================================
+36. ERROR RESPONSE
+============================================================
+
+Use the project's existing error-handling conventions.
+
+Validation errors should clearly identify the problem.
+
+Example concept:
+
+{
+  "message": "Submission validation failed",
+  "errors": {
+    "indicator_12": "This field is required",
+    "indicator_17": "Value must be between 0 and 100"
+  }
+}
+
+Adapt this to the existing API response structure.
+
+Do not create an incompatible second error format.
+
+
+============================================================
+37. DATA ENTRY SIDEBAR
+============================================================
+
+Update the existing AppShell navigation.
+
+DATA_ENTRY should see appropriate navigation such as:
+
+Dashboard
+My Submissions
+
+Do not expose:
+
+Admin configuration pages
+Admin audit pages
+Management analytics
+Reporting approval pages
+
+unless the existing role-routing architecture already requires
+a common shell entry.
+
+Role protection must exist on the backend and frontend.
+
+
+============================================================
+38. DASHBOARD SCOPE
+============================================================
+
+Do not build the full management dashboard in Stage 06.
+
+If a Data Entry landing page is required by the existing
+routing architecture, keep it minimal.
+
+Possible information:
+
+- My Drafts
+- Submitted
+- Returned
+- Recent submissions
+
+Do not implement analytics.
+
+
+============================================================
+39. SECURITY REQUIREMENTS
+============================================================
+
+Never trust:
+
+- user_id from request body
+- owner_id from request body
+- role from request body
+- dataset ownership claims from frontend
+- submission status sent by frontend
+
+The authenticated user comes from the existing auth system.
+
+The backend determines:
+
+owner
+role
+permissions
+editable status
+
+Do not allow clients to directly set:
+
+APPROVED
+UNDER_REVIEW
+
+or other protected workflow states.
+
+
+============================================================
+40. NO DELETE
+============================================================
+
+DATA_ENTRY cannot delete submissions.
+
+Do not implement:
+
+DELETE /submissions/:id
+
+for normal DATA_ENTRY workflow.
+
+Historical data must remain preserved.
+
+
+============================================================
+41. API ENDPOINT SUMMARY
+============================================================
+
+Implement an appropriate REST API consistent with the project.
+
+Required capabilities:
+
+GET
+/api/v1/submissions/my
+
+GET
+/api/v1/submissions/:id
+
+POST
+/api/v1/submissions
+
+PUT/PATCH
+/api/v1/submissions/:id
+
+POST
+/api/v1/submissions/:id/submit
+
+Additional endpoints may be added only when genuinely necessary.
+
+Do not implement Stage 07 review endpoints.
+
+
+============================================================
+42. BACKEND ARCHITECTURE
+============================================================
+
+Follow:
+
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+Database
+
+Do not place business logic directly inside routes.
+
+Do not place SQL directly inside controllers.
+
+Use existing validation/error conventions.
+
+
+============================================================
+43. FRONTEND ARCHITECTURE
+============================================================
+
+Follow existing project conventions.
+
+Suggested:
+
+client/src/api/submissionApi.js
+
+client/src/pages/data-entry/
+    MySubmissionsPage.jsx
+    NewSubmissionPage.jsx
+    SubmissionFormPage.jsx
+
+Reuse existing:
+
+- StatusBadge
+- AppShell
+- authentication context
+- route guards
+- API client
+- loading/error conventions
+
+
+============================================================
+44. TESTING REQUIREMENTS
+============================================================
+
+Before declaring Stage 06 complete, verify:
+
+AUTHENTICATION
+
+1. Anonymous cannot access submissions.
+2. ADMIN cannot use DATA_ENTRY endpoints unless explicitly
+   allowed by existing design.
+3. REPORTING cannot create DATA_ENTRY submissions.
+4. MANAGER cannot create DATA_ENTRY submissions.
+5. DATA_ENTRY can access own submissions.
+
+
+CREATION
+
+6. Active dataset + open period creates DRAFT.
+7. Inactive dataset rejected.
+8. Closed period rejected.
+9. Duplicate Dataset + Period returns 409.
+
+
+OWNERSHIP
+
+10. User A cannot modify User B submission.
+11. User A cannot submit User B submission.
+12. User A cannot view User B submission.
+
+
+DRAFT
+
+13. Draft can save incomplete values.
+14. Draft can be edited.
+15. Invalid configured values rejected.
+
+
+SUBMISSION
+
+16. Required missing values prevent submit.
+17. Invalid data types prevent submit.
+18. Min/max violations prevent submit.
+19. Percentage >100 rejected.
+20. Successful submit changes DRAFT → SUBMITTED.
+21. Submitted submission becomes read-only.
+
+
+RETURNED COMPATIBILITY
+
+22. RETURNED + OPEN can be edited.
+23. RETURNED can be submitted again.
+24. RETURNED → SUBMITTED.
+
+
+CLOSED PERIOD
+
+25. Draft cannot be edited after period closes.
+26. Draft cannot be submitted after period closes.
+
+
+DATA INTEGRITY
+
+27. Data values correctly saved.
+28. Updating values does not create duplicate indicator values.
+29. Submission + data values operations remain consistent.
+
+
+REGRESSION
+
+30. /api/v1/health works.
+31. Stage 04 authentication still works.
+32. Stage 05 dataset management still works.
+33. Stage 05 indicator management still works.
+34. Stage 05 reporting-period management still works.
+35. Client build succeeds.
+
+
+============================================================
+45. UI QUALITY REQUIREMENTS
+============================================================
+
+The interface should be professional and usable.
+
+Include:
+
+- consistent Tailwind styling
+- clear labels
+- required field indicators
+- validation messages
+- loading indicators
+- empty states
+- success feedback
+- error feedback
+- disabled buttons during submission
+- read-only visual state
+- clear status badges
+
+Do not overcomplicate the UI.
+
+
+============================================================
+46. DATABASE SAFETY
+============================================================
+
+Do not drop existing tables.
+
+Do not delete existing data.
+
+Do not rewrite Stage 03 schema unnecessarily.
+
+Do not rewrite Stage 04 refresh-session system.
+
+Do not rewrite Stage 05 dataset/indicator/period system.
+
+Only create a migration if the current schema is genuinely
+insufficient for Stage 06.
+
+Prefer using the existing:
+
+submissions
+data_values
+submission_history
+audit_logs
+
+tables.
+
+
+============================================================
+47. STAGE BOUNDARY
+============================================================
+
+DO NOT IMPLEMENT:
+
+- Reporting review UI
+- UNDER_REVIEW workflow
+- approval
+- rejection as final state
+- RETURNED creation by Reporting
+- manager dashboard
+- advanced analytics
+- custom reports
+- PDF export
+- Excel export
+- full audit UI
+- deployment
+
+These belong to later stages.
+
+
+============================================================
+48. IMPLEMENTATION ORDER
+============================================================
+
+Implement in this order:
+
+1. Inspect existing Stage 03–05 implementation.
+2. Confirm current submissions/data_values schema.
+3. Implement submission repository.
+4. Implement submission service.
+5. Implement validation.
+6. Implement submission controller.
+7. Implement routes.
+8. Implement authorization.
+9. Implement transaction handling.
+10. Implement audit/history integration.
+11. Test backend APIs.
+12. Implement submission API client.
+13. Implement My Submissions page.
+14. Implement New Submission page.
+15. Implement Submission Form page.
+16. Add role-aware navigation.
+17. Add frontend validation/error handling.
+18. Run regression tests.
+19. Build client.
+20. Create Stage 06 review document.
+
+
+============================================================
+49. STAGE 06 ACCEPTANCE CRITERIA
+============================================================
+
+Stage 06 is complete only if:
+
+[ ] DATA_ENTRY can create a submission.
+
+[ ] Submission starts as DRAFT.
+
+[ ] Only ACTIVE datasets can be selected.
+
+[ ] Only OPEN reporting periods can be selected.
+
+[ ] Dataset + Period duplicate is rejected.
+
+[ ] Active indicators load dynamically.
+
+[ ] Indicator types render correctly.
+
+[ ] Values can be saved.
+
+[ ] Drafts may be incomplete.
+
+[ ] Invalid values are rejected.
+
+[ ] Required values are enforced during submission.
+
+[ ] DRAFT can become SUBMITTED.
+
+[ ] SUBMITTED is read-only.
+
+[ ] DATA_ENTRY can see own submissions.
+
+[ ] DATA_ENTRY cannot access another user's submissions.
+
+[ ] DATA_ENTRY cannot approve submissions.
+
+[ ] Closed periods block editing/submission.
+
+[ ] RETURNED submissions are compatible with Stage 07.
+
+[ ] Submission history is recorded appropriately.
+
+[ ] Audit events are recorded appropriately.
+
+[ ] API authorization works.
+
+[ ] Transactions protect critical operations.
+
+[ ] Stage 04 authentication still works.
+
+[ ] Stage 05 configuration still works.
+
+[ ] Client build succeeds.
+
+[ ] No Stage 07+ functionality was implemented.
+
+
+============================================================
+50. REQUIRED STAGE REVIEW DOCUMENT
+============================================================
+
+Create:
+
+docs/stage 06 review.txt
+
+The review must contain:
+
+1. Implementation summary
+2. Files created
+3. Files modified
+4. Database changes
+5. API endpoints
+6. Frontend routes/pages
+7. Authentication/authorization verification
+8. Submission workflow verification
+9. Validation verification
+10. Ownership/security verification
+11. Transaction verification
+12. Tests performed
+13. Build result
+14. Problems encountered
+15. Problems fixed
+16. Remaining issues
+17. Stage boundary confirmation
+18. Confirmation that Stage 07 was NOT implemented
+19. Final readiness assessment for Stage 07
+
+
+============================================================
+END OF STAGE 06
+============================================================

@@ -11,6 +11,9 @@ import {
   ManagerPlaceholder,
   UnauthorizedPage,
 } from '../pages/placeholderPages';
+import DatasetsPage from '../pages/DatasetsPage';
+import IndicatorsPage from '../pages/IndicatorsPage';
+import ReportingPeriodsPage from '../pages/ReportingPeriodsPage';
 
 function AppRoutes() {
   return (
@@ -33,6 +36,30 @@ function AppRoutes() {
               element={
                 <RequireRole role="ADMIN">
                   <AdminPlaceholder />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="admin/datasets"
+              element={
+                <RequireRole role="ADMIN">
+                  <DatasetsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="admin/indicators"
+              element={
+                <RequireRole role="ADMIN">
+                  <IndicatorsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="admin/reporting-periods"
+              element={
+                <RequireRole role="ADMIN">
+                  <ReportingPeriodsPage />
                 </RequireRole>
               }
             />
