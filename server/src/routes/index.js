@@ -7,6 +7,7 @@ const reportingPeriodsRoutes = require('./reportingPeriodsRoutes');
 const submissionsRoutes = require('./submissionsRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const reportRoutes = require('./reportRoutes');
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/reporting-periods', reportingPeriodsRoutes);
 router.use('/submissions', submissionsRoutes);
 router.use('/review', reviewRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/reports', reportRoutes);
 
 module.exports = router;

@@ -1,0 +1,958 @@
+============================================================
+STAGE 08 — DATASET REPORTS & REPORT MANAGEMENT
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. STAGE PURPOSE
+============================================================
+
+Implement the first reporting layer of the system.
+
+Stage 08 allows authorized users to view structured reports from
+APPROVED submissions only.
+
+The purpose is to transform validated and approved health data into
+useful reports without modifying the underlying submission workflow.
+
+Reporting must be based on approved data.
+
+IMPORTANT:
+
+The system is for ONE HOSPITAL.
+
+Do not introduce:
+- multi-hospital hierarchy
+- facility hierarchy
+- woreda/zone/region reporting
+- external facility management
+
+============================================================
+2. REPORTING PRINCIPLE
+============================================================
+
+Only:
+
+submission.status = APPROVED
+
+may be used as finalized reporting data.
+
+DRAFT:
+- excluded
+
+SUBMITTED:
+- excluded
+
+UNDER_REVIEW:
+- excluded
+
+RETURNED:
+- excluded
+
+APPROVED:
+- included
+
+Reports must never modify:
+- submissions
+- data_values
+- submission_history
+
+Reports are read-only.
+
+============================================================
+3. REPORT TYPES — STAGE 08
+============================================================
+
+Implement these report types:
+
+A. Dataset Report
+B. Monthly Report
+C. Indicator Report
+D. Submission Status Report
+E. Report History
+
+Do NOT implement Stage 09 functionality yet:
+
+- Custom Report
+- custom indicator-by-period builder
+- PDF export
+- Excel export
+- advanced custom filtering
+- advanced period comparison
+- trend analysis
+
+============================================================
+4. DATASET REPORT
+============================================================
+
+Purpose:
+
+Show approved indicator values for one selected dataset and
+reporting period.
+
+Example:
+
+Dataset:
+Monthly Common Dataset
+
+Period:
+September 2026
+
+Display:
+
+Dataset information:
+- Dataset name
+- Dataset code
+- Reporting period
+- Period type
+- Submission status
+- Submitted by
+- Approved date
+
+Indicator table:
+
+| Indicator | Code | Type | Value |
+|----------|------|------|-------|
+
+For each indicator belonging to the dataset:
+
+- indicator name
+- indicator code
+- data type
+- submitted value
+
+Use the approved submission.
+
+If an indicator has no value:
+
+display an appropriate empty/Not Available state.
+
+Do not silently invent or calculate values.
+
+============================================================
+5. MONTHLY REPORT
+============================================================
+
+Purpose:
+
+Provide a monthly overview of approved datasets.
+
+User selects:
+
+- Reporting Period
+
+The system displays datasets with approved submissions for that
+period.
+
+Example:
+
+September 2026
+
+| Dataset | Code | Submitted By | Approved Date | Status |
+|---------|------|--------------|---------------|--------|
+
+Only APPROVED submissions are treated as finalized.
+
+If a dataset has no approved submission:
+
+display:
+
+Not Approved / No Approved Submission
+
+Do not treat missing data as zero.
+
+============================================================
+6. INDICATOR REPORT
+============================================================
+
+Purpose:
+
+Allow a user to select:
+
+- Dataset
+- Indicator
+- Reporting Period
+
+Then display the approved value.
+
+Example:
+
+Dataset:
+PMTCT
+
+Indicator:
+Number of HIV-positive pregnant women
+
+Period:
+September 2026
+
+Display:
+
+Indicator information:
+- Indicator name
+- Indicator code
+- Dataset
+- Data type
+- Reporting period
+- Value
+
+If the selected submission is not APPROVED:
+
+do not present the value as finalized.
+
+Show an appropriate status message instead.
+
+============================================================
+7. SUBMISSION STATUS REPORT
+============================================================
+
+Purpose:
+
+Give Reporting users an overview of submission workflow status.
+
+Filters:
+
+- Reporting Period
+- Dataset
+- Status
+
+Statuses:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Display:
+
+- Dataset
+- Reporting Period
+- Data Entry user
+- Status
+- Submitted date
+- Reviewed date
+- Approved date
+- Returned date
+
+This is a workflow report.
+
+It is NOT the same as the finalized Dataset Report.
+
+============================================================
+8. REPORT HISTORY
+============================================================
+
+Create a read-only report history page showing previously viewed
+report requests.
+
+Important:
+
+Do not create a complicated report-versioning system in Stage 08.
+
+Report History should record basic report access information such as:
+
+- user
+- report type
+- dataset if applicable
+- reporting period if applicable
+- accessed/generated timestamp
+
+Use the existing audit infrastructure where appropriate OR create
+a minimal dedicated report history mechanism only if required.
+
+Do not implement document/file storage for reports.
+
+============================================================
+9. REPORT ACCESS
+============================================================
+
+Stage 08 report access:
+
+REPORTING:
+- can access reporting pages
+- can view reports
+- can view submission status reports
+- can view approved data
+
+MANAGER:
+- may access finalized approved reports where appropriate
+- manager dashboard/analytics is NOT implemented yet
+
+DATA_ENTRY:
+- does NOT receive management/reporting analytics
+- continues to access own submission workflow
+
+ADMIN:
+- do not automatically give Admin reporting functionality unless
+  explicitly required by the existing role rules.
+
+Follow the existing RBAC architecture.
+
+Do not weaken existing authorization.
+
+============================================================
+10. REPORT API DESIGN
+============================================================
+
+Use:
+
+/api/v1/reports
+
+Suggested endpoints:
+
+GET /api/v1/reports/dataset
+
+Query parameters:
+
+dataset_id
+reporting_period_id
+
+Returns the approved submission and its indicator values.
+
+------------------------------------------------------------
+
+GET /api/v1/reports/monthly
+
+Query parameters:
+
+reporting_period_id
+
+Returns approved dataset summaries for the selected period.
+
+------------------------------------------------------------
+
+GET /api/v1/reports/indicator
+
+Query parameters:
+
+dataset_id
+indicator_id
+reporting_period_id
+
+Returns the approved indicator value and metadata.
+
+------------------------------------------------------------
+
+GET /api/v1/reports/submission-status
+
+Query parameters:
+
+reporting_period_id
+dataset_id
+status
+
+Returns submission workflow status information.
+
+------------------------------------------------------------
+
+GET /api/v1/reports/history
+
+Returns report access history for the authenticated user,
+according to authorization rules.
+
+============================================================
+11. REPORT SERVICE ARCHITECTURE
+============================================================
+
+Follow the existing backend architecture:
+
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+MySQL
+
+Do NOT put report business logic directly inside controllers.
+
+Create appropriate files such as:
+
+server/src/repositories/reportRepository.js
+
+server/src/services/reportService.js
+
+server/src/controllers/reportController.js
+
+server/src/routes/reportRoutes.js
+
+Add report API client:
+
+client/src/api/reportApi.js
+
+Use existing authentication middleware and role middleware.
+
+============================================================
+12. REPORT QUERY RULES
+============================================================
+
+Report queries must enforce:
+
+1. Only approved submissions are used for finalized reports.
+
+2. The submission must belong to the selected dataset.
+
+3. The submission must belong to the selected reporting period.
+
+4. Indicator must belong to the selected dataset.
+
+5. Indicator must be active OR historically valid according to the
+existing database design.
+
+Do not allow an indicator from Dataset A to be queried against
+Dataset B.
+
+6. Do not trust frontend filtering for authorization.
+
+7. Validate IDs and query parameters server-side.
+
+============================================================
+13. DATA INTEGRITY
+============================================================
+
+The report layer must not change submission data.
+
+No report endpoint may:
+
+- create submission
+- update submission
+- update data_values
+- approve submission
+- return submission
+- change workflow status
+
+Reports are READ ONLY.
+
+============================================================
+14. REPORT UI/UX — IMPORTANT
+============================================================
+
+The application must now begin to look like ONE professional
+hospital reporting system.
+
+Do not create plain disconnected pages.
+
+Use and improve the existing:
+
+- AppShell
+- sidebar
+- header
+- NotificationBell
+- page headers
+- cards
+- tables
+- buttons
+- badges
+- dialogs
+- form controls
+- spacing
+- typography
+- responsive layout
+
+Do not use placeholder-style UI.
+
+============================================================
+15. REPORTING SIDEBAR
+============================================================
+
+For REPORTING users, create a coherent reporting navigation such as:
+
+Reporting
+  - Dashboard / Overview
+  - Review Queue
+  - Dataset Reports
+  - Monthly Reports
+  - Indicator Reports
+  - Submission Status
+  - Report History
+  - Notifications
+
+Do not implement a full Reporting Dashboard/analytics system yet.
+
+If a dashboard link already exists, keep it consistent and avoid
+implementing Stage 10 analytics.
+
+============================================================
+16. DATASET REPORT PAGE
+============================================================
+
+Create:
+
+/app/reporting/reports/dataset
+
+UI:
+
+Page header:
+"Dataset Report"
+
+Subtitle:
+"View approved indicator data for a dataset and reporting period."
+
+Filters:
+
+Dataset
+Reporting Period
+
+Button:
+
+View Report
+
+Before selection:
+
+show a useful empty state explaining what must be selected.
+
+After selection:
+
+show a professional report card.
+
+Example structure:
+
+------------------------------------------------
+Dataset Report
+Monthly Common Dataset
+
+Reporting Period
+September 2026
+
+Status
+APPROVED
+------------------------------------------------
+
+Submission information card.
+
+Then:
+
+Indicator Results
+
+------------------------------------------------
+Indicator       Type        Value
+------------------------------------------------
+ANC Visits      INTEGER     245
+HIV Positive    INTEGER     17
+Coverage        PERCENTAGE  82.5%
+------------------------------------------------
+
+Use appropriate formatting based on indicator data type.
+
+============================================================
+17. MONTHLY REPORT PAGE
+============================================================
+
+Create:
+
+/app/reporting/reports/monthly
+
+Page:
+
+"Monthly Report"
+
+Filter:
+
+Reporting Period
+
+Display summary cards where useful:
+
+- Total Datasets
+- Approved
+- Not Approved
+
+Then a professional dataset table.
+
+Each row can have:
+
+"View Report"
+
+which opens the corresponding Dataset Report.
+
+Do not calculate "Not Approved" as a health value.
+
+It represents workflow/reporting availability only.
+
+============================================================
+18. INDICATOR REPORT PAGE
+============================================================
+
+Create:
+
+/app/reporting/reports/indicator
+
+Filters:
+
+Dataset
+Indicator
+Reporting Period
+
+Indicator dropdown must depend on selected Dataset.
+
+Do not show indicators from unrelated datasets.
+
+Display selected indicator information and approved value.
+
+Use a clear visual distinction between:
+
+- indicator metadata
+- reporting period
+- approval status
+- actual value
+
+============================================================
+19. SUBMISSION STATUS PAGE
+============================================================
+
+Create:
+
+/app/reporting/reports/submission-status
+
+Provide:
+
+- period filter
+- dataset filter
+- status filter
+- search if appropriate
+
+Table columns:
+
+Dataset
+Period
+Data Entry User
+Status
+Submitted
+Reviewed
+Approved
+Returned
+
+Use the existing status badge system.
+
+Provide useful empty/loading/error states.
+
+============================================================
+20. REPORT HISTORY PAGE
+============================================================
+
+Create:
+
+/app/reporting/reports/history
+
+Display:
+
+Report Type
+Dataset
+Reporting Period
+Accessed By
+Accessed At
+
+Newest first.
+
+Provide:
+
+- pagination or sensible limit
+- empty state
+- loading state
+- error state
+
+============================================================
+21. SHARED REPORT COMPONENTS
+============================================================
+
+Avoid duplicating report UI.
+
+Create reusable components where appropriate.
+
+Possible structure:
+
+client/src/components/reports/
+
+DatasetReportCard.jsx
+ReportFilterBar.jsx
+ReportTable.jsx
+ReportStatusBadge.jsx
+ReportEmptyState.jsx
+
+Use only components that are actually useful.
+
+Do not create unnecessary abstraction.
+
+============================================================
+22. LOADING / ERROR / EMPTY STATES
+============================================================
+
+Every report page must handle:
+
+Loading:
+- show skeleton/spinner/professional loading state
+
+Empty:
+- explain what is missing
+
+No approved data:
+- clearly say no approved report data is available
+
+Error:
+- show user-friendly error message
+- provide retry where appropriate
+
+Success:
+- show the report clearly
+
+Do not show raw API errors to normal users.
+
+============================================================
+23. RESPONSIVE UI
+============================================================
+
+Report pages must work on:
+
+- desktop
+- laptop
+- tablet
+- smaller screens
+
+Tables should handle smaller widths appropriately.
+
+Do not allow the entire page to become unusable because of a wide
+report table.
+
+============================================================
+24. VISUAL CONSISTENCY
+============================================================
+
+Use the existing application design language.
+
+Do not introduce random colors.
+
+Use the existing status colors consistently:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Buttons, cards, inputs, tables, badges and dialogs should have
+consistent styling.
+
+The reporting pages should visually belong to the same application
+as Stage 07.
+
+============================================================
+25. SECURITY
+============================================================
+
+All report endpoints require authentication.
+
+Apply role authorization according to Stage 08 access rules.
+
+Never trust:
+
+- dataset_id from frontend
+- indicator_id from frontend
+- reporting_period_id from frontend
+
+without server-side validation.
+
+Prevent unauthorized access to report data.
+
+Do not expose sensitive internal database details in API errors.
+
+============================================================
+26. PERFORMANCE
+============================================================
+
+Use efficient queries.
+
+Avoid:
+
+- N+1 queries
+- loading all submissions unnecessarily
+- loading all indicators repeatedly
+
+Use joins/aggregations where appropriate.
+
+Only fetch the data required by each report.
+
+Pagination should be used for report history and large status lists.
+
+============================================================
+27. TESTING
+============================================================
+
+Test:
+
+Authentication:
+- anonymous -> 401
+- unauthorized role -> 403 where applicable
+
+Dataset Report:
+- valid approved dataset/period
+- no approved submission
+- invalid dataset
+- invalid period
+- dataset/period mismatch
+
+Monthly Report:
+- valid period
+- approved submissions included
+- non-approved submissions excluded
+- missing dataset handled correctly
+
+Indicator Report:
+- valid dataset/indicator/period
+- indicator from wrong dataset rejected
+- non-approved submission not treated as finalized
+- invalid IDs handled
+
+Submission Status:
+- status filtering
+- dataset filtering
+- period filtering
+- authorization
+
+Report History:
+- history recorded
+- user scoping/security
+- newest-first ordering
+
+Regression:
+- Stage 04 authentication
+- Stage 05 configuration
+- Stage 06 data entry
+- Stage 07 review/approval/notifications
+
+Client:
+- npm run build
+
+Server:
+- module loading
+
+============================================================
+28. DO NOT IMPLEMENT STAGE 09+
+============================================================
+
+DO NOT implement:
+
+- Custom Report Builder
+- custom indicator-by-period table builder
+- PDF export
+- Excel export
+- print/export engine
+- advanced report comparison
+- trend charts
+- dashboard analytics
+- management KPI dashboard
+- advanced data analysis
+- deployment
+
+Those belong to later stages.
+
+============================================================
+29. DOCUMENTATION
+============================================================
+
+Create:
+
+docs/stage 08 review.txt
+
+The review must contain:
+
+1. Implementation summary
+2. Files created
+3. Files modified
+4. API endpoints
+5. Database changes
+6. Report query rules
+7. Authorization
+8. UI/UX implementation
+9. Tests performed
+10. Problems encountered
+11. Fixes
+12. Remaining issues
+13. Confirmation that Stage 09+ was not implemented
+14. Stage 08 acceptance criteria
+15. Readiness for Stage 09
+
+============================================================
+30. ACCEPTANCE CRITERIA
+============================================================
+
+[ ] REPORTING can access Dataset Reports.
+
+[ ] Dataset Report uses APPROVED submission data only.
+
+[ ] REPORTING can select dataset and reporting period.
+
+[ ] Dataset Report displays indicator values correctly.
+
+[ ] Monthly Report displays approved datasets for a period.
+
+[ ] Indicator Report displays one approved indicator value.
+
+[ ] Wrong dataset/indicator combinations are rejected.
+
+[ ] Submission Status Report displays workflow status.
+
+[ ] Report History records report access.
+
+[ ] Report endpoints are authenticated.
+
+[ ] Unauthorized roles cannot access restricted reports.
+
+[ ] Reports are read-only.
+
+[ ] No report endpoint changes submission data.
+
+[ ] Loading states exist.
+
+[ ] Empty states exist.
+
+[ ] Error states exist.
+
+[ ] Tables are responsive.
+
+[ ] Reporting sidebar is coherent.
+
+[ ] Report pages visually match Stage 07 AppShell.
+
+[ ] Shared report components are reused appropriately.
+
+[ ] Existing Stage 04–07 functionality remains intact.
+
+[ ] Client build succeeds.
+
+[ ] Backend tests pass.
+
+[ ] No Stage 09+ functionality was implemented.
+
+============================================================
+31. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+Before coding:
+
+1. Inspect docs/stage 01.txt through docs/stage 08.txt.
+2. Inspect all Stage 03–07 review files.
+3. Inspect the ACTUAL existing frontend and backend.
+4. Understand the current AppShell and UI components.
+5. Do not rebuild working Stage 07 functionality unnecessarily.
+
+Then implement Stage 08.
+
+Do not merely create documentation.
+
+Actually implement and test the code.
+
+If an existing component can be improved and reused, improve it rather
+than creating a duplicate.
+
+The final application should feel like one coherent professional
+hospital health reporting system.
+
+============================================================
+END OF STAGE 08 SPECIFICATION
+============================================================

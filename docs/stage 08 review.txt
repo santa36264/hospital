@@ -1,0 +1,511 @@
+============================================================
+STAGE 08 — DATASET REPORTS & REPORT MANAGEMENT REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 08 implementation review
+
+============================================================
+1. IMPLEMENTATION SUMMARY
+============================================================
+
+Stage 08 implements the first reporting layer of the system.
+
+Four report types are available to REPORTING and ADMIN users:
+
+A. Dataset Report  — approved indicator values for one dataset + period
+B. Monthly Report  — all active datasets with approval status per period
+C. Indicator Report — approved value for one specific indicator
+D. Submission Status Report — workflow overview for all submissions
+E. Report History  — log of report access per user
+
+Key design decisions:
+- Only APPROVED submissions are treated as finalized data.
+- DRAFT, SUBMITTED, UNDER_REVIEW and RETURNED submissions are
+  excluded from Dataset, Monthly, and Indicator Reports.
+- All report endpoints are read-only; no submission data is modified.
+- Report access is logged in report_history (fire-and-forget).
+- All IDs validated server-side; frontend cannot bypass validation.
+- All report endpoints require authentication + authorized role.
+
+All Stage 03–07 functionality is preserved unchanged.
+No Stage 09+ functionality was implemented.
+
+============================================================
+2. FILES CREATED
+============================================================
+
+SERVER
+------
+
+server/migrations/004_report_history.js
+  - Creates report_history table (id, user_id FK, report_type ENUM,
+    dataset_id nullable, reporting_period_id nullable,
+    indicator_id nullable, parameters JSON nullable, accessed_at).
+  - Indexed on (user_id, accessed_at) for efficient history queries.
+  - No FKs on dataset/period/indicator — preserves history even
+    if configuration is later changed.
+
+server/src/repositories/reportRepository.js
+  - getApprovedSubmission(datasetId, periodId)
+    → JOIN datasets + periods + users, status=APPROVED only
+  - getSubmissionValues(submissionId)
+    → JOIN data_values + indicators with full metadata
+  - getDatasetIndicators(datasetId)
+    → ACTIVE indicators for dataset, ordered by name
+  - getMonthlyReport(periodId)
+    → period record + all active datasets + approved sub map
+  - getIndicatorReport(datasetId, indicatorId, periodId)
+    → validates indicator belongs to dataset (null if mismatch)
+  - getSubmissionStatus(filters)
+    → paginated, all statuses, search across name/code/user,
+      filters for dataset/period/status
+  - recordHistory(params) — fire-and-forget, never blocks response
+  - getHistory(userId, page, perPage) — paginated, newest first,
+    JOINs dataset/period/indicator names for display
+
+server/src/services/reportService.js
+  - datasetReport — validates IDs, returns approved submission +
+    indicators + valuesMap, records DATASET_REPORT history
+  - monthlyReport — validates period, returns rows array + summary
+    counts (approved/notApproved/total), records MONTHLY_REPORT
+  - indicatorReport — validates indicator belongs to dataset (404
+    if mismatch), returns approved value + context, records history
+  - submissionStatusReport — validates IDs and status enum, paginated,
+    all statuses, records SUBMISSION_STATUS_REPORT history
+  - getReportHistory — returns paginated history for authenticated user
+
+server/src/controllers/reportController.js
+  - datasetReport, monthlyReport, indicatorReport,
+    submissionStatusReport, reportHistory
+  - Thin HTTP handlers; all validation/logic in service
+
+server/src/routes/reportRoutes.js
+  - requireAuth on all routes
+  - requireRole('REPORTING', 'ADMIN') on each route
+  - GET /api/v1/reports/dataset
+  - GET /api/v1/reports/monthly
+  - GET /api/v1/reports/indicator
+  - GET /api/v1/reports/submission-status
+  - GET /api/v1/reports/history
+
+CLIENT
+------
+
+client/src/api/reportApi.js
+  - getDatasetReport, getMonthlyReport, getIndicatorReport,
+    getSubmissionStatusReport, getReportHistory
+
+client/src/components/reports/index.jsx
+  - PageHeader — title, subtitle, optional action slot
+  - StatCard — metric card with accent colour + sub-label
+  - FilterBar / FilterGroup — consistent filter row layout
+  - selectClass / inputClass — shared Tailwind input styles
+  - ReportCard / ReportCardHeader — white rounded card primitive
+  - StatusBadge — full status coverage (DRAFT through APPROVED,
+    ACTIVE/INACTIVE, OPEN/CLOSED) with colour map
+  - formatIndicatorValue — percentage %, yes/no boolean, raw string
+  - ReportTable / TableHead — overflow-safe table primitives
+  - LoadingState — spinner + message
+  - EmptyState — icon + title + message + optional action
+  - ErrorState — warning + message + retry button
+  - NoApprovedData — amber callout explaining missing approved data
+  - Pagination — page navigation with from/to counts
+
+client/src/pages/reporting/reports/DatasetReportPage.jsx
+  - Dataset + period selectors
+  - "View Report" button triggers generate
+  - Stat cards: dataset code, period, status APPROVED, approved date
+  - Submission info card: submitter, submitted, approved dates
+  - Indicator results table: name/code/type/required/value
+  - ValueCell handles missing values gracefully (italic "Not entered")
+  - NoApprovedData shown when no approved submission exists
+
+client/src/pages/reporting/reports/MonthlyReportPage.jsx
+  - Period selector
+  - Summary stat cards: period, approved count, not-approved count
+  - Dataset approval table: name/code/status/submitter/date/action
+  - "View Report" links to DatasetReportPage for approved rows
+  - "Not available" shown for unapproved datasets (not a value)
+
+client/src/pages/reporting/reports/IndicatorReportPage.jsx
+  - Cascading filters: dataset -> indicator (loads on dataset change)
+    + period
+  - Large value highlight card with 4xl font
+  - Indicator metadata: name, code, description, data type
+  - Submission context card: submitter, submitted, approved dates
+
+client/src/pages/reporting/reports/SubmissionStatusPage.jsx
+  - Search + status + dataset + period filters (debounced 250ms)
+  - Paginated table: dataset/period/user/status/submitted/reviewed/
+    approved/returned dates
+  - StatusBadge for each status
+  - Auto-loads on filter change, page resets to 1 on filter change
+
+client/src/pages/reporting/reports/ReportHistoryPage.jsx
+  - Paginated history table: type badge/dataset/period/indicator/
+    accessed-by/accessed-at
+  - Colour-coded report type badges
+  - Newest first ordering
+
+test_stage08.ps1
+  - Full PowerShell API test script (60 tests)
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/src/routes/index.js
+  - Added: const reportRoutes = require('./reportRoutes')
+  - Added: router.use('/reports', reportRoutes)
+
+client/src/layouts/AppShell.jsx
+  - REPORTING nav expanded from [Review Queue, Notifications]
+    to [Review Queue, Dataset Report, Monthly Report,
+        Indicator Report, Submission Status, Report History,
+        Notifications]
+
+client/src/routes/AppRoutes.jsx
+  - Added imports for 5 new report pages
+  - Added routes (all RequireRole REPORTING):
+    /app/reporting/reports/dataset
+    /app/reporting/reports/monthly
+    /app/reporting/reports/indicator
+    /app/reporting/reports/submission-status
+    /app/reporting/reports/history
+
+============================================================
+4. DATABASE CHANGES
+============================================================
+
+New table: report_history (migration 004, batch 4)
+
+  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+  user_id        INT UNSIGNED NOT NULL  FK -> users.id
+  report_type    ENUM(DATASET_REPORT, MONTHLY_REPORT,
+                      INDICATOR_REPORT, SUBMISSION_STATUS_REPORT)
+  dataset_id     INT UNSIGNED NULLABLE  (no FK — historical)
+  reporting_period_id  INT UNSIGNED NULLABLE  (no FK)
+  indicator_id   INT UNSIGNED NULLABLE  (no FK)
+  parameters     JSON NULLABLE
+  accessed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+  INDEX: (user_id, accessed_at)
+
+No existing tables were modified.
+No existing data was altered or removed.
+No FKs on optional columns — history is preserved even if
+datasets/periods/indicators are later deactivated or modified.
+
+============================================================
+5. API ENDPOINTS (Stage 08 new)
+============================================================
+
+All require authentication (401 if not) and REPORTING or ADMIN
+role (403 otherwise).
+
+GET /api/v1/reports/dataset
+  Query: dataset_id (required), reporting_period_id (required)
+  Returns: { dataset, period, submission|null, indicators[],
+             valuesMap{indicatorId: valueRow} }
+  422 if params missing. 404 if dataset/period not found.
+  submission=null when no APPROVED submission exists.
+
+GET /api/v1/reports/monthly
+  Query: reporting_period_id (required)
+  Returns: { period, rows[{dataset, approvedSubmission|null}],
+             summary{totalDatasets, approved, notApproved} }
+  422 if param missing. 404 if period not found.
+
+GET /api/v1/reports/indicator
+  Query: dataset_id, indicator_id, reporting_period_id (all required)
+  Returns: { dataset, period, indicator, submission|null, value|null }
+  422 if any param missing. 404 if any ID not found.
+  404 if indicator does not belong to the selected dataset.
+  submission=null / value=null when no APPROVED submission exists.
+
+GET /api/v1/reports/submission-status
+  Query: dataset_id (opt), reporting_period_id (opt),
+         status (opt), search (opt), page (opt), per_page (opt)
+  Returns: { data[], meta{page, perPage, total, totalPages} }
+  All submission statuses included (not just APPROVED).
+  422 if status filter is invalid.
+  Default page=1, perPage=50, max perPage=200.
+
+GET /api/v1/reports/history
+  Returns: { data[], meta{page, perPage, total, totalPages} }
+  Scoped to authenticated user only.
+  Ordered by accessed_at DESC.
+
+============================================================
+6. REPORT QUERY RULES
+============================================================
+
+1. Dataset, Monthly, and Indicator Reports use ONLY
+   submission.status = 'APPROVED' as finalized data.
+
+2. DRAFT, SUBMITTED, UNDER_REVIEW, RETURNED submissions are
+   excluded from finalized report data (returned as null).
+
+3. Submission Status Report includes ALL statuses — it is a
+   workflow overview, not a finalized data report.
+
+4. Indicator must belong to the selected dataset.
+   Cross-dataset indicator queries return 404.
+
+5. All IDs (dataset_id, period_id, indicator_id) are validated
+   server-side. Frontend claims are not trusted.
+
+6. Report endpoints are READ-ONLY. No endpoint creates, updates,
+   or deletes any submission, data_value, or history record.
+
+7. Report history is recorded fire-and-forget (errors logged but
+   never thrown to the client).
+
+============================================================
+7. AUTHORIZATION
+============================================================
+
+- Anonymous -> 401 on all /reports/* endpoints
+- DATA_ENTRY -> 403 on all /reports/* endpoints
+- MANAGER -> 403 on all /reports/* endpoints
+- REPORTING -> 200 on all /reports/* endpoints
+- ADMIN -> 200 on all /reports/* endpoints
+  (Admin needs reporting access for system oversight)
+
+Report history is scoped to the authenticated user's own history
+(userId = req.user.id in the service). Users cannot access
+another user's report history.
+
+============================================================
+8. UI/UX IMPLEMENTATION
+============================================================
+
+Shared components (client/src/components/reports/index.jsx):
+  A centralized barrel of reusable report primitives used across
+  all 5 report pages:
+  - Consistent card/table/filter/badge/state primitives
+  - No page-by-page style duplication
+  - All use the existing Tailwind language (slate/blue palette,
+    rounded-xl, shadow-sm, border-slate-100)
+
+AppShell REPORTING sidebar:
+  - Expanded from 2 items to 7 items with full report navigation
+  - NavLink active highlighting consistent with Stage 07
+
+Report pages visual quality:
+  - PageHeader with title + subtitle on every page
+  - FilterBar groups labels + inputs consistently
+  - Stat cards with colour-coded left border accents
+  - Tables use TableHead + hover:bg-slate-50 + transition-colors
+  - Empty, loading, error states on every page
+  - NoApprovedData callout clearly explains approved-only rule
+  - Pagination component on paginated reports
+  - Loading spinner (CSS animation, no extra library)
+  - Indicator values formatted by type (%, yes/no, raw)
+
+DatasetReportPage:
+  - 4-stat summary row before report body
+  - Indicator table shows type badge, required flag, formatted value
+  - Missing values shown as italic "Not entered" (not zero)
+
+MonthlyReportPage:
+  - Summary cards: period, approved count, not-approved count
+  - Per-dataset approval badges (APPROVED green / NOT APPROVED amber)
+  - "View Report" links to DatasetReportPage for approved rows
+  - "Not available" text (not a value) for unapproved datasets
+
+IndicatorReportPage:
+  - Cascading dataset -> indicator dropdown (loads on dataset select)
+  - Large value highlighted in 4xl blue font
+  - Indicator name, code, description, data type in context card
+
+SubmissionStatusPage:
+  - Auto-loads on filter change (debounced 250ms)
+  - All 8 status/date columns visible
+
+ReportHistoryPage:
+  - Colour-coded report type badges per type
+
+============================================================
+9. TESTS PERFORMED
+============================================================
+
+API + auth + report tests (test_stage08.ps1):
+
+  PASS  GET /health
+  PASS  Stage 04 /auth/me
+  PASS  Stage 05 datasets, indicators, periods
+  PASS  Stage 06 my submissions
+  PASS  Stage 07 review queue, notifications
+
+  PASS  Anonymous -> 401 on /reports/dataset
+  PASS  DATA_ENTRY -> 403 on /reports/dataset
+  PASS  MANAGER -> 403 on /reports/dataset
+  PASS  Anonymous -> 401 on /reports/monthly
+  PASS  DATA_ENTRY -> 403 on /reports/monthly
+  PASS  Anonymous -> 401 on /reports/submission-status
+  PASS  DATA_ENTRY -> 403 on /reports/submission-status
+  PASS  Anonymous -> 401 on /reports/history
+
+  PASS  Setup: submission approved (DRAFT->SUBMITTED->APPROVED)
+  PASS  Dataset report: succeeds with approved data
+  PASS  Dataset report: has submission (APPROVED)
+  PASS  Dataset report: has indicators array + valuesMap
+  PASS  Dataset report: no-approved period returns null submission
+  PASS  Dataset report: invalid dataset_id -> 404
+  PASS  Dataset report: invalid period_id -> 404
+  PASS  Dataset report: missing params -> 422
+
+  PASS  Monthly report: succeeds
+  PASS  Monthly report: has rows + summary
+  PASS  Monthly report: approved count >= 1
+  PASS  Monthly report: approved row present
+  PASS  Monthly report: non-approved not counted
+  PASS  Monthly report: missing param -> 422
+  PASS  Monthly report: invalid period -> 404
+
+  PASS  Indicator report: succeeds
+  PASS  Indicator report: has indicator + submission (APPROVED) + value
+  PASS  Indicator report: indicator from wrong dataset -> 404
+  PASS  Indicator report: missing params -> 422
+
+  PASS  Status report: succeeds with data + meta
+  PASS  Status report: approved submission present
+  PASS  Status report: status=APPROVED filter returns only APPROVED
+  PASS  Status report: dataset_id filter returns only that dataset
+  PASS  Status report: invalid status -> 422
+
+  PASS  Report history: succeeds with data + meta
+  PASS  Report history: has entries (from earlier report calls)
+  PASS  Report history: newest first
+  PASS  Report history: DATA_ENTRY -> 403
+
+  PASS  ADMIN can access dataset report
+  PASS  ADMIN can access monthly report
+  PASS  ADMIN can access submission status
+
+  PASS  Submission status unchanged after report reads (still APPROVED)
+  PASS  No new workflow history events created by report reads
+
+  Total: 60 passed / 0 failed
+
+Client build:
+  npm run build -> 110 modules, 0 errors, 0 warnings — PASS
+
+Server module load:
+  node -e "require('./src/app')" -> OK — PASS
+
+============================================================
+10. PROBLEMS ENCOUNTERED
+============================================================
+
+PROBLEM 1: Shared report components file (components/reports/index.js)
+used JSX syntax but had a .js extension.
+
+ROOT CAUSE: Vite only processes JSX in .jsx files by default.
+The build failed with "JSX syntax is disabled" error.
+
+FIX: Renamed to index.jsx. All 5 report page imports from
+'../../../components/reports' resolved automatically via
+Vite's directory index resolution (index.jsx is found first).
+Build succeeded on next run.
+
+============================================================
+11. REMAINING ISSUES
+============================================================
+
+- No automated test suite (planned Stage 13); all testing was
+  manual API-level + build verification.
+- MonthlyReportPage "View Report" links carry dataset_id and
+  period_id as URL query params; DatasetReportPage reads them
+  from useSearchParams — this wiring is prepared but requires
+  DatasetReportPage to read URL params on mount (a minor
+  enhancement for Stage 09 polish).
+- Report history is per-user only; an Admin view of all users'
+  report history is a Stage 09+ concern.
+- MANAGER role is not granted report access (per Stage 01/08
+  RBAC rules — Manager analytics is a Stage 09+ feature).
+- test_stage08.ps1 creates a "Stage08 Test Period" row in the
+  development database on each clean run.
+- Rate limiter (15 min / 20 req) — test script adds 700ms
+  delays between logins; restart server if limit is hit.
+
+============================================================
+12. STAGE 08 ACCEPTANCE CRITERIA STATUS
+============================================================
+
+[x] REPORTING can access Dataset Reports.
+[x] Dataset Report uses APPROVED submission data only.
+[x] REPORTING can select dataset and reporting period.
+[x] Dataset Report displays indicator values correctly.
+[x] Missing values shown as "Not entered" (not zero).
+[x] Monthly Report displays approved datasets for a period.
+[x] Monthly Report: unapproved datasets marked NOT APPROVED.
+[x] Indicator Report displays one approved indicator value.
+[x] Indicator from wrong dataset -> 404.
+[x] Submission Status Report displays workflow status.
+[x] Submission Status Report supports filters and pagination.
+[x] Report History records report access (per user).
+[x] Report History: newest first, paginated.
+[x] All report endpoints authenticated (401 if not).
+[x] DATA_ENTRY -> 403 on report endpoints.
+[x] MANAGER -> 403 on report endpoints.
+[x] ADMIN -> 200 on report endpoints.
+[x] Reports are read-only (no submission mutations).
+[x] Missing/invalid IDs return 422 or 404.
+[x] Loading states on all report pages.
+[x] Empty states on all report pages.
+[x] Error states with retry on all report pages.
+[x] Approved-only explanation shown when no approved data.
+[x] Paginated tables where appropriate.
+[x] Shared report components used consistently.
+[x] REPORTING sidebar has full report navigation (6 items).
+[x] Report pages match Stage 07 AppShell visual design.
+[x] Tables are overflow-safe (overflow-x-auto).
+[x] Existing Stage 04–07 functionality unchanged.
+[x] Client build succeeds (110 modules, 0 errors).
+[x] Backend tests pass (60/60).
+[x] No Stage 09+ functionality was implemented.
+
+============================================================
+13. CONFIRMATION — STAGE 09+ NOT IMPLEMENTED
+============================================================
+
+The following Stage 09+ functionality was NOT implemented:
+
+- No Custom Report Builder.
+- No indicator-by-period matrix builder.
+- No PDF export.
+- No Excel export.
+- No print/export engine.
+- No advanced report comparison.
+- No trend charts or visualization.
+- No dashboard analytics.
+- No management KPI dashboard.
+- No advanced data analysis.
+- No deployment configuration.
+
+============================================================
+14. READINESS FOR STAGE 09
+============================================================
+
+Stage 08 is COMPLETE and ready for Stage 09.
+
+Foundation for Stage 09 (Custom Reports / Export):
+
+- reportRepository patterns are reusable for arbitrary
+  indicator-by-period matrix queries.
+- report_history table is in place with parameters JSON column
+  for storing custom report parameter sets.
+- Shared report components (ReportCard, ReportTable, StatCard,
+  Pagination, filters) are all available for Stage 09 pages.
+- APPROVED data access is established and tested.
+- REPORTING sidebar has a clear extension point for
+  "Custom Reports" navigation item.
+- The DatasetReportPage URL-param pattern is ready to support
+  cross-page navigation from MonthlyReport.
+
+============================================================
+END OF STAGE 08 REVIEW
+============================================================

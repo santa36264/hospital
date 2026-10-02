@@ -16,6 +16,11 @@ const NAV_BY_ROLE = {
   ],
   REPORTING: [
     { to: '/app/reporting/queue', label: 'Review Queue' },
+    { to: '/app/reporting/reports/dataset', label: 'Dataset Report' },
+    { to: '/app/reporting/reports/monthly', label: 'Monthly Report' },
+    { to: '/app/reporting/reports/indicator', label: 'Indicator Report' },
+    { to: '/app/reporting/reports/submission-status', label: 'Submission Status' },
+    { to: '/app/reporting/reports/history', label: 'Report History' },
     { to: '/app/notifications', label: 'Notifications' },
   ],
   MANAGER: [

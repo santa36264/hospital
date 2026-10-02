@@ -1,0 +1,557 @@
+============================================================
+STAGE 07 — REVIEW, APPROVAL & DATA QUALITY WORKFLOW REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 07 implementation review
+
+============================================================
+1. IMPLEMENTATION SUMMARY
+============================================================
+
+Stage 07 implements the complete Reporting review workflow:
+
+- REPORTING users see a live submission queue.
+- They explicitly start a review (SUBMITTED -> UNDER_REVIEW).
+- They approve (UNDER_REVIEW -> APPROVED) or return
+  (UNDER_REVIEW -> RETURNED) with a mandatory reason.
+- DATA_ENTRY owners are notified of every status change.
+- Return reason is persisted in submission_history and surfaced
+  in the DATA_ENTRY submission form.
+- All status transitions are atomic (database transactions).
+- All workflow events are audit-logged.
+- In-app notifications are stored per-user with read/unread
+  tracking and a bell badge in the header.
+
+All Stage 03–06 functionality is preserved unchanged.
+No Stage 08+ functionality was implemented.
+
+============================================================
+2. FILES CREATED
+============================================================
+
+SERVER
+------
+
+server/src/repositories/notificationRepository.js
+  - create (trx-aware)
+  - listForUser (with unreadOnly filter)
+  - countUnread
+  - markRead (user-scoped for security)
+  - markAllRead
+
+server/src/services/notificationService.js
+  - notifyUnderReview   — fires inside transaction, fire-and-forget
+  - notifyReturned      — fires inside transaction, fire-and-forget
+  - notifyApproved      — fires inside transaction, fire-and-forget
+  - listForUser, countUnread, markRead, markAllRead
+
+server/src/services/reviewService.js
+  - listForReview       — queue with search/filter, joins owner
+  - getReviewDetail     — full submission + all indicators + values + history
+  - startReview         — SUBMITTED->UNDER_REVIEW, history, audit, notify
+  - approveSubmission   — UNDER_REVIEW->APPROVED, history, audit, notify
+  - returnSubmission    — mandatory reason, UNDER_REVIEW->RETURNED,
+                          history with reason, audit, notify
+  - All multi-step operations wrapped in db.transaction
+
+server/src/controllers/reviewController.js
+  - listQueue, getDetail, startReview, approve, returnSubmission
+  - Thin HTTP handlers; all business logic in reviewService
+
+server/src/controllers/notificationController.js
+  - list, unreadCount, markRead, markAllRead
+
+server/src/routes/reviewRoutes.js
+  - requireAuth + requireRole('REPORTING') on all routes
+  - GET    /api/v1/review/queue
+  - GET    /api/v1/review/submissions/:id
+  - POST   /api/v1/review/submissions/:id/start
+  - POST   /api/v1/review/submissions/:id/approve
+  - POST   /api/v1/review/submissions/:id/return
+
+server/src/routes/notificationRoutes.js
+  - requireAuth (any authenticated role) on all routes
+  - GET    /api/v1/notifications
+  - GET    /api/v1/notifications/unread-count
+  - PATCH  /api/v1/notifications/:id/read
+  - PATCH  /api/v1/notifications/read-all
+
+CLIENT
+------
+
+client/src/api/reviewApi.js
+  - getReviewQueue, getReviewDetail, startReview,
+    approveSubmission, returnSubmission
+
+client/src/api/notificationApi.js
+  - getNotifications, getUnreadCount,
+    markNotificationRead, markAllNotificationsRead
+
+client/src/pages/reporting/SubmissionQueuePage.jsx
+  - Summary cards (awaiting review, under review, total)
+  - Search + status/dataset/period filters (debounced)
+  - Queue table: dataset, period, submitter, submitted date, status
+  - Action links: "Start Review" (blue) / "Continue Review" (purple)
+  - Empty state when queue is clear
+
+client/src/pages/reporting/ReviewDetailPage.jsx
+  - Submission metadata card (dataset, period, status, owner,
+    submitted/reviewed/approved/returned dates)
+  - Contextual action buttons: Start Review / Approve / Return
+  - Approve confirmation dialog
+  - Return dialog with mandatory textarea + client validation
+  - Read-only indicator value display with data-type labels
+  - Workflow history timeline (colour-coded badges, timestamps,
+    return reason highlighted in red)
+
+client/src/pages/notifications/NotificationsPage.jsx
+  - Full notifications list (newest first)
+  - Unread-only filter toggle
+  - Mark single / mark all as read
+  - Type icons and colour coding per notification type
+  - Empty state
+
+client/src/components/NotificationBell.jsx
+  - SVG bell icon in header
+  - Unread count badge (red, capped at 99+)
+  - Polls /api/v1/notifications/unread-count every 60 seconds
+  - Navigates to /app/notifications on click
+
+test_stage07.ps1
+  - Full PowerShell API test script (55 tests)
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/src/repositories/submissionRepository.js
+  - Added findForReview (SUBMITTED+UNDER_REVIEW queue with
+    owner JOIN, search/filter, ordered by submitted_at asc)
+  - Added findByIdWithOwner (reviewer detail with owner info)
+
+server/src/services/submissionService.js
+  - getSubmission now fetches the latest RETURNED history
+    entry and attaches returnReason to the submission object
+    when status is RETURNED.
+
+server/src/routes/index.js
+  - Registered /review -> reviewRoutes
+  - Registered /notifications -> notificationRoutes
+
+client/src/layouts/AppShell.jsx
+  - Rebuilt: NavLink with active state highlighting
+  - REPORTING nav: Review Queue, Notifications
+  - DATA_ENTRY nav: My Submissions, New Submission, Notifications
+  - MANAGER nav: Dashboard, Notifications
+  - NotificationBell in header alongside Notifications link
+  - User name + role badge moved to sidebar bottom
+  - Cleaner brand/logo header in sidebar
+
+client/src/pages/data-entry/SubmissionFormPage.jsx
+  - RETURNED banner now shows the actual return reason from
+    submission.returnReason (supplied by updated getSubmission)
+
+client/src/routes/AppRoutes.jsx
+  - Removed ReportingPlaceholder route
+  - Added /app/reporting/queue     -> SubmissionQueuePage
+  - Added /app/reporting/submissions/:id -> ReviewDetailPage
+  - /app/reporting index redirects to /app/reporting/queue
+  - Added /app/notifications -> NotificationsPage (all roles)
+
+============================================================
+4. DATABASE CHANGES
+============================================================
+
+No new migrations required.
+
+All required tables already exist from Stage 03:
+
+  notifications       — used fully (recipient_user_id, type,
+                        message, status UNREAD/READ, created_at,
+                        read_at)
+  submission_history  — extended usage: REVIEW_STARTED, RETURNED
+                        (with reason), APPROVED events added
+  audit_logs          — new events: SUBMISSION_REVIEW_STARTED,
+                        SUBMISSION_RETURNED, SUBMISSION_APPROVED
+  submissions         — reviewed_at, approved_at, returned_at
+                        columns written on each transition
+
+============================================================
+5. API ENDPOINTS (Stage 07 new)
+============================================================
+
+REVIEW ENDPOINTS (REPORTING role only — 401/403 otherwise)
+
+GET    /api/v1/review/queue
+  Query params: status (SUBMITTED|UNDER_REVIEW), dataset_id,
+  reporting_period_id, search.
+  Returns submissions with owner details, ordered by submitted_at.
+
+GET    /api/v1/review/submissions/:id
+  Returns: { submission (with owner), indicators (all),
+             values map, history (with user names) }
+  403 if submission is not in a reviewable status.
+
+POST   /api/v1/review/submissions/:id/start
+  SUBMITTED -> UNDER_REVIEW.
+  409 if not SUBMITTED.
+  Writes REVIEW_STARTED history, audit, notifies DATA_ENTRY owner.
+
+POST   /api/v1/review/submissions/:id/approve
+  UNDER_REVIEW -> APPROVED.
+  409 if not UNDER_REVIEW.
+  Writes APPROVED history, audit, notifies DATA_ENTRY owner.
+
+POST   /api/v1/review/submissions/:id/return
+  Body: { reason: string (required) }
+  UNDER_REVIEW -> RETURNED.
+  422 if reason is missing or blank.
+  409 if not UNDER_REVIEW.
+  Writes RETURNED history (with reason), audit, notifies owner.
+
+NOTIFICATION ENDPOINTS (all authenticated roles)
+
+GET    /api/v1/notifications
+  Query: unread=true for unread-only.
+  Returns list ordered by created_at desc.
+
+GET    /api/v1/notifications/unread-count
+  Returns { count: number }.
+
+PATCH  /api/v1/notifications/:id/read
+  Marks one notification read (user-scoped).
+  404 if not found or belongs to different user.
+
+PATCH  /api/v1/notifications/read-all
+  Marks all user's unread notifications as read.
+
+============================================================
+6. FRONTEND ROUTES (Stage 07 new)
+============================================================
+
+/app/reporting                       -> redirect to /app/reporting/queue
+/app/reporting/queue                 -> SubmissionQueuePage  [REPORTING]
+/app/reporting/submissions/:id       -> ReviewDetailPage     [REPORTING]
+/app/notifications                   -> NotificationsPage    [any auth'd]
+
+============================================================
+7. AUTHORIZATION
+============================================================
+
+- Anonymous -> 401 on all /review and /notification endpoints.
+- DATA_ENTRY, ADMIN, MANAGER -> 403 on /review endpoints.
+- REPORTING -> 403 on /submissions (DATA_ENTRY creation endpoints).
+- Notification endpoints allow any authenticated role (401 if not
+  authenticated, otherwise own notifications only).
+- reviewer_id is always taken from req.user (never from body).
+- Status transitions are validated server-side; no frontend-only
+  state changes are trusted.
+
+============================================================
+8. VALIDATION
+============================================================
+
+START REVIEW
+- Must be REPORTING role -> 403 otherwise
+- Submission must exist -> 404 otherwise
+- Status must be SUBMITTED -> 409 otherwise
+
+APPROVE
+- Must be REPORTING role -> 403 otherwise
+- Submission must exist -> 404 otherwise
+- Status must be UNDER_REVIEW -> 409 otherwise
+
+RETURN
+- Must be REPORTING role -> 403 otherwise
+- Submission must exist -> 404 otherwise
+- Status must be UNDER_REVIEW -> 409 otherwise
+- reason required and non-blank -> 422 otherwise
+
+NOTIFICATIONS
+- markRead: ownership checked (user_id = recipient_user_id)
+  -> 404 if not found or belongs to another user
+
+============================================================
+9. TRANSACTION SAFETY
+============================================================
+
+startReview:
+  BEGIN -> UPDATE status -> INSERT history (REVIEW_STARTED)
+        -> INSERT audit -> INSERT notification -> COMMIT
+
+approveSubmission:
+  BEGIN -> UPDATE status -> INSERT history (APPROVED)
+        -> INSERT audit -> INSERT notification -> COMMIT
+
+returnSubmission:
+  BEGIN -> UPDATE status -> INSERT history (RETURNED, reason)
+        -> INSERT audit -> INSERT notification -> COMMIT
+
+Notification errors inside transactions are caught and logged
+(console.error) but do not abort the main workflow transaction.
+
+============================================================
+10. SUBMISSION HISTORY EVENTS (Stage 07)
+============================================================
+
+REVIEW_STARTED  — when Reporting starts review
+RETURNED        — when Reporting returns (carries reason text)
+APPROVED        — when Reporting approves
+
+Combined with Stage 06 events (CREATED, SUBMITTED, RESUBMITTED),
+the full lifecycle is now traceable from creation to approval.
+
+============================================================
+11. AUDIT EVENTS (Stage 07)
+============================================================
+
+SUBMISSION_REVIEW_STARTED  — reviewer, old/new status
+SUBMISSION_RETURNED        — reviewer, old/new status, reason
+SUBMISSION_APPROVED        — reviewer, old/new status
+
+Uses existing auditLogRepository.log() from Stage 04.
+
+============================================================
+12. NOTIFICATIONS
+============================================================
+
+Type: SUBMISSION_UNDER_REVIEW
+  Recipient: DATA_ENTRY owner
+  Message:   "Your submission {dataset} — {period} is now
+              under review by {reviewer}."
+
+Type: SUBMISSION_RETURNED
+  Recipient: DATA_ENTRY owner
+  Message:   "Your submission {dataset} — {period} was returned
+              by {reviewer}. Reason: {reason}"
+
+Type: SUBMISSION_APPROVED
+  Recipient: DATA_ENTRY owner
+  Message:   "Your submission {dataset} — {period} has been
+              approved by {reviewer}."
+
+All notifications are stored in the notifications table.
+Delivery is in-app only (no email/SMS — Stage 08+ scope).
+Read/unread tracking with read_at timestamp.
+
+============================================================
+13. UI/UX IMPROVEMENTS
+============================================================
+
+AppShell:
+- Rebuilt sidebar with NavLink active-state highlighting
+  (active item shown in slate-700 with white text)
+- User name and role badge moved to sidebar bottom area
+- Cleaner brand header with subtitle
+- Notification bell SVG icon in header bar
+- Sign Out button styled consistently
+
+Reporting:
+- Summary stat cards at top of queue page (awaiting / under
+  review / total)
+- Queue actions styled with role-appropriate colours:
+  blue for "Start Review", purple for "Continue Review"
+- Review detail page shows full metadata grid (submitted,
+  reviewed, approved, returned dates visible as applicable)
+- Return dialog: modal with required textarea, client-side
+  validation before API call
+- Approve dialog: confirmation modal with dataset + period names
+- History timeline: colour-coded badges per action, timestamps,
+  return reason displayed in red callout box
+
+DATA_ENTRY:
+- RETURNED banner now shows the actual reviewer's return reason
+- "Returned for correction" banner includes reason text
+
+Notifications:
+- Type-specific icons and colour coding
+- Unread items shown at full opacity, read items dimmed
+- "Mark all read" button appears only when unread count > 0
+
+============================================================
+14. TESTS PERFORMED
+============================================================
+
+API + authorization + workflow tests (test_stage07.ps1):
+
+  PASS  GET /health
+  PASS  Stage 04 auth /me
+  PASS  Stage 05 datasets accessible
+  PASS  Stage 05 indicators accessible
+  PASS  Stage 05 periods accessible
+  PASS  Stage 06 my submissions works
+
+  PASS  Anonymous -> 401 on review queue
+  PASS  DATA_ENTRY -> 403 on review queue
+  PASS  ADMIN -> 403 on review queue
+  PASS  MANAGER -> 403 on review queue
+  PASS  DATA_ENTRY -> 403 on start-review
+
+  PASS  Anonymous -> 401 on notifications
+  PASS  Anonymous -> 401 on unread-count
+
+  PASS  Submission is SUBMITTED (setup)
+  PASS  Queue returns data
+  PASS  Submission appears in queue
+  PASS  GET review detail succeeds
+  PASS  Detail has submission
+  PASS  Detail has indicators
+  PASS  Detail has values
+  PASS  Detail has history
+
+  PASS  Start review succeeds
+  PASS  Status is UNDER_REVIEW
+  PASS  Cannot start review again (409)
+  PASS  DATA_ENTRY can still see own submission detail
+  PASS  DATA_ENTRY received under-review notification
+
+  PASS  Unread count endpoint works
+  PASS  Unread count >= 1
+  PASS  Mark notification read
+  PASS  Mark all notifications read
+
+  PASS  Return without reason -> 422
+  PASS  Return with reason succeeds
+  PASS  Status is RETURNED
+  PASS  Cannot return again (409)
+  PASS  DATA_ENTRY received returned notification
+  PASS  Return reason in submission detail
+
+  PASS  Resubmit RETURNED succeeds
+  PASS  Status back to SUBMITTED
+  PASS  Start review on resubmitted
+
+  PASS  Approve succeeds
+  PASS  Status is APPROVED
+  PASS  Cannot approve again (409)
+  PASS  Cannot return APPROVED (409)
+  PASS  DATA_ENTRY received approved notification
+
+  PASS  History has entries
+  PASS  History contains CREATED
+  PASS  History contains SUBMITTED
+  PASS  History contains REVIEW_STARTED
+  PASS  History contains RETURNED with reason
+  PASS  History contains RESUBMITTED
+  PASS  History contains APPROVED
+
+  PASS  DATA_ENTRY cannot start review (403)
+  PASS  DATA_ENTRY cannot approve (403)
+  PASS  DATA_ENTRY cannot return (403)
+  PASS  REPORTING cannot create DATA_ENTRY submissions (403)
+
+  Total: 55 passed / 0 failed
+
+Client build:
+  npm run build -> 103 modules, 0 errors, 0 warnings — PASS
+
+Server module load:
+  node -e "require('./src/app')" -> OK — PASS
+
+============================================================
+15. PROBLEMS ENCOUNTERED AND FIXED
+============================================================
+
+PROBLEM 1: API test suite returned 404 on all /review and
+/notifications routes despite code being correct.
+
+ROOT CAUSE: The background server process was reused from
+Stage 06 (before the new routes were registered). The
+`control_pwsh_process` tool returned `isReused: true`.
+
+FIX: Stopped the old process and started a fresh instance.
+All 55 tests passed on the fresh server.
+
+PROBLEM 2: (stage 06 carry-over) PowerShell rate limiter
+still applies — added 600ms delays between each login call
+in test script to avoid hitting the 15-minute rate-limit
+window.
+
+============================================================
+16. REMAINING ISSUES
+============================================================
+
+- No automated test suite (planned Stage 13); all testing
+  was manual API-level.
+- Notification bell polling interval is 60 seconds; real-time
+  push notifications (WebSocket/SSE) are out of scope.
+- No notification UI for REPORTING users receiving new
+  submissions (only DATA_ENTRY owners are notified of
+  status changes; notifying Reporting of new submissions
+  is a future enhancement).
+- Manager dashboard (/app/manager) remains a placeholder;
+  full manager analytics is Stage 08+ scope.
+- Admin audit-log UI is not yet built (Stage 08+ scope).
+- No report generation, export, or analysis (Stage 08+ scope).
+- test_stage07.ps1 creates a "Stage07 Test Period" row in the
+  development database on each clean run.
+
+============================================================
+17. CONFIRMATION — STAGE 08+ NOT IMPLEMENTED
+============================================================
+
+The following Stage 08+ functionality was NOT implemented:
+
+- No report generation (dataset/standard/custom reports).
+- No PDF or Excel export.
+- No manager analytics or dashboard.
+- No period-comparison or trend analysis.
+- No full audit-log UI.
+- No user management UI.
+- No email or SMS notifications.
+- No system settings page.
+- No deployment configuration.
+
+============================================================
+18. STAGE 07 ACCEPTANCE CRITERIA STATUS
+============================================================
+
+[x] REPORTING can see submission review queue.
+[x] Queue shows SUBMITTED and UNDER_REVIEW submissions.
+[x] Queue supports search and filters.
+[x] REPORTING can start review (SUBMITTED -> UNDER_REVIEW).
+[x] REPORTING can approve (UNDER_REVIEW -> APPROVED).
+[x] REPORTING can return (UNDER_REVIEW -> RETURNED).
+[x] Return reason is mandatory (422 if blank).
+[x] Illegal transitions rejected with 409.
+[x] DATA_ENTRY cannot access review endpoints (403).
+[x] ADMIN/MANAGER cannot access review endpoints (403).
+[x] REPORTING cannot create DATA_ENTRY submissions (403).
+[x] Notifications sent for UNDER_REVIEW, RETURNED, APPROVED.
+[x] Notification bell with unread count in header.
+[x] Notifications page with mark-read functionality.
+[x] Return reason displayed in DATA_ENTRY submission form.
+[x] Submission history records all workflow events.
+[x] Audit log records all workflow events.
+[x] Database transactions protect all multi-step operations.
+[x] Stage 04 authentication still works.
+[x] Stage 05 configuration still works.
+[x] Stage 06 DATA_ENTRY workflow still works.
+[x] Client build succeeds (103 modules, 0 errors).
+[x] No Stage 08+ functionality was implemented.
+
+============================================================
+19. READINESS FOR STAGE 08
+============================================================
+
+Stage 07 is COMPLETE and ready for Stage 08.
+
+Stage 08 can build reporting and analytics on top of the
+complete APPROVED dataset without modifying Stage 07 logic.
+Key hooks for Stage 08:
+
+- submissions with status=APPROVED contain complete, validated
+  indicator values in data_values ready for report queries.
+- All six workflow history event types are recorded.
+- Audit logs capture the complete chain of custody.
+- REPORTING users are already authenticated and authorized;
+  report endpoints can reuse requireRole('REPORTING').
+- The notifications infrastructure is in place; new event
+  types can be added to notificationService.
+- The submission queue page can be extended with an
+  "Approved" tab or report link.
+
+============================================================
+END OF STAGE 07 REVIEW
+============================================================

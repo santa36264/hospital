@@ -19,6 +19,12 @@ import SubmissionFormPage from '../pages/data-entry/SubmissionFormPage';
 // Reporting (Stage 07)
 import SubmissionQueuePage from '../pages/reporting/SubmissionQueuePage';
 import ReviewDetailPage from '../pages/reporting/ReviewDetailPage';
+// Reporting Reports (Stage 08)
+import DatasetReportPage from '../pages/reporting/reports/DatasetReportPage';
+import MonthlyReportPage from '../pages/reporting/reports/MonthlyReportPage';
+import IndicatorReportPage from '../pages/reporting/reports/IndicatorReportPage';
+import SubmissionStatusPage from '../pages/reporting/reports/SubmissionStatusPage';
+import ReportHistoryPage from '../pages/reporting/reports/ReportHistoryPage';
 // Notifications (Stage 07)
 import NotificationsPage from '../pages/notifications/NotificationsPage';
 
@@ -55,6 +61,14 @@ function AppRoutes() {
             {/* ── Reporting (Stage 07) ── */}
             <Route path="reporting/queue" element={<RequireRole role="REPORTING"><SubmissionQueuePage /></RequireRole>} />
             <Route path="reporting/submissions/:id" element={<RequireRole role="REPORTING"><ReviewDetailPage /></RequireRole>} />
+
+            {/* ── Reporting Reports (Stage 08) ── */}
+            <Route path="reporting/reports/dataset" element={<RequireRole role="REPORTING"><DatasetReportPage /></RequireRole>} />
+            <Route path="reporting/reports/monthly" element={<RequireRole role="REPORTING"><MonthlyReportPage /></RequireRole>} />
+            <Route path="reporting/reports/indicator" element={<RequireRole role="REPORTING"><IndicatorReportPage /></RequireRole>} />
+            <Route path="reporting/reports/submission-status" element={<RequireRole role="REPORTING"><SubmissionStatusPage /></RequireRole>} />
+            <Route path="reporting/reports/history" element={<RequireRole role="REPORTING"><ReportHistoryPage /></RequireRole>} />
+
             <Route path="reporting" element={<RequireRole role="REPORTING"><Navigate to="/app/reporting/queue" replace /></RequireRole>} />
 
             {/* ── Manager (placeholder) ── */}

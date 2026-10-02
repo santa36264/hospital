@@ -1,0 +1,999 @@
+============================================================
+STAGE 09 — CUSTOM REPORTS & EXPORT
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. STAGE PURPOSE
+============================================================
+
+Implement the Custom Report Builder and report export functionality.
+
+Stage 09 allows authorized reporting users to construct flexible
+reports from APPROVED health data by selecting:
+
+- Dataset
+- Indicators
+- Reporting periods
+
+The resulting report displays indicator values across selected
+reporting periods.
+
+Example:
+
+Dataset:
+PMTCT
+
+Indicators:
+- HIV Positive Pregnant Women
+- HIV Testing Coverage
+- ART Initiated
+
+Periods:
+- July 2026
+- August 2026
+- September 2026
+
+Result:
+
+| Indicator | Jul 2026 | Aug 2026 | Sep 2026 |
+|-----------|----------|----------|----------|
+| HIV Positive Pregnant Women | 12 | 15 | 17 |
+| HIV Testing Coverage | 72% | 78% | 81% |
+| ART Initiated | 8 | 11 | 13 |
+
+Only APPROVED submissions may contribute values.
+
+============================================================
+2. IMPORTANT SCOPE
+============================================================
+
+Stage 09 implements:
+
+1. Custom Report Builder
+2. Custom Report Preview
+3. Indicator-by-Period report matrix
+4. Saved report access/history
+5. PDF export
+6. Excel export
+7. Print-friendly report view
+
+Do NOT implement Stage 10:
+
+- dashboard analytics
+- trend charts
+- KPI dashboard
+- advanced data visualization
+- management analytics
+- forecasting
+- statistical analysis
+
+Stage 09 is about flexible reporting and export.
+
+============================================================
+3. APPROVED DATA RULE
+============================================================
+
+Custom reports use:
+
+submission.status = APPROVED
+
+ONLY.
+
+Exclude:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+
+Never display non-approved values as finalized report data.
+
+Missing approved data must remain visibly missing.
+
+Do NOT convert missing values to zero.
+
+============================================================
+4. CUSTOM REPORT BUILDER
+============================================================
+
+Create:
+
+/app/reporting/reports/custom
+
+Page title:
+
+"Custom Report"
+
+Subtitle:
+
+"Build a report from approved health data across selected periods."
+
+============================================================
+5. REPORT BUILDER WORKFLOW
+============================================================
+
+The user should build the report in a clear sequence:
+
+STEP 1
+Select Dataset
+
+STEP 2
+Select Indicators
+
+STEP 3
+Select Reporting Periods
+
+STEP 4
+Preview Report
+
+STEP 5
+Export / Print
+
+The UI should clearly communicate the current selection.
+
+Do not make the user fill a confusing collection of unrelated
+dropdowns.
+
+============================================================
+6. DATASET SELECTION
+============================================================
+
+Only active datasets should normally be selectable.
+
+After selecting a dataset:
+
+load its indicators.
+
+Do not display indicators belonging to other datasets.
+
+If dataset changes:
+
+clear previously selected indicators.
+
+The UI should explain:
+
+"Select a dataset to choose its indicators."
+
+============================================================
+7. INDICATOR SELECTION
+============================================================
+
+Display the indicators belonging to the selected dataset.
+
+Allow selecting multiple indicators.
+
+Provide:
+
+- checkbox selection
+- indicator name
+- code
+- data type
+- required/optional status where useful
+
+Provide:
+
+Select All
+
+and
+
+Clear All
+
+actions where appropriate.
+
+At least one indicator is required.
+
+============================================================
+8. REPORTING PERIOD SELECTION
+============================================================
+
+Allow multiple reporting periods.
+
+Display:
+
+- period label
+- start date
+- end date
+- status
+
+Periods should be presented in chronological order.
+
+Allow:
+
+- checkbox selection
+- Select All
+- Clear All
+
+At least one period is required.
+
+The final report should display periods chronologically.
+
+============================================================
+9. BUILDER VALIDATION
+============================================================
+
+The backend MUST validate:
+
+- dataset exists
+- dataset is valid
+- every indicator exists
+- every indicator belongs to dataset
+- every reporting period exists
+- selected indicator list is not empty
+- selected period list is not empty
+- IDs are valid
+- selection sizes are bounded
+
+Do not rely on frontend validation.
+
+Suggested limits:
+
+Maximum indicators:
+50
+
+Maximum periods:
+60
+
+If limits are exceeded:
+
+return 422 with a user-friendly validation message.
+
+============================================================
+10. PREVIEW
+============================================================
+
+After valid selections:
+
+generate the report preview.
+
+Do not require the user to export before seeing the report.
+
+Display:
+
+Report title:
+"Custom Report"
+
+Dataset:
+
+Dataset Name
+Dataset Code
+
+Selected periods:
+
+Period labels
+
+Then:
+
+Indicator-by-period matrix.
+
+Example:
+
+------------------------------------------------------------
+Custom Report
+Dataset: PMTCT
+------------------------------------------------------------
+
+Indicator                  Jul 2026   Aug 2026   Sep 2026
+
+HIV Positive Pregnant
+Women                       12         15         17
+
+HIV Testing Coverage        72%        78%        81%
+
+ART Initiated               8          11         13
+
+------------------------------------------------------------
+
+============================================================
+11. MATRIX RULES
+============================================================
+
+Rows:
+
+Selected indicators.
+
+Columns:
+
+Selected reporting periods.
+
+Cell:
+
+Approved value for that indicator and period.
+
+If there is no approved submission:
+
+display:
+
+"Not Available"
+
+or an equivalent clear missing-data state.
+
+Do NOT display:
+
+0
+
+unless the stored approved value is actually zero.
+
+============================================================
+12. VALUE FORMATTING
+============================================================
+
+Use indicator data_type.
+
+INTEGER:
+display integer.
+
+NUMERIC / DECIMAL:
+respect configured precision.
+
+PERCENTAGE:
+display percentage appropriately.
+
+BOOLEAN:
+display Yes / No.
+
+TEXT:
+display text.
+
+DATE:
+display formatted date.
+
+Do not change the underlying stored value.
+
+============================================================
+13. PERIOD ORDER
+============================================================
+
+Periods must be ordered chronologically.
+
+Do not depend on the order submitted by the frontend.
+
+The backend should normalize ordering.
+
+Example:
+
+July
+August
+September
+
+not:
+
+September
+July
+August
+
+============================================================
+14. CUSTOM REPORT API
+============================================================
+
+Create:
+
+POST /api/v1/reports/custom/preview
+
+Request body:
+
+{
+  "dataset_id": 1,
+  "indicator_ids": [1, 2, 3],
+  "reporting_period_ids": [10, 11, 12]
+}
+
+Response should contain:
+
+- dataset metadata
+- selected indicators
+- selected periods
+- matrix values
+- approval/data availability information
+
+The preview endpoint must be read-only.
+
+============================================================
+15. CUSTOM REPORT EXPORT
+============================================================
+
+Implement:
+
+POST /api/v1/reports/custom/export/pdf
+
+POST /api/v1/reports/custom/export/excel
+
+Request body uses the same report selection.
+
+The server must rebuild/validate the report data rather than trusting
+a report matrix sent by the frontend.
+
+Never allow the frontend to send arbitrary values for export.
+
+The server determines the exported data from the database.
+
+============================================================
+16. PDF EXPORT
+============================================================
+
+Generate a professional PDF report.
+
+The PDF should include:
+
+- system/report title
+- dataset name
+- dataset code
+- generated date/time
+- selected reporting periods
+- indicator-by-period table
+- clear page structure
+- page numbers where practical
+
+The PDF must represent the same approved data shown in preview.
+
+Do not create a screenshot of the web page.
+
+Generate an actual structured PDF document.
+
+============================================================
+17. EXCEL EXPORT
+============================================================
+
+Generate a real Excel workbook.
+
+Workbook should contain at minimum:
+
+Sheet:
+Custom Report
+
+Include:
+
+- report title
+- dataset
+- generated date
+- reporting periods
+- indicator-by-period matrix
+
+Use appropriate spreadsheet formatting.
+
+Do not export HTML renamed as .xlsx.
+
+============================================================
+18. PRINT VIEW
+============================================================
+
+Provide:
+
+"Print Report"
+
+The report should have a print-friendly layout.
+
+Use browser print behavior.
+
+Hide:
+
+- sidebar
+- navigation
+- buttons
+- filters
+
+during printing.
+
+Keep:
+
+- report title
+- metadata
+- report table
+- generated date
+
+============================================================
+19. REPORT HISTORY
+============================================================
+
+Extend existing report history to support:
+
+CUSTOM_REPORT
+
+Record:
+
+- user
+- report type
+- dataset
+- selected periods
+- selected indicators where practical
+- access/generated timestamp
+
+Use the existing parameters JSON field where appropriate.
+
+Do not create duplicate history systems.
+
+============================================================
+20. UI/UX REQUIREMENTS
+============================================================
+
+This is a major requirement.
+
+The Custom Report Builder must feel like a professional part of the
+existing hospital application.
+
+Reuse:
+
+- AppShell
+- sidebar
+- PageHeader
+- ReportCard
+- FilterBar
+- ReportTable
+- StatusBadge
+- LoadingState
+- EmptyState
+- ErrorState
+- existing button/input styles
+
+Do not create an isolated visual design.
+
+============================================================
+21. BUILDER UI
+============================================================
+
+Use a clear layout such as:
+
+------------------------------------------------------------
+Custom Report
+Build a report from approved health data
+------------------------------------------------------------
+
+Dataset
+[ Select Dataset                         ]
+
+Indicators
+[ ] Indicator A
+[ ] Indicator B
+[ ] Indicator C
+
+[ Select All ] [ Clear All ]
+
+Reporting Periods
+[ ] July 2026
+[ ] August 2026
+[ ] September 2026
+
+[ Select All ] [ Clear All ]
+
+------------------------------------------------------------
+
+Selected:
+1 Dataset
+3 Indicators
+3 Periods
+
+[ Preview Report ]
+
+------------------------------------------------------------
+
+After preview:
+
+[ Export PDF ] [ Export Excel ] [ Print ]
+
+============================================================
+22. SELECTION SUMMARY
+============================================================
+
+Always show the current selection.
+
+Example:
+
+Dataset:
+PMTCT
+
+Indicators:
+3 selected
+
+Periods:
+6 selected
+
+This helps prevent user confusion.
+
+============================================================
+23. PREVIEW UI
+============================================================
+
+The preview should look like a finished report.
+
+Include:
+
+- report header
+- dataset information
+- period information
+- matrix table
+- missing-data states
+- generated timestamp
+
+Do not show raw JSON.
+
+Do not show database IDs to normal users.
+
+============================================================
+24. LARGE MATRIX HANDLING
+============================================================
+
+The matrix can become wide.
+
+Use:
+
+- horizontal scrolling
+- sticky first column where practical
+- readable column widths
+- responsive behavior
+
+Do not allow the report table to break the entire page layout.
+
+============================================================
+25. EXPORT FEEDBACK
+============================================================
+
+When exporting:
+
+Show loading state:
+
+"Preparing PDF..."
+
+or
+
+"Preparing Excel file..."
+
+Prevent duplicate export clicks.
+
+On success:
+
+trigger file download.
+
+On failure:
+
+show a clear error message.
+
+Do not expose server stack traces.
+
+============================================================
+26. REPORT TITLE
+============================================================
+
+Default title:
+
+"Custom Report"
+
+The initial Stage 09 version does NOT need arbitrary user-defined
+report titles.
+
+Do not build a report-template editor.
+
+============================================================
+27. API SECURITY
+============================================================
+
+All custom report endpoints require authentication.
+
+Only authorized reporting roles may use them according to the
+existing RBAC design.
+
+Do not trust:
+
+- dataset IDs
+- indicator IDs
+- period IDs
+- matrix values
+
+from the client.
+
+Validate all selections server-side.
+
+============================================================
+28. PERFORMANCE
+============================================================
+
+Avoid N+1 queries.
+
+For the matrix:
+
+Do not execute one database query for every cell.
+
+Fetch the required approved data efficiently.
+
+The implementation should support reasonable selections such as:
+
+50 indicators
+60 periods
+
+without hundreds/thousands of individual queries.
+
+============================================================
+29. BACKEND ARCHITECTURE
+============================================================
+
+Follow:
+
+Route
+→ Middleware
+→ Controller
+→ Service
+→ Repository
+→ Database
+
+Suggested files:
+
+server/src/repositories/customReportRepository.js
+
+server/src/services/customReportService.js
+
+server/src/controllers/customReportController.js
+
+server/src/routes/customReportRoutes.js
+
+Use existing report infrastructure where appropriate.
+
+Do not duplicate logic unnecessarily.
+
+============================================================
+30. EXPORT ARCHITECTURE
+============================================================
+
+Keep export generation separate from database/query logic.
+
+Suggested structure:
+
+server/src/services/export/
+    pdfReportService.js
+    excelReportService.js
+
+The exact structure may be adjusted if the existing architecture
+has a better reusable pattern.
+
+The report service should prepare normalized report data.
+
+Export services should transform that data into PDF/Excel.
+
+============================================================
+31. DEPENDENCIES
+============================================================
+
+Before installing any dependency:
+
+inspect the existing package.json.
+
+Prefer stable, well-supported packages compatible with the existing
+Node.js version.
+
+Do not replace the existing stack.
+
+Do not introduce another backend framework.
+
+============================================================
+32. REPORT DATA CONSISTENCY
+============================================================
+
+Preview, PDF and Excel must use the same report-generation logic.
+
+Do not implement:
+
+one query for preview,
+another different query for PDF,
+another different query for Excel.
+
+Create one normalized report-data structure and use it for:
+
+- preview
+- PDF
+- Excel
+- print
+
+============================================================
+33. AUDIT / HISTORY
+============================================================
+
+Record custom report access/generation using the existing report
+history mechanism.
+
+Do not create full audit-log UI in Stage 09.
+
+Do not change Stage 07 audit behavior.
+
+============================================================
+34. TESTING
+============================================================
+
+Test:
+
+CUSTOM REPORT PREVIEW
+
+- valid dataset
+- valid indicators
+- valid periods
+- multiple indicators
+- multiple periods
+- chronological period ordering
+- approved values
+- missing approved submissions
+- missing values
+- wrong indicator/dataset combination
+- invalid dataset
+- invalid indicator
+- invalid period
+- empty indicator selection
+- empty period selection
+- selection limits
+
+AUTHORIZATION
+
+- anonymous -> 401
+- unauthorized role -> 403
+- authorized role -> success
+
+PDF
+
+- valid export
+- correct content/data
+- valid PDF response
+- invalid selection rejected
+
+EXCEL
+
+- valid export
+- valid workbook generated
+- correct sheet
+- correct data
+
+PRINT
+
+- print stylesheet/page behavior where testable
+
+HISTORY
+
+- CUSTOM_REPORT recorded
+- parameters stored
+- user scoping preserved
+
+REGRESSION
+
+- Stage 04 authentication
+- Stage 05 configuration
+- Stage 06 data entry
+- Stage 07 review
+- Stage 08 standard reports
+
+CLIENT
+
+npm run build
+
+SERVER
+
+module load/startup test
+
+============================================================
+35. DO NOT IMPLEMENT STAGE 10+
+============================================================
+
+DO NOT implement:
+
+- management dashboard
+- KPI dashboard
+- trend charts
+- advanced visualization
+- analytics engine
+- forecasting
+- statistical analysis
+- management-specific insights
+- deployment
+
+============================================================
+36. DOCUMENTATION
+============================================================
+
+Create:
+
+docs/stage 09 review.txt
+
+Include:
+
+1. Implementation summary
+2. Files created
+3. Files modified
+4. API endpoints
+5. Database changes
+6. Custom report query architecture
+7. Approved-data rules
+8. PDF architecture
+9. Excel architecture
+10. UI/UX implementation
+11. Authorization
+12. Tests
+13. Problems/fixes
+14. Remaining issues
+15. Confirmation Stage 10+ was not implemented
+16. Acceptance criteria
+17. Readiness for Stage 10
+
+============================================================
+37. ACCEPTANCE CRITERIA
+============================================================
+
+[ ] Custom Report Builder exists.
+
+[ ] Dataset selection works.
+
+[ ] Indicator selection is dataset-specific.
+
+[ ] Multiple indicators can be selected.
+
+[ ] Multiple periods can be selected.
+
+[ ] Selected periods are chronological.
+
+[ ] At least one indicator is required.
+
+[ ] At least one period is required.
+
+[ ] Backend validates every selection.
+
+[ ] Selection limits are enforced.
+
+[ ] Custom Preview works.
+
+[ ] Matrix displays indicators by periods.
+
+[ ] Only APPROVED data is used.
+
+[ ] Missing data is not converted to zero.
+
+[ ] Indicator values are formatted by type.
+
+[ ] PDF export works.
+
+[ ] PDF contains the same report data as preview.
+
+[ ] Excel export works.
+
+[ ] Excel contains the same report data as preview.
+
+[ ] Print view is available.
+
+[ ] Report history records CUSTOM_REPORT.
+
+[ ] Export operations provide loading/success/error feedback.
+
+[ ] Large tables are horizontally scrollable.
+
+[ ] UI matches the existing hospital application.
+
+[ ] Existing AppShell/sidebar remains coherent.
+
+[ ] Existing Stage 04–08 functionality remains intact.
+
+[ ] Client build succeeds.
+
+[ ] Backend tests pass.
+
+[ ] Stage 10+ functionality is not implemented.
+
+============================================================
+38. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+Before coding:
+
+1. Inspect docs/stage 01.txt through docs/stage 09.txt.
+2. Inspect all Stage 03–08 review files.
+3. Inspect the actual current frontend/backend.
+4. Inspect existing report components.
+5. Inspect existing report_history implementation.
+6. Inspect package.json before adding dependencies.
+7. Reuse existing report architecture where appropriate.
+
+Do not merely document the solution.
+
+Actually implement and test Stage 09.
+
+Do not silently implement Stage 10+.
+
+The Custom Report Builder must feel like a natural extension of the
+existing reporting application, not a separate tool.
+
+============================================================
+END OF STAGE 09 SPECIFICATION
+============================================================
