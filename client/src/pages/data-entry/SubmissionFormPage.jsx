@@ -307,11 +307,15 @@ function SubmissionFormPage() {
           )}
         </div>
 
-        {/* Returned notice: shown for Stage 07 compatibility */}
+        {/* Returned notice — show last return reason from history */}
         {submission.status === 'RETURNED' && (
-          <div className="mt-4 rounded bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-            <strong>Returned for correction.</strong> Please review the indicator values and
-            resubmit.
+          <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <p className="font-semibold mb-1">Returned for correction.</p>
+            {submission.returnReason ? (
+              <p><span className="font-medium">Reason: </span>{submission.returnReason}</p>
+            ) : (
+              <p>Please review the indicator values and resubmit.</p>
+            )}
           </div>
         )}
 

@@ -144,8 +144,16 @@ async function getSubmission(id, userId) {
     valuesMap[dv.indicator_id] = dv.value;
   }
 
+  // Attach latest return reason (if any) so the DATA_ENTRY form can display it.
+  let returnReason = null;
+  if (submission.status === 'RETURNED') {
+    const history = await submissionRepository.getHistory(id);
+    const lastReturn = [...history].reverse().find(h => h.action === 'RETURNED');
+    if (lastReturn) returnReason = lastReturn.reason;
+  }
+
   return {
-    submission,
+    submission: { ...submission, returnReason },
     indicators: activeIndicators,
     values: valuesMap,
   };
