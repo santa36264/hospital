@@ -4,16 +4,29 @@ const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Analytics endpoints: MANAGER, REPORTING, ADMIN
-router.use(requireAuth, requireRole('MANAGER', 'REPORTING', 'ADMIN'));
+// ── DATA_ENTRY dashboard — DATA_ENTRY only ────────────────────────────────────
+// Must be before the general requireRole middleware so DATA_ENTRY can reach it.
+router.get(
+  '/data-entry-dashboard',
+  requireAuth,
+  requireRole('DATA_ENTRY'),
+  analyticsController.dataEntryDashboard
+);
 
-// GET /api/v1/analytics/dashboard
-router.get('/dashboard', analyticsController.dashboard);
+// ── REPORTING dashboard — REPORTING and ADMIN ─────────────────────────────────
+router.get(
+  '/reporting-dashboard',
+  requireAuth,
+  requireRole('REPORTING', 'ADMIN'),
+  analyticsController.reportingDashboard
+);
 
-// GET /api/v1/analytics/indicator-trend
-router.get('/indicator-trend', analyticsController.indicatorTrend);
+// ── All remaining analytics: MANAGER, REPORTING, ADMIN ────────────────────────
+// Applied per-route (not router.use) to avoid blocking the routes above.
+const managerAuth = [requireAuth, requireRole('MANAGER', 'REPORTING', 'ADMIN')];
 
-// GET /api/v1/analytics/indicator-comparison
-router.get('/indicator-comparison', analyticsController.indicatorComparison);
+router.get('/dashboard', ...managerAuth, analyticsController.dashboard);
+router.get('/indicator-trend', ...managerAuth, analyticsController.indicatorTrend);
+router.get('/indicator-comparison', ...managerAuth, analyticsController.indicatorComparison);
 
 module.exports = router;

@@ -111,15 +111,35 @@ function generatePDF(reportData, outputStream) {
       .text(period.label, x + 3, tableStartY + 4, { width: periodColW - 6, align: 'right', ellipsis: true });
   });
 
-  // Data rows
-  indicators.forEach((ind, rowIdx) => {
-    const y = tableStartY + HEADER_H + rowIdx * ROW_H;
+  // Data rows with proper page breaks and repeated headers.
+  let currentY = tableStartY + HEADER_H;
+  const pageBottom = () => doc.page.height - 50;
+  const drawHeaderRow = (y) => {
+    doc.rect(tableStartX, y - HEADER_H, pageWidth, HEADER_H).fill(COLOURS.primary);
+    doc.fill(COLOURS.white).font(FONT.bold).fontSize(8)
+      .text('Indicator', tableStartX + 6, y - HEADER_H + 9, { width: INDICATOR_COL_W - 10, ellipsis: true });
+    periods.forEach((period, i) => {
+      const x = tableStartX + INDICATOR_COL_W + i * periodColW;
+      doc.fill(COLOURS.white).font(FONT.bold).fontSize(7)
+        .text(period.label, x + 3, y - HEADER_H + 4, { width: periodColW - 6, align: 'right', ellipsis: true });
+    });
+  };
 
-    // Check page break
-    if (y + ROW_H > doc.page.height - 50) {
+  // Ensure the header fits: if the header row + first row exceed the page,
+  // the addPage above already gave us a fresh page; if not, header was drawn.
+  let pageNo = 1;
+  const ensureSpace = (needed) => {
+    if (currentY + needed > pageBottom()) {
       doc.addPage();
-      // Reprint a mini-header on continuation pages could go here
+      pageNo += 1;
+      drawHeaderRow(50 + HEADER_H);
+      currentY = 50 + HEADER_H;
     }
+  };
+
+  indicators.forEach((ind, rowIdx) => {
+    ensureSpace(ROW_H);
+    const y = currentY;
 
     // Row background
     if (rowIdx % 2 === 0) {
@@ -149,27 +169,31 @@ function generatePDF(reportData, outputStream) {
     // Bottom border
     doc.moveTo(tableStartX, y + ROW_H).lineTo(tableStartX + pageWidth, y + ROW_H)
       .strokeColor(COLOURS.border).lineWidth(0.5).stroke();
+
+    currentY += ROW_H;
   });
 
-  // Table bottom border
-  const tableEndY = tableStartY + HEADER_H + indicators.length * ROW_H;
-  doc.rect(tableStartX, tableStartY, pageWidth, tableEndY - tableStartY)
+  // Table outer border for the last rendered page segment
+  doc.rect(tableStartX, tableStartY, pageWidth, Math.max(HEADER_H, currentY - tableStartY))
     .strokeColor(COLOURS.border).lineWidth(1).stroke();
 
   // ── Footer ──────────────────────────────────────────────────────────────────
   const footerY = doc.page.height - 40;
   doc.fill(COLOURS.subtext).font(FONT.normal).fontSize(7)
     .text(
-      `${indicators.length} indicators · ${periods.length} periods · APPROVED data only`,
+      `${indicators.length} indicators | ${periods.length} periods | APPROVED data only`,
       50, footerY,
       { width: pageWidth, align: 'center' }
     );
 
   // Page number
   doc.fill(COLOURS.subtext).font(FONT.normal).fontSize(7)
-    .text(`Page 1`, 50, footerY + 10, { width: pageWidth, align: 'right' });
+    .text(`Page ${pageNo}`, 50, footerY + 10, { width: pageWidth, align: 'right' });
 
   doc.end();
 }
 
 module.exports = { generatePDF };
+
+
+

@@ -224,7 +224,8 @@ async function getHistory({ userId, page = 1, perPage = 50 } = {}) {
       'datasets.name as dataset_name',
       'datasets.code as dataset_code',
       'reporting_periods.label as period_label',
-      'indicators.name as indicator_name'
+      'indicators.name as indicator_name',
+      'report_history.parameters'
     )
     .orderBy('report_history.accessed_at', 'desc');
 

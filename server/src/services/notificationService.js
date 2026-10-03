@@ -61,6 +61,30 @@ async function notifyApproved(trx, { submission, reviewerName }) {
 }
 
 /**
+ * Notify all REPORTING users that a DATA_ENTRY user submitted a submission.
+ */
+async function notifySubmitted(trx, { submission, submitterName }) {
+  try {
+    const { db } = require('../config/database');
+    const conn = trx || db;
+    const reporters = await conn('users')
+      .join('roles', 'roles.id', 'users.role_id')
+      .where('roles.name', 'REPORTING')
+      .andWhere('users.status', 'ACTIVE')
+      .select('users.id');
+    for (const r of reporters) {
+      await notificationRepository.create(trx, {
+        recipientUserId: r.id,
+        type: TYPES.SUBMISSION_SUBMITTED,
+        message: `A submission "${submission.dataset_name} — ${submission.period_label}" was submitted for review by ${submitterName}.`,
+      });
+    }
+  } catch (err) {
+    console.error('Notification write failed (notifySubmitted):', err.message);
+  }
+}
+
+/**
  * Retrieve notifications for a user.
  */
 async function listForUser(userId, options = {}) {
@@ -92,6 +116,7 @@ module.exports = {
   notifyUnderReview,
   notifyReturned,
   notifyApproved,
+  notifySubmitted,
   listForUser,
   countUnread,
   markRead,

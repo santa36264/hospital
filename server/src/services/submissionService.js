@@ -12,6 +12,7 @@ const datasetRepository = require('../repositories/datasetRepository');
 const reportingPeriodRepository = require('../repositories/reportingPeriodRepository');
 const indicatorRepository = require('../repositories/indicatorRepository');
 const auditLogRepository = require('../repositories/auditLogRepository');
+const notificationService = require('./notificationService');
 
 // Statuses that a DATA_ENTRY user may edit.
 const EDITABLE_STATUSES = ['DRAFT', 'RETURNED'];
@@ -326,6 +327,8 @@ async function submitSubmission(submissionId, user) {
       oldValues: { status: previousStatus },
       newValues: { status: 'SUBMITTED' },
     });
+
+    await notificationService.notifySubmitted(trx, { submission, submitterName: user.name });
 
     return sub;
   });

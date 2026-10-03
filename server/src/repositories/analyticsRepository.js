@@ -245,3 +245,100 @@ module.exports = {
   getIndicatorTrend,
   getIndicatorComparison,
 };
+
+// ─── DATA_ENTRY role dashboard ────────────────────────────────────────────────
+
+/**
+ * Submission status counts for the authenticated DATA_ENTRY user.
+ */
+async function getDataEntryStats(ownerId) {
+  const rows = await db('submissions')
+    .where('owner_user_id', ownerId)
+    .select('status')
+    .count('id as cnt')
+    .groupBy('status');
+
+  const counts = { DRAFT: 0, SUBMITTED: 0, UNDER_REVIEW: 0, RETURNED: 0, APPROVED: 0 };
+  for (const r of rows) counts[r.status] = Number(r.cnt);
+
+  // Open reporting periods the user can still submit to
+  const openPeriods = await db('reporting_periods')
+    .where('status', 'OPEN')
+    .count('id as cnt')
+    .first();
+
+  return { ...counts, openPeriods: Number(openPeriods.cnt) };
+}
+
+/**
+ * Recent submissions (last 10) for the DATA_ENTRY user.
+ */
+async function getRecentSubmissions(ownerId, limit = 10) {
+  return db('submissions')
+    .join('datasets', 'datasets.id', 'submissions.dataset_id')
+    .join('reporting_periods', 'reporting_periods.id', 'submissions.reporting_period_id')
+    .where('submissions.owner_user_id', ownerId)
+    .select(
+      'submissions.id',
+      'submissions.status',
+      'submissions.updated_at',
+      'submissions.submitted_at',
+      'submissions.returned_at',
+      'datasets.name as dataset_name',
+      'datasets.code as dataset_code',
+      'reporting_periods.label as period_label',
+      'reporting_periods.status as period_status'
+    )
+    .orderBy('submissions.updated_at', 'desc')
+    .limit(limit);
+}
+
+// ─── REPORTING role dashboard ─────────────────────────────────────────────────
+
+/**
+ * Review queue counts (all submissions in reviewable statuses).
+ */
+async function getReportingStats() {
+  const rows = await db('submissions')
+    .whereIn('status', ['SUBMITTED', 'UNDER_REVIEW', 'RETURNED', 'APPROVED'])
+    .select('status')
+    .count('id as cnt')
+    .groupBy('status');
+
+  const counts = { SUBMITTED: 0, UNDER_REVIEW: 0, RETURNED: 0, APPROVED: 0 };
+  for (const r of rows) {
+    if (r.status in counts) counts[r.status] = Number(r.cnt);
+  }
+
+  return counts;
+}
+
+/**
+ * Recent submissions for Reporting review (newest SUBMITTED + UNDER_REVIEW first).
+ */
+async function getRecentReviewActivity(limit = 10) {
+  return db('submissions')
+    .join('datasets', 'datasets.id', 'submissions.dataset_id')
+    .join('reporting_periods', 'reporting_periods.id', 'submissions.reporting_period_id')
+    .join('users', 'users.id', 'submissions.owner_user_id')
+    .whereIn('submissions.status', ['SUBMITTED', 'UNDER_REVIEW', 'RETURNED', 'APPROVED'])
+    .select(
+      'submissions.id',
+      'submissions.status',
+      'submissions.submitted_at',
+      'submissions.updated_at',
+      'datasets.name as dataset_name',
+      'datasets.code as dataset_code',
+      'reporting_periods.label as period_label',
+      'users.name as owner_name'
+    )
+    .orderBy('submissions.submitted_at', 'desc')
+    .limit(limit);
+}
+
+module.exports = Object.assign(module.exports, {
+  getDataEntryStats,
+  getRecentSubmissions,
+  getReportingStats,
+  getRecentReviewActivity,
+});

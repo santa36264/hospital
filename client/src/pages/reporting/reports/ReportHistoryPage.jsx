@@ -10,6 +10,7 @@ const REPORT_TYPE_LABELS = {
   MONTHLY_REPORT: 'Monthly Report',
   INDICATOR_REPORT: 'Indicator Report',
   SUBMISSION_STATUS_REPORT: 'Submission Status',
+  CUSTOM_REPORT: 'Custom Report',
 };
 
 const REPORT_TYPE_COLOURS = {
@@ -17,6 +18,7 @@ const REPORT_TYPE_COLOURS = {
   MONTHLY_REPORT: 'bg-teal-100 text-teal-800',
   INDICATOR_REPORT: 'bg-purple-100 text-purple-800',
   SUBMISSION_STATUS_REPORT: 'bg-slate-100 text-slate-700',
+  CUSTOM_REPORT: 'bg-amber-100 text-amber-800',
 };
 
 function formatDate(dt) {
@@ -78,7 +80,11 @@ export default function ReportHistoryPage() {
                   { label: 'Accessed At', right: true },
                 ]} />
                 <tbody>
-                  {result.data.map(h => (
+                  {result.data.map(h => {
+                    let params = null;
+                    try { params = h.parameters ? JSON.parse(h.parameters) : null; } catch { params = null; }
+                    const isCustom = h.report_type === 'CUSTOM_REPORT';
+                    return (
                     <tr key={h.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${REPORT_TYPE_COLOURS[h.report_type] || 'bg-slate-100 text-slate-700'}`}>
@@ -86,15 +92,24 @@ export default function ReportHistoryPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-600 text-sm">{h.dataset_name || '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 text-sm">{h.period_label || '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 text-sm">{h.indicator_name || '—'}</td>
+                      <td className="px-4 py-3 text-slate-600 text-sm">
+                        {isCustom && params?.period_labels?.length
+                          ? params.period_labels.join(', ')
+                          : (h.period_label || '—')}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-sm">
+                        {isCustom && params?.indicator_names?.length
+                          ? params.indicator_names.join(', ')
+                          : (h.indicator_name || '—')}
+                      </td>
                       <td className="px-4 py-3">
                         <p className="text-slate-700 text-sm">{h.user_name}</p>
                         <p className="text-slate-400 text-xs">{h.user_email}</p>
                       </td>
                       <td className="px-4 py-3 text-right text-slate-500 text-sm">{formatDate(h.accessed_at)}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </ReportTable>
               <Pagination meta={result.meta} onPage={p => { setPage(p); load(p); }} />

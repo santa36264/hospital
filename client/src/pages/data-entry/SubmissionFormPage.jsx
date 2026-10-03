@@ -347,6 +347,26 @@ function SubmissionFormPage() {
         </div>
       )}
 
+      {/* Required-field progress */}
+      {editable && indicators.some((i) => i.required) && (
+        <div className="bg-white rounded shadow p-4 mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-slate-600">Required fields completed</p>
+            <p className="text-sm font-mono text-slate-700">
+              {indicators.filter((i) => i.required && values[i.id] !== undefined && values[i.id] !== '').length} / {indicators.filter((i) => i.required).length}
+            </p>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{
+                width: `${(indicators.filter((i) => i.required && values[i.id] !== undefined && values[i.id] !== '').length / Math.max(1, indicators.filter((i) => i.required).length)) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Indicator form */}
       <div className="bg-white rounded shadow p-5">
         <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">

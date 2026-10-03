@@ -4,6 +4,7 @@ import RequireAuth, { RequireRole } from './RequireAuth';
 import LoginPage from '../pages/LoginPage';
 import AppShell from '../layouts/AppShell';
 import { AppHome, UnauthorizedPage } from '../pages/placeholderPages';
+import RoleIndex from '../pages/roleIndex';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import AuditLogsPage from '../pages/admin/AuditLogsPage';
@@ -15,9 +16,11 @@ import ReportingPeriodsPage from '../pages/ReportingPeriodsPage';
 import MySubmissionsPage from '../pages/data-entry/MySubmissionsPage';
 import NewSubmissionPage from '../pages/data-entry/NewSubmissionPage';
 import SubmissionFormPage from '../pages/data-entry/SubmissionFormPage';
+import DataEntryDashboardPage from '../pages/data-entry/DataEntryDashboardPage';
 // Reporting (Stage 07)
 import SubmissionQueuePage from '../pages/reporting/SubmissionQueuePage';
 import ReviewDetailPage from '../pages/reporting/ReviewDetailPage';
+import ReportingDashboardPage from '../pages/reporting/ReportingDashboardPage';
 // Reporting Reports (Stage 08)
 import DatasetReportPage from '../pages/reporting/reports/DatasetReportPage';
 import MonthlyReportPage from '../pages/reporting/reports/MonthlyReportPage';
@@ -48,7 +51,7 @@ function AppRoutes() {
               </RequireAuth>
             }
           >
-            <Route index element={<AppHome />} />
+            <Route index element={<RoleIndex />} />
 
             {/* ── Admin ── */}
             <Route path="admin" element={<RequireRole role="ADMIN"><AdminDashboardPage /></RequireRole>} />
@@ -60,12 +63,14 @@ function AppRoutes() {
             <Route path="admin/reporting-periods" element={<RequireRole role="ADMIN"><ReportingPeriodsPage /></RequireRole>} />
 
             {/* ── Data Entry ── */}
+            <Route path="data-entry/dashboard" element={<RequireRole role="DATA_ENTRY"><DataEntryDashboardPage /></RequireRole>} />
             <Route path="data-entry/submissions/new" element={<RequireRole role="DATA_ENTRY"><NewSubmissionPage /></RequireRole>} />
             <Route path="data-entry/submissions/:id"  element={<RequireRole role="DATA_ENTRY"><SubmissionFormPage /></RequireRole>} />
             <Route path="data-entry/submissions"      element={<RequireRole role="DATA_ENTRY"><MySubmissionsPage /></RequireRole>} />
-            <Route path="data-entry" element={<RequireRole role="DATA_ENTRY"><Navigate to="/app/data-entry/submissions" replace /></RequireRole>} />
+            <Route path="data-entry" element={<RequireRole role="DATA_ENTRY"><Navigate to="/app/data-entry/dashboard" replace /></RequireRole>} />
 
-            {/* ── Reporting (Stage 07) ── */}
+            {/* ── Reporting (Stage 07 + 15) ── */}
+            <Route path="reporting/dashboard" element={<RequireRole role="REPORTING"><ReportingDashboardPage /></RequireRole>} />
             <Route path="reporting/queue" element={<RequireRole role="REPORTING"><SubmissionQueuePage /></RequireRole>} />
             <Route path="reporting/submissions/:id" element={<RequireRole role="REPORTING"><ReviewDetailPage /></RequireRole>} />
 
@@ -77,7 +82,7 @@ function AppRoutes() {
             <Route path="reporting/reports/submission-status" element={<RequireRole role="REPORTING"><SubmissionStatusPage /></RequireRole>} />
             <Route path="reporting/reports/history" element={<RequireRole role="REPORTING"><ReportHistoryPage /></RequireRole>} />
 
-            <Route path="reporting" element={<RequireRole role="REPORTING"><Navigate to="/app/reporting/queue" replace /></RequireRole>} />
+            <Route path="reporting" element={<RequireRole role="REPORTING"><Navigate to="/app/reporting/dashboard" replace /></RequireRole>} />
 
             {/* ── Manager (Stage 10) ── */}
             <Route

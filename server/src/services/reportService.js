@@ -131,7 +131,29 @@ async function indicatorReport({ datasetId, indicatorId, reportingPeriodId }, us
   return { dataset, period, indicator, submission: submission || null, value };
 }
 
-// ─── Submission Status Report ─────────────────────────────────────────────────
+// ─── Pagination helper ────────────────────────────────────────────────────────
+
+const PAGE_SIZE_LIMITS = {
+  submissionStatus: { default: 50, max: 200 },
+  reportHistory:    { default: 50, max: 100 },
+};
+
+/**
+ * Normalise a pagination input pair to safe values.
+ * - page:    string|number → integer >= 1 (NaN, null, 0, negative all become 1)
+ * - perPage: string|number → integer 1..max (NaN/out-of-range clamped to defaults)
+ */
+function normalisePagination(page, perPage, limits) {
+  const rawPage = Number(page);
+  const safePage = Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+
+  const rawPerPage = Number(perPage);
+  const safePerPage = Number.isFinite(rawPerPage) && rawPerPage >= 1
+    ? Math.min(Math.floor(rawPerPage), limits.max)
+    : limits.default;
+
+  return { page: safePage, perPage: safePerPage };
+}
 
 async function submissionStatusReport(
   { datasetId, reportingPeriodId, status, search, page, perPage },
@@ -157,8 +179,7 @@ async function submissionStatusReport(
     reportingPeriodId,
     status,
     search,
-    page: page ? Number(page) : 1,
-    perPage: perPage ? Math.min(Number(perPage), 200) : 50,
+    ...normalisePagination(page, perPage, PAGE_SIZE_LIMITS.submissionStatus),
   });
 
   // Record history (non-blocking)
@@ -178,8 +199,7 @@ async function submissionStatusReport(
 async function getReportHistory({ userId, page, perPage } = {}) {
   return reportRepository.getHistory({
     userId,
-    page: page ? Number(page) : 1,
-    perPage: perPage ? Math.min(Number(perPage), 100) : 50,
+    ...normalisePagination(page, perPage, PAGE_SIZE_LIMITS.reportHistory),
   });
 }
 

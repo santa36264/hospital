@@ -34,3 +34,15 @@ export async function getIndicatorComparison({ datasetId, indicatorId, periodAId
   });
   return res.data;
 }
+
+/** DATA_ENTRY personal dashboard — submission counts + recent activity. */
+export async function getDataEntryDashboard() {
+  const res = await apiClient.get('/analytics/data-entry-dashboard');
+  return res.data;
+}
+
+/** REPORTING operational dashboard — review queue counts + recent activity. */
+export async function getReportingDashboard() {
+  const res = await apiClient.get('/analytics/reporting-dashboard');
+  return res.data;
+}

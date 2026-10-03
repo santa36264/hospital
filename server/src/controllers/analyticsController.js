@@ -42,3 +42,19 @@ async function indicatorComparison(req, res, next) {
 }
 
 module.exports = { dashboard, indicatorTrend, indicatorComparison };
+
+async function dataEntryDashboard(req, res, next) {
+  try {
+    const data = await analyticsService.getDataEntryDashboard(req.user.id);
+    res.json({ success: true, message: 'Data entry dashboard retrieved.', data });
+  } catch (err) { next(err); }
+}
+
+async function reportingDashboard(req, res, next) {
+  try {
+    const data = await analyticsService.getReportingDashboard();
+    res.json({ success: true, message: 'Reporting dashboard retrieved.', data });
+  } catch (err) { next(err); }
+}
+
+module.exports = Object.assign(module.exports, { dataEntryDashboard, reportingDashboard });

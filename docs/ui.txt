@@ -1,0 +1,2300 @@
+UI/UX RECONSTRUCTION SPECIFICATION
+==================================
+
+Project:
+Hospital Health Data Management, Reporting and Analysis System
+
+Document:
+ui.txt
+
+Purpose:
+Complete frontend UI/UX reconstruction of the existing Hospital Health
+Data Management, Reporting and Analysis System.
+
+This document defines the visual design, information architecture,
+navigation, page layouts, reusable components, responsive behavior,
+accessibility, and interaction standards for the ENTIRE frontend.
+
+This is NOT an icon replacement task.
+
+This is NOT a color-change task.
+
+This is NOT a small styling improvement.
+
+The existing frontend must be reconstructed into a coherent,
+professional, production-quality hospital health-data application.
+
+============================================================
+1. CORE OBJECTIVE
+============================================================
+
+The final frontend must feel like ONE complete application.
+
+Every page must share:
+
+- the same design system
+- the same spacing system
+- the same typography
+- the same button styles
+- the same form styles
+- the same table styles
+- the same status styles
+- the same navigation system
+- the same icon system
+- the same interaction patterns
+- the same responsive behavior
+
+Do not design every page independently.
+
+Create reusable components and use them consistently.
+
+The application should feel:
+
+- professional
+- clean
+- calm
+- trustworthy
+- healthcare appropriate
+- data-oriented
+- practical
+- modern
+- accessible
+
+It should NOT feel like:
+
+- a generic CRUD admin template
+- a student project
+- a dashboard template with random cards
+- a collection of unrelated pages
+- a UI made entirely from white cards
+- an icon showcase
+- a decorative design
+
+============================================================
+2. CRITICAL IMPLEMENTATION RULE
+============================================================
+
+EVERY VISIBLE NAVIGATION LINK MUST WORK.
+
+Do not add a sidebar link simply because it looks good.
+
+For every navigation item:
+
+1. The route must exist.
+2. The route must load successfully.
+3. The page must be implemented.
+4. The page must use real application data where applicable.
+5. The page must respect RBAC.
+6. The page must not be a placeholder.
+7. The page must not show "Coming Soon".
+8. The page must not show fake data.
+9. The page must not lead to a broken route.
+10. The active navigation state must work.
+
+If a required page already exists:
+- redesign it.
+
+If the page exists but is incomplete:
+- complete it.
+
+If a navigation item has no valid destination:
+- implement the required page before adding the link.
+
+Do not leave dead navigation.
+
+============================================================
+3. DO NOT REWRITE THE BACKEND
+============================================================
+
+This is a frontend reconstruction.
+
+Preserve:
+
+- Node.js
+- Express
+- MySQL/MariaDB
+- Knex
+- existing REST APIs
+- JWT authentication
+- refresh sessions
+- RBAC
+- submission workflow
+- review workflow
+- reports
+- custom reports
+- exports
+- analytics
+- notifications
+- audit logs
+- existing business rules
+- existing security rules
+
+Only modify backend/API behavior when absolutely necessary to support
+an existing frontend requirement.
+
+Do not create duplicate backend systems.
+
+============================================================
+4. DESIGN SYSTEM FIRST
+============================================================
+
+Before redesigning individual pages, establish a reusable UI system.
+
+Create or improve shared components.
+
+Suggested structure:
+
+client/src/components/ui/
+
+- Button
+- IconButton
+- Input
+- Select
+- Textarea
+- Checkbox
+- Radio
+- Switch
+- Badge
+- StatusBadge
+- Card
+- Section
+- Dialog
+- Drawer
+- Dropdown
+- Tooltip
+- Tabs
+- Pagination
+- Breadcrumbs
+- Table
+- DataTable
+- EmptyState
+- LoadingState
+- ErrorState
+- Skeleton
+- Alert
+- Toast
+- Progress
+- Divider
+
+Layout components:
+
+client/src/components/layout/
+
+- AppShell
+- Sidebar
+- SidebarSection
+- SidebarItem
+- Header
+- PageHeader
+- PageContent
+- PageSection
+
+Data display:
+
+client/src/components/data-display/
+
+- StatCard
+- Metric
+- ActivityList
+- DataTable
+- StatusBadge
+- EmptyState
+- KeyValueList
+
+Charts:
+
+client/src/components/charts/
+
+- TrendChart
+- StatusChart
+- DistributionChart
+- CoverageChart
+
+Use reusable components instead of repeating page-specific styling.
+
+============================================================
+5. COLOR SYSTEM
+============================================================
+
+Use a restrained professional healthcare-oriented palette.
+
+Do not use excessive colors.
+
+Primary:
+- deep navy/blue
+
+Secondary:
+- muted blue/slate
+
+Background:
+- soft neutral/light gray
+
+Surface:
+- white
+
+Text:
+- dark neutral
+
+Muted text:
+- slate/gray
+
+Semantic:
+
+Success:
+- green
+
+Warning:
+- amber
+
+Danger:
+- red
+
+Information:
+- blue
+
+Status colors must be consistent throughout the application.
+
+Do not rely only on color to communicate status.
+
+============================================================
+6. TYPOGRAPHY
+============================================================
+
+Establish a consistent typography hierarchy.
+
+Use clear differences between:
+
+- page title
+- page subtitle
+- section heading
+- card heading
+- table heading
+- body text
+- supporting text
+- labels
+- status text
+
+Avoid:
+
+- oversized headings
+- excessive bold text
+- tiny body text
+- inconsistent font sizes
+- random capitalization
+
+Page titles should be prominent but not excessive.
+
+============================================================
+7. SPACING SYSTEM
+============================================================
+
+Do not randomly choose padding/margin on every page.
+
+Use a consistent spacing scale.
+
+Page layout should have:
+
+- consistent outer padding
+- consistent section spacing
+- consistent card padding
+- consistent table row height
+- consistent form spacing
+
+Do not create enormous empty areas unnecessarily.
+
+Do not compress content so tightly that the interface becomes difficult
+to scan.
+
+The amount of whitespace must support hierarchy and readability.
+
+============================================================
+8. CARDS
+============================================================
+
+Do not put every piece of information inside a card.
+
+Cards should be used when they create meaningful grouping.
+
+Good uses:
+
+- KPI
+- important summary
+- grouped information
+- focused action area
+- chart
+- form section
+
+Bad use:
+
+A page consisting of 8–12 identical white boxes simply because cards
+look modern.
+
+Cards should have:
+
+- consistent radius
+- subtle border/shadow
+- consistent padding
+- clear hierarchy
+
+Do not overuse shadows.
+
+============================================================
+9. ICON SYSTEM
+============================================================
+
+Use one professional icon library consistently.
+
+Prefer the existing icon system.
+
+If required, use Lucide React.
+
+Do NOT use emoji as functional icons.
+
+Never use:
+
+☰
+📊
+📈
+👤
+🔔
+⚙️
+🏥
+📋
+✅
+❌
+etc.
+
+Use professional SVG icon components.
+
+Icon sizes must be consistent.
+
+Icon-only buttons MUST have:
+
+- aria-label
+- tooltip where appropriate
+- visible focus state
+
+============================================================
+10. HEADER
+============================================================
+
+The application header should be minimal and professional.
+
+Example structure:
+
+------------------------------------------------------------
+Hospital Health Data Management
+
+                                      [Bell] [User menu]
+------------------------------------------------------------
+
+IMPORTANT:
+
+Do NOT display:
+
+[bell icon] Notifications
+
+in the header.
+
+The notification icon is sufficient.
+
+The header notification control should be:
+
+- icon-only
+- professional bell icon
+- unread badge when needed
+- accessible label
+- tooltip "Notifications"
+- click → notifications page
+- keyboard accessible
+
+Do not show the text "Notifications" beside the bell.
+
+The sidebar may contain the Notifications navigation item.
+
+These have different purposes:
+
+Header bell:
+Quick notification access.
+
+Sidebar Notifications:
+Persistent navigation.
+
+============================================================
+11. APP SHELL
+============================================================
+
+The application shell consists of:
+
+- Sidebar
+- Header
+- Main content
+- User/account area
+
+The shell must work on:
+
+- desktop
+- tablet
+- mobile
+
+The shell must preserve role-specific navigation.
+
+Sidebar:
+
+- fixed or stable desktop layout
+- collapsible/responsive mobile behavior
+- active state
+- hover state
+- keyboard focus
+- professional icons
+- section grouping
+- scrollable navigation area
+- user/account area at bottom
+
+Mobile:
+
+- hamburger uses professional icon
+- drawer/sidebar opens
+- backdrop appears
+- clicking navigation closes drawer
+- Escape closes drawer where appropriate
+- focus behavior is accessible
+
+============================================================
+12. SIDEBAR INFORMATION ARCHITECTURE
+============================================================
+
+Every role must have appropriate navigation.
+
+Do NOT simply give every role every page.
+
+RBAC determines visibility.
+
+============================================================
+13. ADMIN SIDEBAR
+============================================================
+
+ADMIN navigation:
+
+MAIN
+- Dashboard
+
+DATA MANAGEMENT
+- Datasets
+- Indicators
+- Reporting Periods
+
+REPORTING
+- Reports
+- Analysis
+
+USER & SECURITY
+- Users
+- Notifications
+- Audit Logs
+- System
+
+Every item MUST work.
+
+Routes must be checked.
+
+Do not create duplicate Dashboard links.
+
+Do not place Dashboard in multiple sections.
+
+============================================================
+14. DATA ENTRY SIDEBAR
+============================================================
+
+DATA_ENTRY navigation:
+
+MAIN
+- Dashboard
+
+REPORTING WORK
+- My Submissions
+
+ACCOUNT
+- Notifications
+
+The Data Entry user should not see:
+
+- Admin Users
+- Audit Logs
+- System
+- Dataset configuration
+- Indicator configuration
+- Management-only analytics
+- Administrative reports that they are not authorized to access
+
+Every visible link must work.
+
+============================================================
+15. REPORTING SIDEBAR
+============================================================
+
+REPORTING navigation:
+
+MAIN
+- Dashboard
+
+REVIEW
+- Review Queue
+
+REPORTS
+- Dataset Reports
+- Monthly Reports
+- Indicator Reports
+- Submission Status
+- Custom Reports
+- Report History
+
+ANALYSIS
+- Indicator Analysis
+
+ACCOUNT
+- Notifications
+
+Every link must work.
+
+No placeholder report pages.
+
+============================================================
+16. MANAGER SIDEBAR
+============================================================
+
+MANAGER navigation:
+
+MAIN
+- Dashboard
+
+ANALYSIS
+- Indicator Analysis
+
+ACCOUNT
+- Notifications
+
+Manager must not see:
+
+- Admin management
+- Audit logs
+- user management
+- configuration pages
+- unapproved submission workflows
+
+Manager analytics must use approved data only.
+
+============================================================
+17. NAVIGATION BEHAVIOR
+============================================================
+
+Every navigation item must:
+
+- have a valid route
+- have a professional icon
+- have active state
+- have hover state
+- have keyboard focus
+- preserve role restrictions
+
+Active navigation must clearly indicate current page.
+
+Do not use only color to indicate active state.
+
+Do not show multiple Dashboard items.
+
+============================================================
+18. PAGE HEADER
+============================================================
+
+Every major page should use a consistent PageHeader.
+
+Structure:
+
+Page Title
+Short explanation
+
+Optional:
+
+- breadcrumb
+- primary action
+- secondary action
+- filter controls
+
+Example:
+
+Datasets
+
+Manage hospital health-data datasets and their reporting configuration.
+
+                                + New Dataset
+
+Avoid unnecessary descriptions.
+
+Do not repeat the same application title on every page.
+
+============================================================
+19. DASHBOARD DESIGN PRINCIPLE
+============================================================
+
+Every dashboard must answer:
+
+1. Where am I?
+2. What is happening?
+3. What needs attention?
+4. What can I do next?
+
+Do not build dashboards consisting only of KPI cards.
+
+Use a combination of:
+
+- meaningful metrics
+- activity
+- tables
+- charts
+- actions
+- alerts
+- status summaries
+
+Only show information relevant to the current role.
+
+============================================================
+20. ADMIN DASHBOARD
+============================================================
+
+Admin Dashboard:
+
+Purpose:
+System-level administrative overview.
+
+Possible sections:
+
+Top metrics:
+
+- Total Users
+- Active Users
+- Active Datasets
+- Open Reporting Periods
+
+Then:
+
+Reporting Activity
+
+Users by Role
+
+Recent Administrative Activity
+
+System Health
+
+Use real data.
+
+Do not show raw technical audit event names as the primary display.
+
+Transform:
+
+LOGIN_SUCCESS
+
+into:
+
+Successful login
+
+Transform:
+
+SESSION_REFRESHED
+
+into:
+
+Session refreshed
+
+Transform:
+
+AUDIT_LOG_VIEWED
+
+into:
+
+Audit log viewed
+
+Database event values may remain unchanged.
+
+Only presentation changes.
+
+============================================================
+21. DATA ENTRY DASHBOARD
+============================================================
+
+Data Entry Dashboard must NOT be:
+
+"Welcome + links."
+
+It must be an operational workspace.
+
+Sections:
+
+Overview
+
+- Draft submissions
+- Submitted
+- Returned
+- Approved
+
+Current Work
+
+- open reporting periods
+- recent submissions
+- returned submissions requiring correction
+
+Attention Required
+
+Returned submissions should be clearly visible.
+
+Recent Submissions:
+
+Dataset
+Period
+Status
+Last Updated
+Action
+
+Actions should lead directly to the correct page.
+
+Do not expose management analytics.
+
+============================================================
+22. REPORTING DASHBOARD
+============================================================
+
+Reporting Dashboard must be an operational review center.
+
+Sections:
+
+Review Overview
+
+- Pending Review
+- Under Review
+- Approved
+- Returned
+
+Needs Attention
+
+- submissions waiting for review
+
+Recent Activity
+
+Reporting Tools
+
+- Reports
+- Custom Reports
+- Analysis
+
+Notifications
+
+Do not duplicate the Review Queue.
+
+Dashboard summarizes.
+
+Review Queue performs detailed workflow.
+
+============================================================
+23. MANAGER DASHBOARD
+============================================================
+
+Manager dashboard focuses on:
+
+Approved health data
+Reporting coverage
+Indicator trends
+Comparisons
+Key approved metrics
+
+Do NOT expose:
+
+- draft data
+- returned data
+- pending review data
+- internal audit information
+
+Charts should use approved data only.
+
+============================================================
+24. NOTIFICATIONS PAGE
+============================================================
+
+Notifications page must be redesigned.
+
+Do not show a giant empty white rectangle.
+
+Structure:
+
+Notifications
+
+[All] [Unread]
+
+Notification list
+
+Each notification:
+
+- icon
+- title
+- short message
+- timestamp
+- unread indicator
+- action/destination where appropriate
+
+Empty state:
+
+No notifications
+
+You're all caught up.
+
+New submission reviews, returned submissions, and
+system events will appear here.
+
+Do not show raw database notification types.
+
+============================================================
+25. NOTIFICATION HEADER BUTTON
+============================================================
+
+Header:
+
+[bell icon]
+
+No text beside it.
+
+Unread count:
+
+[bell]
+  3
+
+Use a small badge.
+
+Clicking:
+
+→ /app/notifications
+
+Tooltip:
+
+Notifications
+
+Accessibility:
+
+aria-label="Notifications"
+
+============================================================
+26. DATASET MANAGEMENT PAGE
+============================================================
+
+Admin Dataset page should feel like a real management workspace.
+
+Header:
+
+Datasets
+Manage the hospital's health-data reporting datasets.
+
+Primary action:
+
++ New Dataset
+
+Table:
+
+Dataset
+Code
+Description
+Status
+Indicators
+Updated
+Actions
+
+Actions:
+
+View
+Edit
+Activate/Deactivate
+
+Do not expose hard delete if business rules prohibit it.
+
+Use filters where useful.
+
+============================================================
+27. DATASET DETAIL
+============================================================
+
+Dataset detail should show:
+
+Dataset information
+
+- name
+- code
+- description
+- status
+
+Indicators
+
+List of indicators belonging to dataset.
+
+Actions:
+
+Edit Dataset
+Add Indicator
+Manage Indicators
+
+Use clear sections.
+
+============================================================
+28. INDICATOR MANAGEMENT
+============================================================
+
+Indicator page should present:
+
+Dataset
+Indicator Name
+Code
+Type
+Required
+Validation Range
+Precision
+Status
+
+Creation/edit form should be clear.
+
+Use appropriate controls depending on type.
+
+Examples:
+
+INTEGER
+NUMERIC
+DECIMAL
+TEXT
+DATE
+BOOLEAN
+PERCENTAGE
+
+Do not show irrelevant fields for the selected type.
+
+============================================================
+29. REPORTING PERIOD MANAGEMENT
+============================================================
+
+Show:
+
+Period
+Type
+Start Date
+End Date
+Status
+Submission Activity
+Actions
+
+Statuses:
+
+OPEN
+CLOSED
+
+Use clear status badges.
+
+Actions:
+
+Open
+Close
+View
+
+Do not use destructive actions unnecessarily.
+
+============================================================
+30. USER MANAGEMENT
+============================================================
+
+User management should feel like a professional administration page.
+
+Show:
+
+Name
+Email
+Role
+Status
+Last Login
+Actions
+
+Actions:
+
+View
+Edit
+Activate
+Deactivate
+Change Password
+
+Do not display password information.
+
+Use confirmation dialogs for important actions.
+
+============================================================
+31. AUDIT LOGS
+============================================================
+
+Audit logs are technical but must still be readable.
+
+Table:
+
+Activity
+User
+Resource
+Time
+Details
+
+Human-readable event labels.
+
+Optional detail dialog:
+
+- event
+- actor
+- resource
+- timestamp
+- relevant details
+
+Do not expose unnecessary internal implementation details.
+
+============================================================
+32. SYSTEM PAGE
+============================================================
+
+System Overview should NOT simply duplicate the Admin Dashboard.
+
+Dashboard:
+Activity and overview.
+
+System page:
+Technical/system information.
+
+Sections:
+
+Application
+
+- Name
+- API Version
+- Environment
+- Version
+
+System Health
+
+- Database
+- API
+- Authentication
+- Session System
+
+Configuration Summary
+
+- Users
+- Datasets
+- Indicators
+- Reporting Periods
+
+Keep technical information readable.
+
+============================================================
+33. REPORTING REVIEW QUEUE
+============================================================
+
+Review Queue must prioritize work.
+
+Header:
+
+Review Queue
+
+Submissions waiting for review.
+
+Top summary:
+
+Pending
+Under Review
+Returned
+Approved
+
+Filters:
+
+Dataset
+Period
+Status
+Search
+
+Table:
+
+Dataset
+Period
+Submitted By
+Submitted
+Status
+Action
+
+Action:
+
+Review
+
+============================================================
+34. REVIEW DETAIL
+============================================================
+
+Review page should clearly show:
+
+Dataset
+Reporting Period
+Submitted By
+Submitted Date
+Status
+
+Then:
+
+Indicator values
+
+Validation information
+
+Submission history
+
+Review actions
+
+Buttons:
+
+Start Review
+
+Approve
+
+Return
+
+Return requires reason.
+
+Make the approve/return actions visually distinct.
+
+Do not use dangerous-looking red styling for normal actions.
+
+============================================================
+35. DATA ENTRY SUBMISSION PAGE
+============================================================
+
+Submission page should be one of the strongest pages in the system.
+
+Header:
+
+Dataset name
+
+Reporting period
+
+Status badge
+
+Progress:
+
+7 / 10 required fields complete
+
+Progress bar
+
+Then indicators grouped logically.
+
+Each field:
+
+Label
+Required indicator
+Input
+Help/description where appropriate
+Validation message
+
+Bottom action area:
+
+Save Draft
+Submit
+
+When returned:
+
+Show prominent return reason.
+
+Example:
+
+Returned for correction
+
+Reviewer comment:
+Please verify the reported ANC values.
+
+Then:
+
+Save Changes
+Resubmit
+
+Do not create a new submission.
+
+============================================================
+36. SUBMISSION LIST
+============================================================
+
+Data Entry submission list:
+
+My Submissions
+
+Filters:
+
+Dataset
+Period
+Status
+
+Table:
+
+Dataset
+Period
+Status
+Last Updated
+Action
+
+Actions:
+
+Continue
+View
+Correct
+View Result
+
+Use status-specific actions.
+
+============================================================
+37. REPORT PAGES
+============================================================
+
+All report pages must share the same report design language.
+
+Report header:
+
+Report Name
+Dataset / Period context
+
+Filters
+
+Results
+
+Export actions
+
+Do not create completely different layouts for each report.
+
+Report types:
+
+- Dataset Report
+- Monthly Report
+- Indicator Report
+- Submission Status
+- Custom Report
+- Report History
+
+============================================================
+38. REPORT TABLES
+============================================================
+
+Tables should support:
+
+- readable headers
+- proper alignment
+- number formatting
+- status badges
+- pagination
+- filters
+- empty states
+- loading states
+- responsive horizontal scrolling when necessary
+
+Avoid overly dense tables.
+
+============================================================
+39. CUSTOM REPORT BUILDER
+============================================================
+
+Custom Report page should feel like a reporting tool.
+
+Layout:
+
+Step/selection area
+
+Dataset
+
+Indicators
+
+Reporting periods
+
+Then:
+
+Preview
+
+Indicator-by-period matrix
+
+Then:
+
+Export actions
+
+PDF
+Excel
+Print
+
+Selection should be clearly visible.
+
+Use pills/tags where appropriate.
+
+Do not make the selection interface visually noisy.
+
+============================================================
+40. REPORT HISTORY
+============================================================
+
+Report History should show:
+
+Report Type
+Dataset
+Indicators
+Periods
+Generated/Accessed By
+Date
+Actions
+
+For custom reports, show human-readable parameters.
+
+Do NOT show raw JSON.
+
+============================================================
+41. INDICATOR ANALYSIS
+============================================================
+
+Analysis page should have:
+
+Dataset selector
+
+Indicator selector
+
+Period range
+
+Trend chart
+
+Comparison section
+
+Data table
+
+The chart should have:
+
+- readable axes
+- meaningful labels
+- tooltip
+- appropriate empty state
+- no unnecessary decoration
+
+Do not show a chart when there is insufficient data.
+
+============================================================
+42. CHART DESIGN
+============================================================
+
+Charts should be restrained and professional.
+
+Use existing Recharts.
+
+Charts may include:
+
+- trend lines
+- bar charts
+- distribution charts
+- coverage charts
+
+Do not create decorative charts.
+
+Every chart must communicate a specific data relationship.
+
+Avoid:
+
+- 3D charts
+- unnecessary gradients
+- excessive labels
+- excessive colors
+
+============================================================
+43. TABLE DESIGN SYSTEM
+============================================================
+
+Create ONE reusable DataTable style.
+
+Table characteristics:
+
+- clean header
+- readable row height
+- subtle separators
+- hover state
+- status badges
+- actions
+- pagination
+- loading
+- empty
+- error
+
+Use consistent alignment:
+
+Text:
+left
+
+Numbers:
+right
+
+Dates:
+consistent format
+
+Status:
+badge
+
+Actions:
+right
+
+============================================================
+44. FORM DESIGN SYSTEM
+============================================================
+
+All forms should share:
+
+- label style
+- input height
+- border
+- focus ring
+- error state
+- help text
+- required indicator
+- spacing
+
+Do not make each form look different.
+
+============================================================
+45. DIALOG DESIGN
+============================================================
+
+Dialogs should:
+
+- have clear title
+- have useful description
+- have clear action buttons
+- support keyboard
+- support Escape
+- prevent accidental destructive actions
+
+Use consistent width.
+
+Do not create huge dialogs for simple confirmations.
+
+============================================================
+46. EMPTY STATES
+============================================================
+
+Empty states must be useful.
+
+Bad:
+
+"No data"
+
+Good:
+
+"No submissions found for the selected reporting period."
+
+Provide useful action where appropriate.
+
+Example:
+
+"No datasets have been created yet."
+
+[Create Dataset]
+
+Do not add an action if the user does not have permission.
+
+============================================================
+47. LOADING STATES
+============================================================
+
+Avoid blank white screens.
+
+Use:
+
+- skeletons
+- loading indicators
+- disabled action states
+
+For tables, use table skeleton rows.
+
+For dashboards, use skeleton metric blocks.
+
+============================================================
+48. ERROR STATES
+============================================================
+
+Error messages must be understandable.
+
+Avoid:
+
+"Request failed."
+
+Prefer:
+
+"Unable to load reporting periods. Please try again."
+
+Do not expose stack traces.
+
+Provide retry where appropriate.
+
+============================================================
+49. SUCCESS FEEDBACK
+============================================================
+
+Use consistent feedback after:
+
+- save
+- submit
+- approve
+- return
+- activate
+- deactivate
+- password update
+- report generation
+
+Do not use excessive popups.
+
+Toast or inline confirmation should be appropriate to the action.
+
+============================================================
+50. RESPONSIVE DESIGN
+============================================================
+
+Desktop:
+
+Use available screen width efficiently.
+
+Tablet:
+
+Adapt grids.
+
+Mobile:
+
+- sidebar becomes drawer
+- tables can scroll horizontally
+- cards stack
+- forms become single column
+- buttons remain usable
+- charts resize
+- dialogs fit viewport
+
+No accidental page-level horizontal scrolling.
+
+============================================================
+51. ACCESSIBILITY
+============================================================
+
+All interactive controls must have:
+
+- accessible name
+- keyboard access
+- visible focus
+- correct semantics
+
+Icon-only controls:
+
+aria-label required.
+
+Example:
+
+aria-label="Notifications"
+
+Do not rely on icon shape alone.
+
+Do not rely only on color for status.
+
+============================================================
+52. RESPONSIVE SIDEBAR
+============================================================
+
+Desktop:
+
+sidebar visible.
+
+Mobile:
+
+sidebar hidden initially.
+
+Header:
+
+[Menu Icon]
+
+Click:
+
+sidebar drawer opens.
+
+Click navigation:
+
+drawer closes.
+
+Click backdrop:
+
+drawer closes.
+
+Escape:
+
+drawer closes.
+
+Do not use emoji "☰".
+
+============================================================
+53. USER ACCOUNT AREA
+============================================================
+
+Bottom sidebar user section may show:
+
+User name
+
+Role badge
+
+Sign Out
+
+Keep it compact.
+
+Do not waste large vertical space.
+
+User information must come from authenticated user data.
+
+============================================================
+54. BREADCRUMBS
+============================================================
+
+Use breadcrumbs where they improve navigation.
+
+Example:
+
+Reports
+/
+Custom Report
+
+or:
+
+Datasets
+/
+Monthly Common Dataset
+
+Do not add breadcrumbs everywhere unnecessarily.
+
+============================================================
+55. SEARCH AND FILTERS
+============================================================
+
+Filters should be visually consistent.
+
+Use:
+
+- search input
+- select
+- date/period selector
+- status selector
+
+Keep filters near the content they affect.
+
+Do not create huge filter panels for simple pages.
+
+============================================================
+56. ACTION HIERARCHY
+============================================================
+
+Every page should have clear primary action.
+
+Example:
+
+Datasets
+→ New Dataset
+
+Submission
+→ Save Draft / Submit
+
+Review
+→ Approve / Return
+
+Reports
+→ Generate / Export
+
+Do not make every button look equally important.
+
+============================================================
+57. STATUS BADGES
+============================================================
+
+Create one reusable StatusBadge.
+
+Support:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+OPEN
+CLOSED
+ACTIVE
+INACTIVE
+
+Status badge style must remain consistent everywhere.
+
+============================================================
+58. DATA VISUALIZATION RULE
+============================================================
+
+Never add a chart just because there is empty space.
+
+Before adding a chart ask:
+
+What question does this chart answer?
+
+If there is no useful answer:
+
+Do not add the chart.
+
+============================================================
+59. NO FAKE DATA
+============================================================
+
+Never hardcode:
+
+- fake users
+- fake reports
+- fake submissions
+- fake metrics
+- fake charts
+- fake notifications
+
+Use real API data.
+
+If no data exists:
+
+show a professional empty state.
+
+============================================================
+60. NO PLACEHOLDER PAGES
+============================================================
+
+The final UI must contain no:
+
+- Coming Soon
+- Placeholder
+- Demo Page
+- Temporary Page
+- Welcome + links
+- TODO screen
+
+Every sidebar destination must be a real working page.
+
+============================================================
+61. ROUTE VALIDATION
+============================================================
+
+Create an audit of all sidebar links.
+
+For every role record:
+
+Label
+Route
+Page
+Access
+Status
+
+Verify:
+
+- route exists
+- page loads
+- API calls work
+- RBAC works
+
+A sidebar link must never lead to a 404.
+
+============================================================
+62. ADMIN ROUTE MATRIX
+============================================================
+
+ADMIN:
+
+/app
+/app/admin
+/app/admin/datasets
+/app/admin/indicators
+/app/admin/reporting-periods
+/app/reports/*
+/app/manager/analysis or appropriate admin analysis route
+/app/admin/users
+/app/notifications
+/app/admin/audit-logs
+/app/admin/system
+
+Verify the actual project route definitions before changing them.
+
+Do not create duplicate routes unnecessarily.
+
+============================================================
+63. DATA ENTRY ROUTE MATRIX
+============================================================
+
+DATA_ENTRY:
+
+/app
+/app/data-entry/submissions
+/app/data-entry/submissions/new
+/app/data-entry/submissions/:id
+/app/notifications
+
+All must work.
+
+============================================================
+64. REPORTING ROUTE MATRIX
+============================================================
+
+REPORTING:
+
+/app
+/app/review
+/app/reports/dataset
+/app/reports/monthly
+/app/reports/indicator
+/app/reports/submission-status
+/app/reports/custom
+/app/reports/history
+/app/manager/analysis or the actual reporting analysis route
+/app/notifications
+
+Verify actual current routes before modifying.
+
+============================================================
+65. MANAGER ROUTE MATRIX
+============================================================
+
+MANAGER:
+
+/app
+/app/manager/dashboard
+/app/manager/analysis
+/app/notifications
+
+All must work.
+
+============================================================
+66. ROLE-BASED UI
+============================================================
+
+The UI must be generated from role permissions where practical.
+
+Do not merely hide things with CSS.
+
+Frontend navigation should reflect role permissions.
+
+Backend authorization remains authoritative.
+
+============================================================
+67. VISUAL CONSISTENCY RULE
+============================================================
+
+If a button looks one way on:
+
+Datasets
+
+then it should look the same on:
+
+Reports
+Users
+Notifications
+Submissions
+Review
+Analysis
+
+Same applies to:
+
+- tables
+- forms
+- dialogs
+- status badges
+- page headers
+- filters
+- empty states
+
+============================================================
+68. FINAL PAGE-BY-PAGE UI AUDIT
+============================================================
+
+Inspect EVERY page.
+
+ADMIN:
+
+Dashboard
+Datasets
+Dataset detail
+Indicators
+Reporting Periods
+Reports
+Analysis
+Users
+Notifications
+Audit Logs
+System
+
+DATA_ENTRY:
+
+Dashboard
+My Submissions
+New Submission
+Submission Detail
+Returned Submission
+Notifications
+
+REPORTING:
+
+Dashboard
+Review Queue
+Review Detail
+Dataset Report
+Monthly Report
+Indicator Report
+Submission Status
+Custom Report
+Report History
+Indicator Analysis
+Notifications
+
+MANAGER:
+
+Dashboard
+Indicator Analysis
+Notifications
+
+Authentication:
+
+Login
+Unauthorized
+Session/inactivity behavior
+
+No page should visually feel like it belongs to a different application.
+
+============================================================
+69. FINAL VISUAL QUALITY CHECK
+============================================================
+
+After implementation, inspect every page.
+
+Ask:
+
+- Is the hierarchy clear?
+- Is the spacing balanced?
+- Is there unnecessary empty space?
+- Are cards overused?
+- Are tables readable?
+- Are buttons consistent?
+- Are icons consistent?
+- Is the active navigation obvious?
+- Are page titles clear?
+- Are actions easy to find?
+- Does the page communicate its purpose?
+- Does it feel like a hospital application?
+- Does it look finished?
+
+Fix issues discovered.
+
+============================================================
+70. FINAL FUNCTIONAL CHECK
+============================================================
+
+UI reconstruction is NOT complete if:
+
+- a sidebar link is broken
+- a page is placeholder
+- an API call fails
+- a role sees unauthorized navigation
+- a button does nothing
+- a form cannot submit
+- a report cannot load
+- a notification cannot open
+- a dashboard uses fake data
+
+Every visible interaction must be functional.
+
+============================================================
+71. TESTING
+============================================================
+
+Run all existing tests.
+
+Also test:
+
+- every sidebar link
+- every major page
+- authentication
+- role access
+- dashboard data
+- forms
+- submission
+- review
+- reports
+- notifications
+- exports
+- responsive behavior
+
+Do not remove existing tests.
+
+============================================================
+72. BROWSER VERIFICATION
+============================================================
+
+Use a real browser where available.
+
+Test:
+
+Desktop
+Tablet
+Mobile
+
+Check:
+
+- console
+- network failures
+- broken routes
+- visual overflow
+- dialogs
+- forms
+- sidebar
+- header
+- charts
+- tables
+
+Document anything that could not be tested.
+
+============================================================
+73. PERFORMANCE
+============================================================
+
+Do not create unnecessary frontend requests.
+
+Avoid:
+
+- repeated API calls
+- N+1 requests
+- unnecessary re-renders
+- duplicated data fetching
+
+Reuse existing API results where appropriate.
+
+============================================================
+74. SECURITY
+============================================================
+
+Frontend redesign must NOT weaken security.
+
+Do not:
+
+- expose tokens
+- expose passwords
+- bypass RBAC
+- trust frontend authorization
+- expose admin pages to unauthorized users
+
+Backend authorization remains authoritative.
+
+============================================================
+75. FINAL IMPLEMENTATION RULE
+============================================================
+
+Implement the UI in this order:
+
+PHASE 1
+Design tokens and shared UI components.
+
+PHASE 2
+AppShell, Header, Sidebar, navigation.
+
+PHASE 3
+Authentication pages.
+
+PHASE 4
+Admin pages.
+
+PHASE 5
+Data Entry pages.
+
+PHASE 6
+Reporting pages.
+
+PHASE 7
+Manager pages.
+
+PHASE 8
+Reports and analysis.
+
+PHASE 9
+Notifications.
+
+PHASE 10
+Responsive/accessibility refinement.
+
+PHASE 11
+Page-by-page visual audit.
+
+PHASE 12
+Functional/browser audit.
+
+Do not jump randomly between pages.
+
+============================================================
+76. DO NOT DECLARE COMPLETE TOO EARLY
+============================================================
+
+The UI reconstruction is NOT complete because:
+
+- build passes
+- icons changed
+- sidebar exists
+- cards exist
+- one dashboard looks good
+
+It is complete only when:
+
+EVERY PAGE
+EVERY SIDEBAR LINK
+EVERY MAJOR INTERACTION
+EVERY ROLE
+EVERY RESPONSIVE STATE
+
+has been reviewed.
+
+============================================================
+77. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+[ ] Complete design system exists.
+
+[ ] Shared UI components are reused.
+
+[ ] AppShell is professionally redesigned.
+
+[ ] Header is professionally redesigned.
+
+[ ] Sidebar is professionally redesigned.
+
+[ ] No functional emoji icons remain.
+
+[ ] Header notification uses icon-only control.
+
+[ ] Notification icon has tooltip/accessibility label.
+
+[ ] Admin navigation is complete.
+
+[ ] Data Entry navigation is complete.
+
+[ ] Reporting navigation is complete.
+
+[ ] Manager navigation is complete.
+
+[ ] Every sidebar link has a valid route.
+
+[ ] Every sidebar destination has a real page.
+
+[ ] No placeholder pages remain.
+
+[ ] No duplicate Dashboard links remain.
+
+[ ] No broken navigation remains.
+
+[ ] Admin Dashboard is redesigned.
+
+[ ] Data Entry Dashboard is redesigned.
+
+[ ] Reporting Dashboard is redesigned.
+
+[ ] Manager Dashboard is redesigned.
+
+[ ] Dataset pages are redesigned.
+
+[ ] Indicator pages are redesigned.
+
+[ ] Reporting Period pages are redesigned.
+
+[ ] User Management is redesigned.
+
+[ ] Audit Logs are redesigned.
+
+[ ] System page is redesigned.
+
+[ ] Review Queue is redesigned.
+
+[ ] Review Detail is redesigned.
+
+[ ] Submission List is redesigned.
+
+[ ] Submission Form is redesigned.
+
+[ ] Notifications are redesigned.
+
+[ ] Dataset Reports are redesigned.
+
+[ ] Monthly Reports are redesigned.
+
+[ ] Indicator Reports are redesigned.
+
+[ ] Submission Status Reports are redesigned.
+
+[ ] Custom Report Builder is redesigned.
+
+[ ] Report History is redesigned.
+
+[ ] Indicator Analysis is redesigned.
+
+[ ] Tables use a consistent design.
+
+[ ] Forms use a consistent design.
+
+[ ] Dialogs use a consistent design.
+
+[ ] Status badges are consistent.
+
+[ ] Loading states are consistent.
+
+[ ] Empty states are consistent.
+
+[ ] Error states are consistent.
+
+[ ] Success feedback is consistent.
+
+[ ] Charts are meaningful.
+
+[ ] No fake data is used.
+
+[ ] Responsive desktop layout works.
+
+[ ] Responsive tablet layout works.
+
+[ ] Responsive mobile layout works.
+
+[ ] Mobile navigation works.
+
+[ ] Accessibility basics are implemented.
+
+[ ] Keyboard navigation works.
+
+[ ] Icon-only buttons have accessible labels.
+
+[ ] RBAC is preserved.
+
+[ ] Authentication is preserved.
+
+[ ] Backend business rules are preserved.
+
+[ ] Existing tests still pass.
+
+[ ] Browser verification is completed or honestly documented.
+
+[ ] No major visual inconsistency remains.
+
+============================================================
+78. FINAL RESULT
+============================================================
+
+The desired result is NOT:
+
+"the existing application with prettier colors."
+
+The desired result is:
+
+A complete, coherent, professional hospital health-data application
+where every role has an appropriate workspace, every navigation link
+works, every page follows one design language, and the interface helps
+users understand their work and act on it efficiently.
+
+The backend remains the foundation.
+
+The frontend becomes the finished product.

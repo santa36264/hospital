@@ -4,6 +4,7 @@
  */
 
 const reportService = require('../services/reportService');
+const { normalizePagination } = require('../utils/pagination');
 
 async function datasetReport(req, res, next) {
   try {
@@ -66,8 +67,8 @@ async function submissionStatusReport(req, res, next) {
           : undefined,
         status: req.query.status || undefined,
         search: req.query.search || undefined,
-        page: req.query.page,
-        perPage: req.query.per_page,
+        page: normalizePagination(req.query).page,
+        perPage: normalizePagination(req.query).pageSize,
       },
       req.user
     );
@@ -81,8 +82,8 @@ async function reportHistory(req, res, next) {
   try {
     const result = await reportService.getReportHistory({
       userId: req.user.id,
-      page: req.query.page,
-      perPage: req.query.per_page,
+      page: normalizePagination(req.query).page,
+      perPage: normalizePagination(req.query).pageSize,
     });
     res.json({ success: true, message: 'Report history retrieved.', data: result.data, meta: result.meta });
   } catch (err) {

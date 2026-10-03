@@ -87,3 +87,28 @@ async function getIndicatorComparison({ datasetId, indicatorId, periodAId, perio
 }
 
 module.exports = { getDashboard, getIndicatorTrend, getIndicatorComparison };
+
+// ─── DATA_ENTRY Dashboard ─────────────────────────────────────────────────────
+
+async function getDataEntryDashboard(userId) {
+  const [stats, recentSubmissions] = await Promise.all([
+    analyticsRepository.getDataEntryStats(userId),
+    analyticsRepository.getRecentSubmissions(userId, 8),
+  ]);
+  return { stats, recentSubmissions };
+}
+
+// ─── REPORTING Dashboard ──────────────────────────────────────────────────────
+
+async function getReportingDashboard() {
+  const [stats, recentActivity] = await Promise.all([
+    analyticsRepository.getReportingStats(),
+    analyticsRepository.getRecentReviewActivity(10),
+  ]);
+  return { stats, recentActivity };
+}
+
+module.exports = Object.assign(module.exports, {
+  getDataEntryDashboard,
+  getReportingDashboard,
+});

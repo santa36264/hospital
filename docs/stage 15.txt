@@ -1,0 +1,1718 @@
+STAGE 15 — FINAL GAP CLOSURE & PROFESSIONAL UI/UX TRANSFORMATION
+===============================================================
+
+Project:
+Hospital Health Data Management, Reporting and Analysis System
+
+Purpose:
+This stage exists because the previous Stage 14 implementation did not
+fully complete the required UI/UX transformation and left multiple
+documented functional gaps.
+
+Stage 15 is a FINAL GAP-CLOSURE and PROFESSIONALIZATION stage.
+
+This is a real hospital-delivery application, not a student/demo CRUD
+application.
+
+The objective is NOT simply to replace icons.
+
+The objective is to make the existing application feel and behave like
+one coherent, professional hospital health-data management system while
+closing every confirmed gap listed in this document.
+
+IMPORTANT:
+Do NOT rewrite the application from scratch.
+
+Preserve the existing architecture, database relationships, APIs,
+business rules, authentication, RBAC, security controls, reports,
+analytics, notifications, and tested workflows unless a change is
+explicitly required by this stage.
+
+Do not implement unrelated features.
+
+Do not introduce unnecessary complexity.
+
+Do not create duplicate functionality when an existing implementation
+already satisfies the requirement.
+
+===============================================================
+1. EXISTING TECHNOLOGY STACK
+===============================================================
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+- Recharts
+- existing professional icon library if already installed
+- Lucide React may be used if a professional icon library is needed
+
+Backend:
+- Node.js
+- Express
+
+Database:
+- MySQL / MariaDB
+
+Database access:
+- Knex.js
+- mysql2
+
+Authentication:
+- JWT
+- refresh sessions
+- HttpOnly cookies
+- existing authentication implementation
+
+API:
+- REST
+- /api/v1
+
+Architecture:
+Route
+→ Middleware
+→ Controller
+→ Service
+→ Repository
+→ Database
+
+Do not replace this architecture.
+
+===============================================================
+2. PRIMARY STAGE 15 OBJECTIVES
+===============================================================
+
+Stage 15 has four primary objectives:
+
+A. Close all documented functional gaps.
+
+B. Complete the professional UI/UX transformation.
+
+C. Remove duplicate, placeholder, unfinished, or inconsistent UI.
+
+D. Perform final regression testing and verification.
+
+The application must feel like one product rather than a collection
+of independently implemented stages.
+
+===============================================================
+3. CRITICAL RULE — UI/UX TRANSFORMATION
+===============================================================
+
+DO NOT interpret "professional UI/UX" as:
+
+- changing icons only
+- changing colors only
+- changing button styles only
+- adding gradients
+- adding more cards
+- adding decorative animations
+
+The UI must be redesigned at the INFORMATION ARCHITECTURE level.
+
+Improve:
+
+- page hierarchy
+- navigation
+- spacing
+- typography
+- visual grouping
+- dashboard composition
+- tables
+- filters
+- forms
+- dialogs
+- status presentation
+- empty states
+- loading states
+- error states
+- success feedback
+- responsive behavior
+- accessibility
+- workflow clarity
+
+The application should communicate clearly what the user needs to
+do next.
+
+===============================================================
+4. NO EMOJI UI ICONS
+===============================================================
+
+Do NOT use emoji characters as functional interface icons.
+
+Examples that MUST NOT be used:
+
+☰
+📊
+📈
+👤
+🔔
+⚙️
+🏥
+📋
+✅
+❌
+etc.
+
+This applies to:
+
+- sidebar
+- buttons
+- mobile navigation
+- headers
+- notifications
+- dashboard cards
+- tables
+- actions
+- menus
+
+Use a consistent professional SVG/icon library.
+
+Prefer the existing icon system.
+
+If necessary, use Lucide React or another existing professional
+icon library.
+
+Do not mix many unrelated icon styles.
+
+===============================================================
+5. GAP CLOSURE — COMPLETE ALL 15 CONFIRMED GAPS
+===============================================================
+
+Every item below must be investigated and resolved.
+
+Do NOT simply mark an item complete without actually verifying it.
+
+---------------------------------------------------------------
+GAP 1 — LIVE BROWSER VERIFICATION
+---------------------------------------------------------------
+
+Previous Stage 14 did not complete live browser verification.
+
+Perform actual browser verification.
+
+Verify in the running application:
+
+- login
+- logout
+- navigation
+- sidebar
+- dashboard
+- Data Entry workflow
+- Reporting workflow
+- reports
+- custom report
+- notifications
+- Manager dashboard
+- Admin pages
+- forms
+- dialogs
+- tables
+- responsive behavior
+- mobile navigation
+- browser console
+
+Check for:
+
+- runtime errors
+- broken routes
+- missing assets
+- console errors
+- visual overflow
+- broken responsive layouts
+- unusable dialogs
+- inaccessible controls
+
+Do not claim browser verification if it was not actually performed.
+
+Document any environment limitation honestly.
+
+---------------------------------------------------------------
+GAP 2 — MOBILE HAMBURGER EMOJI
+---------------------------------------------------------------
+
+Replace the current emoji "☰" mobile menu control.
+
+Use a professional icon component.
+
+The button must provide:
+
+- accessible label
+- keyboard accessibility
+- visible focus state
+- correct open/close behavior
+
+Verify on mobile-sized viewport.
+
+---------------------------------------------------------------
+GAP 3 — ADMIN SIDEBAR REPORTS LINK
+---------------------------------------------------------------
+
+Admin must have access to Reports.
+
+Review the current Admin navigation.
+
+Ensure there is an appropriate Reports navigation entry.
+
+Avoid duplicate Dashboard entries.
+
+The navigation must be logically organized.
+
+---------------------------------------------------------------
+GAP 4 — ADMIN SIDEBAR NOTIFICATIONS LINK
+---------------------------------------------------------------
+
+Admin must have access to Notifications.
+
+Add the appropriate navigation entry.
+
+Use the existing notification implementation.
+
+Do not create a second notification system.
+
+---------------------------------------------------------------
+GAP 5 — MANAGER SIDEBAR NOTIFICATIONS LINK
+---------------------------------------------------------------
+
+Manager must have access to Notifications.
+
+Add Notifications to the Manager navigation.
+
+Use the existing notification page/component/API.
+
+---------------------------------------------------------------
+GAP 6 — ADMIN SIDEBAR SECTION GROUPINGS
+---------------------------------------------------------------
+
+Admin navigation must have meaningful grouping.
+
+Use this information architecture unless an existing implementation
+provides an objectively equivalent structure:
+
+ADMIN
+
+MAIN
+- Dashboard
+
+DATA MANAGEMENT
+- Datasets
+- Indicators
+- Reporting Periods
+
+REPORTING
+- Reports
+- Analysis
+
+USER & SECURITY
+- Users
+- Notifications
+- Audit Logs
+- System
+
+Do not create duplicate links.
+
+Do not show links the Admin cannot access.
+
+Do not use excessive section groups.
+
+Use professional section labels and spacing.
+
+---------------------------------------------------------------
+GAP 7 — MISSING STAGE 03–05 TEST SCRIPTS
+---------------------------------------------------------------
+
+Create missing test scripts for:
+
+- Stage 03
+- Stage 04
+- Stage 05
+
+Before creating them:
+
+Inspect the actual current implementation.
+
+The tests must test real existing behavior.
+
+Do NOT create fake tests that only verify files exist.
+
+At minimum cover the major functionality introduced in each stage.
+
+Stage 03:
+- database connection
+- migration
+- core tables
+- seed roles
+- API health
+- frontend build/foundation where appropriate
+
+Stage 04:
+- login
+- invalid login
+- authentication
+- refresh
+- logout
+- role protection
+- session behavior
+- password hashing/security expectations
+
+Stage 05:
+- dataset CRUD rules
+- indicator rules
+- reporting-period rules
+- Admin authorization
+- duplicate handling
+- activation/deactivation
+- validation
+
+Do not weaken existing tests.
+
+---------------------------------------------------------------
+GAP 8 — STAGE 02 DASHBOARD API CONTRACT
+---------------------------------------------------------------
+
+Investigate the Stage 02 requirement for:
+
+GET /api/v1/dashboard/data-entry
+
+GET /api/v1/dashboard/reporting
+
+IMPORTANT:
+
+Do NOT automatically create duplicate APIs.
+
+First inspect:
+
+- current Stage 10 analytics/dashboard implementation
+- existing dashboard APIs
+- existing services
+- existing repositories
+- current frontend usage
+
+Determine whether these Stage 02 endpoints are:
+
+A. still required and genuinely missing
+
+OR
+
+B. superseded by the later dashboard architecture.
+
+If still required:
+
+Implement them cleanly using the existing architecture.
+
+If superseded:
+
+Document the supersession clearly in the Stage 15 review and ensure
+the current dashboard functionality provides the equivalent required
+information.
+
+Do not create redundant dashboard systems.
+
+===============================================================
+6. REAL DATA ENTRY DASHBOARD
+===============================================================
+
+The current generic Data Entry /app placeholder must be replaced.
+
+DATA_ENTRY users need an actual operational dashboard.
+
+The dashboard should communicate:
+
+- current work
+- submission status
+- reporting activity
+- actions requiring attention
+
+Include meaningful summary information such as:
+
+- Draft submissions
+- Submitted submissions
+- Returned submissions
+- Approved submissions
+
+Where appropriate also show:
+
+- Open reporting periods
+- Recent submissions
+- Returned submissions requiring correction
+- Recently updated submissions
+
+Do not fabricate values.
+
+Use real API/database data.
+
+Do not add charts merely for decoration.
+
+A useful dashboard structure may be:
+
+Page Header
+    Dashboard
+    Overview of your reporting activity
+
+Summary cards
+
+Recent submissions
+
+Items requiring attention
+
+Reporting activity/progress where meaningful
+
+The Data Entry dashboard must NOT expose management analytics that
+DATA_ENTRY users are not authorized to see.
+
+===============================================================
+7. REAL REPORTING DASHBOARD
+===============================================================
+
+The current generic Reporting /app placeholder must be replaced.
+
+REPORTING users need an operational reporting center.
+
+Include meaningful information such as:
+
+- Pending review
+- Under review
+- Approved
+- Returned
+
+Also show:
+
+- Recent submissions
+- Submissions requiring action
+- Reporting activity
+- Quick access to reports
+- Quick access to indicator analysis
+- Notifications
+
+Example information architecture:
+
+Page Header
+    Reporting Dashboard
+    Monitor submissions, reviews and reporting activity
+
+Review summary
+
+Pending review queue
+
+Recent activity
+
+Reporting tools
+
+Analysis shortcuts
+
+Do not duplicate the existing Review Queue page unnecessarily.
+
+The dashboard should summarize the workflow and link to the detailed
+pages.
+
+===============================================================
+8. REPORT HISTORY PARAMETERS
+===============================================================
+
+Report History currently stores custom report parameters such as:
+
+- indicator IDs
+- period IDs
+
+inside JSON but does not display useful details in the UI.
+
+Improve Report History.
+
+For custom reports, display meaningful information such as:
+
+- report type
+- dataset
+- selected indicators
+- selected reporting periods
+- generated/accessed time
+- user where appropriate
+- report action/type
+
+Do not expose raw internal JSON unnecessarily.
+
+Transform stored IDs into human-readable names using existing database
+relationships.
+
+Do not make extra N+1 database queries if the repository/service can
+retrieve the required information efficiently.
+
+===============================================================
+9. PDF MULTI-PAGE TABLE SUPPORT
+===============================================================
+
+Fix Custom Report PDF export.
+
+Current problem:
+
+Large tables can break awkwardly across pages.
+
+The PDF must support:
+
+- multiple pages
+- repeated table headers
+- readable rows
+- sensible page margins
+- no clipped content
+- no overlapping content
+- proper page numbering where appropriate
+
+Test with a sufficiently large report.
+
+Do not solve this by simply shrinking all text to an unreadable size.
+
+Maintain professional document readability.
+
+===============================================================
+10. REPORTING USER NOTIFICATION
+===============================================================
+
+When a Data Entry user successfully submits a submission:
+
+SUBMITTED
+
+the appropriate REPORTING users must receive a persisted notification
+that a submission is ready for review.
+
+Use the existing notification architecture.
+
+Do not create a second notification mechanism.
+
+The notification should include useful information such as:
+
+- dataset
+- reporting period
+- submitter
+- submission identifier/reference where appropriate
+- timestamp
+
+Do not expose unnecessary sensitive information.
+
+Notification must respect existing RBAC.
+
+Test:
+
+DATA_ENTRY submits
+→ REPORTING receives notification
+→ REPORTING can open/use the relevant workflow.
+
+===============================================================
+11. SUBMISSION FORM PROGRESS INDICATOR
+===============================================================
+
+Improve the Data Entry submission form.
+
+Show meaningful completion progress.
+
+For example:
+
+Required fields:
+3 of 8 complete
+
+or an equivalent professional visual indicator.
+
+The progress calculation must use actual indicator requirements.
+
+It must distinguish:
+
+- required completed
+- required incomplete
+
+Do not treat optional fields as required.
+
+Progress must update as the user enters data.
+
+The progress indicator must not replace validation.
+
+The final Submit action must still enforce server-side validation.
+
+===============================================================
+12. REPORT PAGINATION HARDENING
+===============================================================
+
+Stage 12 pagination hardening must also apply to:
+
+GET /api/v1/reports/submission-status
+
+GET /api/v1/reports/history
+
+Inspect the existing pagination utility.
+
+Reuse the centralized pagination validation.
+
+Requirements:
+
+- page must be >= 1
+- pageSize must be within safe configured limits
+- invalid values must be normalized or rejected consistently
+- no negative offsets
+- no unbounded page size
+- consistent response metadata
+
+Do not duplicate pagination logic unnecessarily.
+
+===============================================================
+13. PROFESSIONAL APPLICATION SHELL
+===============================================================
+
+Redesign the shared application shell.
+
+The shell must include:
+
+- professional sidebar
+- professional header
+- page content area
+- responsive behavior
+- role-aware navigation
+- notification access
+- user/account access
+
+The sidebar should not feel like a generic template.
+
+Use:
+
+- clear active state
+- subtle hover state
+- logical grouping
+- consistent icon sizing
+- consistent spacing
+- readable labels
+
+Avoid:
+
+- excessive borders
+- excessive shadows
+- excessive rounded cards
+- decorative gradients
+- oversized icons
+- emoji
+- unnecessary animations
+
+The design should communicate:
+
+professional
+trustworthy
+calm
+data-oriented
+hospital/healthcare appropriate
+
+Do NOT invent hospital branding.
+
+===============================================================
+14. PROFESSIONAL DESIGN SYSTEM
+===============================================================
+
+Establish a consistent design system across the application.
+
+Typography:
+- clear hierarchy
+- readable body text
+- consistent heading sizes
+- consistent labels
+
+Spacing:
+- consistent page padding
+- consistent section spacing
+- consistent card/table spacing
+
+Colors:
+- restrained healthcare-appropriate palette
+- strong contrast
+- semantic status colors
+
+Status colors may communicate:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+OPEN
+CLOSED
+ACTIVE
+INACTIVE
+
+Do not use color as the only indicator.
+
+Buttons:
+- primary
+- secondary
+- destructive
+- ghost/text where appropriate
+
+All should be visually consistent.
+
+===============================================================
+15. PROFESSIONAL DASHBOARD DESIGN
+===============================================================
+
+Review all dashboards.
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Each dashboard must answer:
+
+1. Where am I?
+2. What is happening?
+3. What needs attention?
+4. What can I do next?
+
+Use charts only where they communicate useful information.
+
+Existing Recharts implementation should be reused where appropriate.
+
+Possible useful visualizations:
+
+- reporting activity over time
+- submission status distribution
+- dataset reporting coverage
+- approved reporting trend
+
+Do NOT add charts simply because dashboards are expected to have charts.
+
+Do NOT duplicate the same chart in multiple locations without purpose.
+
+===============================================================
+16. ADMIN DASHBOARD
+===============================================================
+
+Admin dashboard should provide a useful system overview.
+
+Possible information:
+
+- total active users
+- active datasets
+- active indicators
+- open reporting periods
+- submission activity
+- system status
+
+Use real data.
+
+Do not expose sensitive audit information unnecessarily on the dashboard.
+
+Link to detailed management pages.
+
+===============================================================
+17. MANAGER DASHBOARD
+===============================================================
+
+Manager dashboard should focus on approved health-data reporting and
+analysis.
+
+Maintain the existing rule:
+
+MANAGER sees approved data only.
+
+Do not expose:
+
+- drafts
+- returned unapproved data
+- pending review data
+- internal audit information
+
+Provide useful:
+
+- reporting coverage
+- approved data summary
+- indicator trends
+- comparison access
+- analysis navigation
+
+===============================================================
+18. REPORTING REVIEW EXPERIENCE
+===============================================================
+
+Improve the Reporting review workflow visually.
+
+The reviewer should easily understand:
+
+- what dataset is being reviewed
+- reporting period
+- submitter
+- submission status
+- indicator values
+- validation information
+- submission history
+- available actions
+
+Actions:
+
+Start Review
+Approve
+Return
+
+Return must continue requiring a reason.
+
+Do not change the business rules.
+
+===============================================================
+19. DATA ENTRY EXPERIENCE
+===============================================================
+
+Improve the submission workflow.
+
+The user should clearly see:
+
+- dataset
+- reporting period
+- current status
+- required fields
+- completed fields
+- validation errors
+- save state
+- submit action
+
+For RETURNED submissions:
+
+show the return reason prominently.
+
+Make correction and resubmission obvious.
+
+Do not create a new submission for a returned record.
+
+===============================================================
+20. TABLES
+===============================================================
+
+Review all major tables.
+
+Improve:
+
+- column hierarchy
+- readable spacing
+- status badges
+- action placement
+- search
+- filters
+- pagination
+- empty state
+- loading state
+- responsive behavior
+
+Avoid unnecessarily wide tables.
+
+Where tables must scroll horizontally, make this intentional and usable.
+
+===============================================================
+21. FORMS
+===============================================================
+
+Review forms throughout the application.
+
+Ensure:
+
+- labels are clear
+- required fields are visible
+- validation messages are near fields
+- errors are understandable
+- disabled states are clear
+- submit states are clear
+- keyboard navigation works
+
+Do not rely only on placeholder text for labels.
+
+===============================================================
+22. EMPTY / LOADING / ERROR STATES
+===============================================================
+
+Every major page should have professional states for:
+
+Loading
+Empty
+Error
+Success
+
+Do not show:
+
+"Something happened"
+
+Use useful messages.
+
+Example:
+
+"No approved data is available for the selected period."
+
+instead of a generic empty message.
+
+===============================================================
+23. NOTIFICATIONS
+===============================================================
+
+Review the complete notification experience.
+
+Ensure:
+
+- unread state is clear
+- read state is clear
+- timestamps are understandable
+- notifications link to useful destinations where appropriate
+- notification bell works
+- role access is correct
+
+Admin:
+Notifications available.
+
+Reporting:
+Notifications available.
+
+Manager:
+Notifications available.
+
+Data Entry:
+Notifications available.
+
+Do not create duplicate notification pages.
+
+===============================================================
+24. RESPONSIVE UI
+===============================================================
+
+Verify:
+
+Desktop
+Tablet
+Mobile
+
+Pay particular attention to:
+
+- sidebar
+- mobile menu
+- header
+- tables
+- report builder
+- forms
+- dialogs
+- dashboard cards
+- charts
+
+No horizontal page overflow unless intentional inside a table/report.
+
+===============================================================
+25. ACCESSIBILITY
+===============================================================
+
+Verify basic accessibility.
+
+At minimum:
+
+- buttons have accessible names
+- icon-only buttons have aria-label
+- keyboard focus is visible
+- form labels are associated correctly
+- sufficient color contrast
+- status is not communicated only through color
+- dialogs are keyboard accessible
+- mobile menu is keyboard accessible
+
+Do not use emoji as accessibility labels/icons.
+
+===============================================================
+26. DUPLICATE AND PLACEHOLDER UI AUDIT
+===============================================================
+
+Search the entire frontend for:
+
+- duplicate Dashboard links
+- duplicate navigation items
+- placeholder pages
+- "Welcome" demo pages
+- temporary text
+- fake statistics
+- hardcoded sample data
+- developer-facing wording
+- unfinished labels
+- unused navigation entries
+- dead UI
+
+Remove or replace them.
+
+Do NOT remove real functionality.
+
+===============================================================
+27. API / BUSINESS RULE PRESERVATION
+===============================================================
+
+Do not break:
+
+Authentication
+RBAC
+Dataset configuration
+Indicator configuration
+Reporting periods
+Submission ownership
+Submission workflow
+Review workflow
+Notifications
+Reports
+Custom reports
+Exports
+Analytics
+Audit logs
+Admin controls
+Security controls
+
+Existing rules remain authoritative.
+
+===============================================================
+28. SECURITY REGRESSION
+===============================================================
+
+Verify:
+
+- authentication
+- authorization
+- role restrictions
+- ownership checks
+- session security
+- password hashing
+- refresh-token security
+- inactive-session handling
+- audit logging
+- security headers
+- production error handling
+- input validation
+- pagination limits
+
+Do not expose:
+
+- password hashes
+- refresh tokens
+- secrets
+- database credentials
+- internal stack traces
+
+===============================================================
+29. TESTING REQUIREMENTS
+===============================================================
+
+Create:
+
+test_stage15.ps1
+
+Do not delete previous test scripts.
+
+Run:
+
+Stage 03 tests
+Stage 04 tests
+Stage 05 tests
+Stage 06 tests
+Stage 07 tests
+Stage 08 tests
+Stage 09 tests
+Stage 10 tests
+Stage 11 tests
+Stage 12 tests
+Stage 13 tests
+Stage 14 tests if they exist
+Stage 15 tests
+
+Record:
+
+- total tests/checks
+- passed
+- failed
+- skipped
+- important warnings
+
+Do not claim success if tests were not actually executed.
+
+===============================================================
+30. BUILD VERIFICATION
+===============================================================
+
+Run:
+
+npm run build
+
+Verify:
+
+- frontend builds successfully
+- backend starts successfully
+- migrations work
+- health endpoint works
+- no new build errors
+- no new runtime errors
+
+Existing acceptable warnings may remain if documented.
+
+===============================================================
+31. BROWSER VERIFICATION
+===============================================================
+
+Perform actual browser verification where the environment supports it.
+
+At minimum verify:
+
+ADMIN
+- login
+- dashboard
+- navigation
+- datasets
+- indicators
+- reporting periods
+- users
+- reports
+- notifications
+- audit logs
+- system
+
+DATA_ENTRY
+- dashboard
+- submissions
+- new submission
+- draft
+- submit
+- returned submission
+- notifications
+
+REPORTING
+- dashboard
+- review queue
+- review
+- reports
+- custom report
+- report history
+- analysis
+- notifications
+
+MANAGER
+- dashboard
+- analysis
+- notifications
+
+Also test:
+
+- mobile navigation
+- responsive layout
+- browser console
+- major forms
+- dialogs
+- tables
+- charts
+
+===============================================================
+32. REPORT HISTORY VERIFICATION
+===============================================================
+
+Create at least one custom report.
+
+Verify:
+
+- history record is created
+- parameters are stored
+- history displays meaningful dataset/indicator/period information
+- no raw confusing JSON is shown to ordinary users
+
+===============================================================
+33. PDF VERIFICATION
+===============================================================
+
+Generate:
+
+- small report
+- medium report
+- large report
+
+Verify:
+
+- PDF opens
+- headers repeat on new pages
+- tables remain readable
+- rows do not overlap
+- content is not clipped
+
+===============================================================
+34. NOTIFICATION VERIFICATION
+===============================================================
+
+Perform:
+
+DATA_ENTRY
+→ create submission
+→ submit
+
+Then verify:
+
+REPORTING
+→ receives persisted notification
+→ notification is visible
+→ relevant review workflow can be opened
+
+Verify notification read/unread behavior.
+
+===============================================================
+35. SUBMISSION PROGRESS VERIFICATION
+===============================================================
+
+Create a dataset with multiple required indicators.
+
+Verify progress:
+
+0 of N
+1 of N
+...
+N of N
+
+Confirm optional indicators do not incorrectly affect required
+completion.
+
+Confirm server-side validation still prevents incomplete submission.
+
+===============================================================
+36. PAGINATION VERIFICATION
+===============================================================
+
+Test:
+
+/reports/submission-status
+
+/reports/history
+
+with:
+
+page=1
+page=0
+page=-1
+pageSize=1
+pageSize=100
+pageSize=101
+invalid page
+invalid pageSize
+
+Verify safe consistent behavior.
+
+===============================================================
+37. VISUAL QUALITY AUDIT
+===============================================================
+
+Perform a final visual review of every role.
+
+Ask:
+
+Does this look like one application?
+
+Are spacing rules consistent?
+
+Are icons consistent?
+
+Are headings consistent?
+
+Are buttons consistent?
+
+Are tables consistent?
+
+Are cards necessary?
+
+Are charts meaningful?
+
+Does the sidebar feel professional?
+
+Does the header feel professional?
+
+Are there obvious unfinished areas?
+
+Are there duplicate elements?
+
+Are there placeholder screens?
+
+Does the application look appropriate for delivery to a hospital?
+
+Fix obvious issues found during the audit.
+
+===============================================================
+38. DO NOT OVERDESIGN
+===============================================================
+
+Professional does NOT mean:
+
+- huge gradients
+- glassmorphism everywhere
+- excessive animations
+- excessive shadows
+- excessive rounded cards
+- giant icons
+- decorative charts
+- unnecessary illustrations
+- excessive colors
+
+Prefer:
+
+clean
+calm
+structured
+professional
+data-focused
+accessible
+consistent
+
+===============================================================
+39. DOCUMENTATION
+===============================================================
+
+Create/update:
+
+docs/stage 15 review.txt
+
+The review must contain:
+
+1. Executive summary
+2. All 15 gap results
+3. UI/UX changes
+4. Navigation changes
+5. Dashboard changes
+6. Data Entry changes
+7. Reporting changes
+8. Manager changes
+9. Admin changes
+10. Notification changes
+11. Report History changes
+12. PDF changes
+13. Pagination changes
+14. Test results
+15. Browser verification
+16. Security verification
+17. Build result
+18. Files created
+19. Files modified
+20. Database changes
+21. Known limitations
+22. Final status
+
+===============================================================
+40. DATABASE CHANGES
+===============================================================
+
+Before creating a migration:
+
+Determine whether the requested functionality can be implemented
+using existing tables.
+
+Do NOT create a migration unnecessarily.
+
+If a migration is required:
+
+- create it properly
+- document it
+- test it
+- preserve existing data
+- make it reversible where practical
+
+Do not modify production data manually.
+
+===============================================================
+41. IMPORTANT ARCHITECTURE RULE
+===============================================================
+
+Do not:
+
+- rewrite the project
+- replace React
+- replace Express
+- replace MySQL
+- replace Knex
+- replace JWT
+- replace existing RBAC
+- replace existing reports
+- replace existing analytics
+- create a second architecture
+- create duplicate notification systems
+- create duplicate dashboard systems
+- delete working functionality
+
+Modify the existing implementation carefully.
+
+===============================================================
+42. IMPORTANT UI RULE
+===============================================================
+
+Do not simply satisfy the requirements by technically adding links.
+
+The final result must be visually coherent.
+
+For example:
+
+BAD:
+
+Dashboard
+Reports
+Notifications
+
+with unrelated styling.
+
+GOOD:
+
+A role-aware navigation system with clear sections,
+consistent icons, active states, hierarchy, and spacing.
+
+The same principle applies to every page.
+
+===============================================================
+43. OPEN QUESTIONS / AMBIGUITIES
+===============================================================
+
+When an older requirement conflicts with a later implemented design:
+
+1. inspect the current implementation
+2. inspect the Stage 01–14 documentation
+3. preserve the latest confirmed business rule
+4. avoid duplicate implementations
+5. document the decision in Stage 15 review
+
+Do not silently invent behavior.
+
+===============================================================
+44. FINAL ACCEPTANCE CRITERIA
+===============================================================
+
+Stage 15 is complete only when:
+
+[ ] All 15 documented gaps are resolved or explicitly justified.
+
+[ ] Mobile hamburger is a professional icon, not emoji.
+
+[ ] Admin navigation has no duplicate Dashboard.
+
+[ ] Admin has appropriate Reports access.
+
+[ ] Admin has Notifications access.
+
+[ ] Manager has Notifications access.
+
+[ ] Admin navigation has meaningful section grouping.
+
+[ ] Stage 03 test script exists and passes.
+
+[ ] Stage 04 test script exists and passes.
+
+[ ] Stage 05 test script exists and passes.
+
+[ ] Stage 02 dashboard API contract has been investigated and
+    correctly resolved without unnecessary duplication.
+
+[ ] Data Entry has a real operational dashboard.
+
+[ ] Reporting has a real operational dashboard.
+
+[ ] Report History displays meaningful custom report parameters.
+
+[ ] Large PDF reports support multi-page tables correctly.
+
+[ ] Reporting users receive notifications for newly submitted data.
+
+[ ] Submission form has a real required-field progress indicator.
+
+[ ] Report pagination is hardened.
+
+[ ] Professional icon system is used consistently.
+
+[ ] No functional emoji icons remain.
+
+[ ] UI has a consistent professional design system.
+
+[ ] Dashboards use meaningful real data.
+
+[ ] Charts are purposeful.
+
+[ ] Tables are professional.
+
+[ ] Forms are professional.
+
+[ ] Dialogs are professional.
+
+[ ] Loading states exist.
+
+[ ] Empty states exist.
+
+[ ] Error states exist.
+
+[ ] Success feedback exists.
+
+[ ] Responsive behavior is verified.
+
+[ ] Accessibility basics are verified.
+
+[ ] No obvious placeholder/demo UI remains.
+
+[ ] No duplicate navigation remains.
+
+[ ] Authentication works.
+
+[ ] RBAC works.
+
+[ ] Submission workflow works.
+
+[ ] Review workflow works.
+
+[ ] Notifications work.
+
+[ ] Reports work.
+
+[ ] Custom reports work.
+
+[ ] PDF export works.
+
+[ ] Excel export works.
+
+[ ] Analytics work.
+
+[ ] Audit logs work.
+
+[ ] Security controls remain intact.
+
+[ ] All regression tests pass.
+
+[ ] Stage 15 tests pass.
+
+[ ] npm run build succeeds.
+
+[ ] Browser verification is honestly documented.
+
+[ ] docs/stage 15 review.txt exists.
+
+===============================================================
+45. OPENAI/OPENCODE IMPLEMENTATION RULE
+===============================================================
+
+Before changing code:
+
+1. Inspect the current Stage 01–14 implementation.
+2. Inspect the current AppShell.
+3. Inspect all role navigation.
+4. Inspect existing dashboards.
+5. Inspect existing report pages.
+6. Inspect notification implementation.
+7. Inspect report history.
+8. Inspect PDF generation.
+9. Inspect pagination utilities.
+10. Inspect existing tests.
+
+Then create an implementation plan.
+
+Do not immediately rewrite files.
+
+Implement incrementally.
+
+After each major group of changes:
+
+- run relevant tests
+- build
+- inspect errors
+- fix regressions
+
+At the end run the complete regression suite.
+
+===============================================================
+46. REQUIRED FINAL OUTPUT FROM OPENCODE
+===============================================================
+
+At the end provide a concise but complete Stage 15 review.
+
+Use exactly these sections:
+
+# Stage 15 Final Review
+
+## 1. Executive Summary
+
+## 2. Gap Closure
+
+| Gap | Status | Implementation |
+|-----|--------|----------------|
+
+Include all 15 gaps.
+
+## 3. UI/UX Transformation
+
+## 4. Navigation
+
+## 5. Dashboards
+
+## 6. Data Entry
+
+## 7. Reporting
+
+## 8. Manager
+
+## 9. Admin
+
+## 10. Notifications
+
+## 11. Reports & Exports
+
+## 12. Security
+
+## 13. Testing
+
+Include:
+
+- Stage 03
+- Stage 04
+- Stage 05
+- Stage 06
+- Stage 07
+- Stage 08
+- Stage 09
+- Stage 10
+- Stage 11
+- Stage 12
+- Stage 13
+- Stage 14
+- Stage 15
+
+## 14. Browser Verification
+
+Clearly state what was actually tested.
+
+## 15. Build Verification
+
+## 16. Files Created
+
+## 17. Files Modified
+
+## 18. Database Changes
+
+## 19. Known Limitations
+
+## 20. Final Completion Status
+
+Do not write "complete" unless the acceptance criteria were actually
+verified.
+
+===============================================================
+47. FINAL INSTRUCTION
+===============================================================
+
+This stage is about finishing the product.
+
+Do not optimize for:
+
+"requirements technically exist."
+
+Optimize for:
+
+"the hospital user can actually use this application comfortably,
+understand what is happening, and trust the interface."
+
+The biggest priority is not adding more features.
+
+The biggest priorities are:
+
+1. Close the 15 confirmed gaps.
+2. Replace placeholder dashboards with real role-based dashboards.
+3. Perform a genuine application-wide UI/UX transformation.
+4. Remove duplicate and unfinished UI.
+5. Maintain all existing business and security rules.
+6. Verify the entire system instead of assuming it works.
+
+Do not stop after changing icons.
+
+Do not declare completion based only on a successful build.
+
+Do not declare browser verification without actually performing it.
+
+Do not create unnecessary duplicate APIs or features.
+
+This is the final professionalization and gap-closure stage.

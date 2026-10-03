@@ -122,6 +122,8 @@ async function previewCustomReport({ datasetId, indicatorIds, periodIds }, user)
     parameters: {
       indicator_ids: indicatorIds,
       period_ids: periodIds,
+      indicator_names: indicators.map((i) => i.name),
+      period_labels: periods.map((p) => p.label),
       indicatorCount: indicatorIds.length,
       periodCount: periodIds.length,
     },
