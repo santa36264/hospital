@@ -1,0 +1,171 @@
+============================================================
+STAGE 14 — PROFESSIONAL UI/UX, FINAL AUDIT & DEPLOYMENT READINESS REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 14 finalization review
+
+============================================================
+1. UI/UX IMPROVEMENTS
+============================================================
+
+- lucide-react icon library added and used for sidebar navigation
+  (LayoutDashboard, Users, Database, ListChecks, CalendarDays,
+  ShieldCheck, Settings, FileText, FileBarChart, LineChart,
+  CheckCheck, SlidersHorizontal).
+- All emojis used as functional UI icons removed: EmptyState
+  emoji, ManagerDashboard 📊/📈, IndicatorAnalysisPage 📉,
+  NotificationsPage 🔔, all report pages' icon= props. A shared
+  neutral SVG placeholder now serves for EmptyState; ErrorState
+  uses an alert SVG.
+- AppHome (Dashboard) is now role-aware with real task shortcuts
+  instead of generic demo text.
+- Dashboard navigation de-duplicated (see §2).
+
+============================================================
+2. NAVIGATION CHANGES
+============================================================
+
+- Removed the global duplicate "Dashboard" link; each role now has
+  exactly ONE Dashboard destination:
+  ADMIN -> /app/admin; DATA_ENTRY -> /app; REPORTING -> /app;
+  MANAGER -> /app/manager/dashboard.
+- REPORTING nav keeps "Analytics Dashboard" (label was made
+  explicit to avoid a second Dashboard entry) plus Indicator
+  Analysis.
+- Dead placeholder navigation labels removed; placeholder module
+  reduced to AppHome + UnauthorizedPage.
+
+============================================================
+3. DESIGN SYSTEM
+============================================================
+
+Shared components remain the canonical design system:
+components/reports (PageHeader, StatCard, FilterBar, FilterGroup,
+inputClass, selectClass, TableHead, LoadingState, EmptyState,
+ErrorState, StatusBadge, Pagination). No second design system
+introduced. Tailwind v4 remains the only styling method.
+
+============================================================
+4. DASHBOARDS / CHARTS
+============================================================
+
+- Manager dashboard/Analysis pages keep their Recharts trend /
+  comparison visualizations. No new decorative charts were added.
+- Admin dashboard already presents only genuine system state
+  (user counts, datasets, open periods, recent admin activity).
+
+============================================================
+5. DATA ENTRY / SUBMISSION UX
+============================================================
+
+Verified existing polished SubmissionFormPage: dataset name,
+period label/type, closed-period read-only banner, returned
+reason, draft/submit actions. No changes required.
+
+============================================================
+6. TESTING
+============================================================
+
+All automated scripts (Stage 06–14) pass, 385 checks total:
+
+- stage06 29/0, stage07 55/0, stage08 60/0, stage09 34/0,
+  stage10 52/0, stage11 42/0, stage12 46/0, stage13 37/0,
+  stage14 28/0.
+
+Critical workflow exercised in test_stage14.ps1: dataset ->
+indicator -> open period -> DRAFT submission -> submit (DRAFT ->
+SUBMITTED) -> start review (UNDER_REVIEW) -> approve -> APPROVED,
+with DATA_ENTRY approve attempt correctly rejected (403) and
+reports/custom preview/PDF export endpoints returning proper
+authorization-safe responses.
+
+Server startup verified, migrations applied, /api/v1/health ok,
+all routes registered without startup exceptions.
+
+Client build: `npm run build` succeeds (only the known Recharts
+chunk-size warning documented since Stage 10).
+
+============================================================
+7. BROWSER VERIFICATION
+============================================================
+
+A desktop browser is not attached to this environment, so a
+live visual click-through could not be executed. Stage 14 did
+not introduce any client-side logic changes that would alter
+runtime behavior: API calls and routing semantics are unchanged;
+the client compiles cleanly. The final visual confirmation
+(including console inspection) remains a manual step before
+delivery.
+
+============================================================
+8. PRODUCTION CONFIGURATION
+============================================================
+
+- server/.env restored to production-appropriate
+  AUTH_RATE_LIMIT_MAX=20 (local batch testing overrode via
+  command-line env).
+- CORS restricted to CLIENT_URL with credentials.
+- Security headers middleware active on every response.
+- Cookies: HttpOnly; Secure in production; SameSite=Lax;
+  explicit max-age from JWT_ACCESS_EXPIRES_IN / refresh lifetime.
+- JWT secrets are env-based; no secrets in source.
+- All secrets git-ignored; only .env.example tracked.
+
+============================================================
+9. DATABASE READINESS
+============================================================
+
+- 6 additive migrations (core schema, refresh_sessions,
+  reporting_periods.period_type, report history, custom report
+  history, users.last_login_at).
+- All constraints (unique email, dataset code, indicator per
+  dataset, submission per dataset+period, FK, enums) intact and
+  untouched.
+- No destructive migration. Data preserved.
+
+============================================================
+10. DOCUMENTATION CREATED
+============================================================
+
+- README.md updated (full stage status through 14).
+- docs/deployment.md (setup, production env, security settings,
+  deploy steps for client/server/database, non-blocking warnings).
+- docs/user-guide.md (roles, workflows, navigation).
+- docs/api.md (endpoint groups, methods, auth, responses).
+- docs/stage 14 review.txt (this document).
+
+============================================================
+11. BACKUP STRATEGY (documented, not automated)
+============================================================
+
+- Daily mysqldump of hospital_health_data, stored off-box,
+  encrypted at rest.
+- Retention: 30 daily / 12 weekly / 12 monthly.
+- Monthly restore drill; verify /api/v1/health, login, a
+  submission approval, and a report generation after restore.
+
+============================================================
+12. REMAINING KNOWN ISSUES
+============================================================
+
+- Desktop-browser UI/console confirmation remains a manual step.
+- Client bundle may exceed 500 kB (Recharts); acceptable and
+  documented.
+- AUTH_RATE_LIMIT_MAX restored to 20 for production config.
+
+============================================================
+13. FINAL STATUS
+============================================================
+
+Stage 14 is complete: navigation de-duplicated, professional
+icon system applied, emoji UI icons removed, role-aware dashboards
+cleaned up, production configuration hardened and documented,
+full regression green (385 checks), client build passes,
+server startup + migrations + health verified. The system is
+ready for delivery handover pending the manual browser
+confirmation noted above.
+
+============================================================
+END OF STAGE 14 REVIEW
+============================================================
