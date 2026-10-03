@@ -1,16 +1,65 @@
 import { useEffect, useState } from 'react';
 import { getAuditLogs } from '../../api/adminAuditApi';
 import {
-  PageHeader,
-  FilterBar,
-  FilterGroup,
-  inputClass,
-  selectClass,
-  LoadingState,
-  EmptyState,
-  ErrorState,
-  Pagination,
+  PageHeader, FilterBar, FilterGroup, Card,
+  LoadingState, EmptyState, ErrorState, Pagination,
+  Notice, Dialog, DialogActions, Button,
+  ReportTable, TableHead,
 } from '../../components/reports';
+import { Input } from '../../components/reports';
+import { ShieldAlert, X } from 'lucide-react';
+
+const ACTION_LABELS = {
+  LOGIN_SUCCESS:            'Successful login',
+  LOGIN_FAILED:             'Failed login attempt',
+  LOGIN_BLOCKED_INACTIVE:   'Login blocked — inactive account',
+  LOGOUT:                   'User signed out',
+  SESSION_REFRESHED:        'Session refreshed',
+  USER_CREATED:             'User account created',
+  USER_UPDATED:             'User account updated',
+  USER_ACTIVATED:           'User account activated',
+  USER_DEACTIVATED:         'User account deactivated',
+  USER_ROLE_CHANGED:        'User role changed',
+  USER_PASSWORD_CHANGED:    'Password changed',
+  DATASET_CREATED:          'Dataset created',
+  DATASET_UPDATED:          'Dataset updated',
+  DATASET_ACTIVATED:        'Dataset activated',
+  DATASET_DEACTIVATED:      'Dataset deactivated',
+  INDICATOR_CREATED:        'Indicator created',
+  INDICATOR_UPDATED:        'Indicator updated',
+  INDICATOR_ACTIVATED:      'Indicator activated',
+  INDICATOR_DEACTIVATED:    'Indicator deactivated',
+  REPORTING_PERIOD_CREATED: 'Reporting period created',
+  REPORTING_PERIOD_UPDATED: 'Reporting period updated',
+  REPORTING_PERIOD_OPENED:  'Reporting period opened',
+  REPORTING_PERIOD_CLOSED:  'Reporting period closed',
+  SUBMISSION_CREATED:       'Submission created',
+  SUBMISSION_SUBMITTED:     'Submission submitted',
+  SUBMISSION_UPDATED:       'Submission updated',
+  SUBMISSION_REVIEW_STARTED:'Review started',
+  SUBMISSION_APPROVED:      'Submission approved',
+  SUBMISSION_RETURNED:      'Submission returned',
+};
+
+const ACTION_COLORS = {
+  LOGIN_FAILED:           'bg-red-100 text-red-800',
+  LOGIN_BLOCKED_INACTIVE: 'bg-red-100 text-red-800',
+  USER_DEACTIVATED:       'bg-amber-100 text-amber-800',
+  SUBMISSION_APPROVED:    'bg-green-100 text-green-800',
+  SUBMISSION_RETURNED:    'bg-red-100 text-red-800',
+};
+
+function humanLabel(action) {
+  return ACTION_LABELS[action] || action?.replace(/_/g, ' ')?.toLowerCase()?.replace(/\b\w/g, c => c.toUpperCase()) || action;
+}
+
+function formatTs(dt) {
+  if (!dt) return '—';
+  return new Date(dt).toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
 
 function parseMeta(raw) {
   if (!raw) return null;
@@ -54,91 +103,141 @@ function AuditLogsPage() {
   useEffect(() => {
     const t = setTimeout(() => load(1), 250);
     return () => clearTimeout(t);
-  }, [search, actionFilter, resourceType, dateFrom, dateTo]);
+  }, [search, actionFilter, resourceType, dateFrom, dateTo]); // eslint-disable-line
 
   return (
     <div>
-      <PageHeader title="Audit Logs" subtitle="Append-only record of important system and administrative events." />
+      <PageHeader
+        title="Audit Logs"
+        subtitle="Append-only record of important system and administrative events."
+      />
 
       <FilterBar>
         <FilterGroup label="Search">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Action, entity, user" className={inputClass} />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Action, user, resource…"
+            className="w-52"
+          />
         </FilterGroup>
-        <FilterGroup label="Event">
-          <input value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} placeholder="e.g. USER_CREATED" className={inputClass} />
+        <FilterGroup label="Event Type">
+          <Input
+            value={actionFilter}
+            onChange={e => setActionFilter(e.target.value)}
+            placeholder="e.g. USER_CREATED"
+            className="w-44"
+          />
         </FilterGroup>
-        <FilterGroup label="Entity Type">
-          <input value={resourceType} onChange={(e) => setResourceType(e.target.value)} placeholder="user, dataset…" className={inputClass} />
+        <FilterGroup label="Resource">
+          <Input
+            value={resourceType}
+            onChange={e => setResourceType(e.target.value)}
+            placeholder="user, dataset…"
+            className="w-36"
+          />
         </FilterGroup>
         <FilterGroup label="From">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputClass} />
+          <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-40" />
         </FilterGroup>
         <FilterGroup label="To">
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputClass} />
+          <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-40" />
         </FilterGroup>
       </FilterBar>
 
-      {error && <div className="mb-3 rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{error} <button onClick={() => load()} className="underline ml-2">Retry</button></div>}
+      {error && <Notice variant="danger" onDismiss={() => setError('')} className="mb-4">{error}</Notice>}
 
       {loading ? (
         <LoadingState message="Loading audit logs…" />
       ) : items.length === 0 ? (
-        <EmptyState title="No audit records" message="No records match the current filters." />
+        <EmptyState
+          icon={ShieldAlert}
+          title="No audit records found"
+          message="No events match the current filters."
+        />
       ) : (
-        <div className="bg-white rounded shadow overflow-x-auto">
-          <table className="w-full text-sm min-w-[760px]">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th className="text-left px-4 py-2">Timestamp</th>
-                <th className="text-left px-4 py-2">User</th>
-                <th className="text-left px-4 py-2">Event</th>
-                <th className="text-left px-4 py-2">Entity</th>
-                <th className="text-left px-4 py-2">Entity ID</th>
-              </tr>
-            </thead>
+        <Card>
+          <ReportTable>
+            <TableHead cols={[
+              { label: 'Timestamp' },
+              { label: 'Activity' },
+              { label: 'Actor' },
+              { label: 'Resource' },
+              { label: 'Resource ID' },
+            ]} />
             <tbody>
-              {items.map((a) => (
-                <tr key={a.id} className="border-t border-slate-100 cursor-pointer hover:bg-slate-50" onClick={() => setDetail(a)}>
-                  <td className="px-4 py-2 text-slate-600 text-xs">{new Date(a.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-2">{a.user_name || a.user_email || (a.user_id ? `#${a.user_id}` : 'system')}</td>
-                  <td className="px-4 py-2 font-mono text-xs">{a.action}</td>
-                  <td className="px-4 py-2">{a.resource_type}</td>
-                  <td className="px-4 py-2 text-slate-500 text-xs">{a.resource_id || '—'}</td>
+              {items.map(a => (
+                <tr
+                  key={a.id}
+                  className="border-t border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => setDetail(a)}
+                >
+                  <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                    {formatTs(a.created_at)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ACTION_COLORS[a.action] || 'bg-slate-100 text-slate-700'}`}>
+                      {humanLabel(a.action)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-700">
+                    {a.user_name || a.user_email || (a.user_id ? `User #${a.user_id}` : <span className="text-slate-400 italic">system</span>)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.resource_type}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{a.resource_id || '—'}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
-          <Pagination meta={{ ...pagination, perPage: pagination.pageSize }} onPage={(p) => load(p)} />
-        </div>
+          </ReportTable>
+          <Pagination meta={{ ...pagination, perPage: pagination.pageSize }} onPage={p => load(p)} />
+        </Card>
       )}
 
+      {/* Detail dialog */}
       {detail && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-10" onClick={() => setDetail(null)}>
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">{detail.action}</h3>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <dt className="text-slate-500">Timestamp</dt><dd>{new Date(detail.created_at).toLocaleString()}</dd>
-              <dt className="text-slate-500">Actor</dt><dd>{detail.user_name || detail.user_email || 'system'}</dd>
-              <dt className="text-slate-500">Entity</dt><dd>{detail.resource_type} {detail.resource_id ? `#${detail.resource_id}` : ''}</dd>
-              <dt className="text-slate-500">IP</dt><dd>{parseMeta(detail.metadata)?.ip || '—'}</dd>
-            </dl>
-            {parseMeta(detail.metadata) && (
+        <Dialog
+          open
+          onClose={() => setDetail(null)}
+          title={humanLabel(detail.action)}
+          description={`${detail.resource_type}${detail.resource_id ? ` #${detail.resource_id}` : ''} · ${formatTs(detail.created_at)}`}
+          maxWidth="max-w-lg"
+        >
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4">
+            <dt className="text-slate-500 font-medium">Actor</dt>
+            <dd className="text-slate-800">{detail.user_name || detail.user_email || 'system'}</dd>
+            <dt className="text-slate-500 font-medium">Resource</dt>
+            <dd className="text-slate-800">{detail.resource_type} {detail.resource_id ? `#${detail.resource_id}` : ''}</dd>
+            <dt className="text-slate-500 font-medium">IP Address</dt>
+            <dd className="text-slate-800">{parseMeta(detail.metadata)?.ip || '—'}</dd>
+          </dl>
+
+          {parseMeta(detail.metadata) && (() => {
+            const meta = parseMeta(detail.metadata);
+            const relevantKeys = Object.keys(meta).filter(k => k !== 'ip');
+            if (!relevantKeys.length) return null;
+            return (
               <>
-                <h4 className="mt-4 text-sm font-semibold text-slate-700">Metadata</h4>
-                <pre className="mt-1 rounded bg-slate-50 p-3 text-xs overflow-x-auto">{JSON.stringify(parseMeta(detail.metadata), null, 2)}</pre>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Details</p>
+                <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs overflow-x-auto text-slate-700">
+                  {JSON.stringify(Object.fromEntries(relevantKeys.map(k => [k, meta[k]])), null, 2)}
+                </pre>
               </>
-            )}
-            {(detail.old_values || detail.new_values) && (
-              <>
-                <h4 className="mt-4 text-sm font-semibold text-slate-700">Changes</h4>
-                <pre className="mt-1 rounded bg-slate-50 p-3 text-xs overflow-x-auto">{JSON.stringify({ old: parseMeta(detail.old_values), new: parseMeta(detail.new_values) }, null, 2)}</pre>
-              </>
-            )}
-            <div className="flex justify-end mt-4">
-              <button onClick={() => setDetail(null)} className="px-4 py-2 text-sm text-slate-600">Close</button>
-            </div>
-          </div>
-        </div>
+            );
+          })()}
+
+          {(detail.old_values || detail.new_values) && (
+            <>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-1">Changes</p>
+              <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs overflow-x-auto text-slate-700">
+                {JSON.stringify({ before: parseMeta(detail.old_values), after: parseMeta(detail.new_values) }, null, 2)}
+              </pre>
+            </>
+          )}
+
+          <DialogActions>
+            <Button variant="secondary" onClick={() => setDetail(null)}>Close</Button>
+          </DialogActions>
+        </Dialog>
       )}
     </div>
   );

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { getUnreadCount } from '../api/notificationApi';
 
 /**
- * Notification bell icon with unread badge.
- * Polls the unread count every 60 seconds.
+ * Notification bell — header icon-only control.
+ * - Professional Lucide Bell icon (no emoji)
+ * - Unread badge when count > 0
+ * - aria-label with count for screen readers
+ * - Tooltip via title attribute
+ * - Polls every 60 s
  */
 export default function NotificationBell() {
   const [count, setCount] = useState(0);
@@ -14,7 +19,7 @@ export default function NotificationBell() {
       const res = await getUnreadCount();
       setCount(res.data?.count ?? 0);
     } catch {
-      // silently ignore — bell degrades gracefully
+      // silently degrade
     }
   }
 
@@ -27,28 +32,18 @@ export default function NotificationBell() {
   return (
     <Link
       to="/app/notifications"
-      className="relative inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-slate-100 transition-colors"
-      aria-label={`Notifications${count > 0 ? `, ${count} unread` : ''}`}
+      className="relative inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+      aria-label={count > 0 ? `Notifications — ${count} unread` : 'Notifications'}
+      title="Notifications"
     >
-      {/* Bell icon (SVG) */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 text-slate-500"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.8}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-        />
-      </svg>
+      <Bell className="w-5 h-5" aria-hidden />
 
       {/* Unread badge */}
       {count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-0.5 leading-none"
+        >
           {count > 99 ? '99+' : count}
         </span>
       )}

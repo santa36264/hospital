@@ -1,58 +1,134 @@
 import { useEffect, useState } from 'react';
 import {
-  getNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
+  getNotifications, markNotificationRead, markAllNotificationsRead,
 } from '../../api/notificationApi';
+import {
+  PageHeader, Card, CardBody, Button, Notice, LoadingState, EmptyState, Tabs,
+} from '../../components/reports';
+import {
+  Bell, CheckCircle, RotateCcw, Eye, Info,
+} from 'lucide-react';
 
 function formatDate(dt) {
   if (!dt) return '';
-  return new Date(dt).toLocaleDateString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  const d = new Date(dt);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin  = Math.floor(diffMs / 60000);
+  const diffHr   = Math.floor(diffMs / 3600000);
+  const diffDay  = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1)   return 'Just now';
+  if (diffMin < 60)  return `${diffMin}m ago`;
+  if (diffHr < 24)   return `${diffHr}h ago`;
+  if (diffDay < 7)   return `${diffDay}d ago`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function typeIcon(type) {
-  if (type === 'SUBMISSION_APPROVED') return '✓';
-  if (type === 'SUBMISSION_RETURNED') return '!';
-  if (type === 'SUBMISSION_UNDER_REVIEW') return '◎';
-  return '•';
+const TYPE_META = {
+  SUBMISSION_APPROVED: {
+    icon:    CheckCircle,
+    color:   'text-green-600',
+    bg:      'bg-green-50',
+    label:   'Submission Approved',
+  },
+  SUBMISSION_RETURNED: {
+    icon:    RotateCcw,
+    color:   'text-red-600',
+    bg:      'bg-red-50',
+    label:   'Returned for Correction',
+  },
+  SUBMISSION_UNDER_REVIEW: {
+    icon:    Eye,
+    color:   'text-purple-600',
+    bg:      'bg-purple-50',
+    label:   'Under Review',
+  },
+  SUBMISSION_SUBMITTED: {
+    icon:    Info,
+    color:   'text-blue-600',
+    bg:      'bg-blue-50',
+    label:   'New Submission',
+  },
+};
+
+function getTypeMeta(type) {
+  return TYPE_META[type] || {
+    icon:  Bell,
+    color: 'text-slate-500',
+    bg:    'bg-slate-100',
+    label: 'Notification',
+  };
 }
 
-function typeColour(type) {
-  if (type === 'SUBMISSION_APPROVED') return 'bg-green-100 text-green-700';
-  if (type === 'SUBMISSION_RETURNED') return 'bg-red-100 text-red-700';
-  if (type === 'SUBMISSION_UNDER_REVIEW') return 'bg-purple-100 text-purple-700';
-  return 'bg-blue-100 text-blue-700';
+function NotificationItem({ notification: n, onMarkRead }) {
+  const meta = getTypeMeta(n.type);
+  const Icon = meta.icon;
+  const isUnread = n.status === 'UNREAD';
+
+  return (
+    <div className={`flex items-start gap-4 px-6 py-4 border-b border-slate-100 last:border-0 transition-colors ${isUnread ? 'bg-blue-50/40' : ''}`}>
+      {/* Type icon */}
+      <div className={`w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0 mt-0.5`}>
+        <Icon className={`w-4 h-4 ${meta.color}`} aria-hidden />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-0.5 ${meta.color}`}>
+              {meta.label}
+            </p>
+            <p className={`text-sm leading-snug ${isUnread ? 'text-slate-800 font-medium' : 'text-slate-600'}`}>
+              {n.message}
+            </p>
+          </div>
+          {/* Unread dot */}
+          {isUnread && (
+            <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5" aria-label="Unread" />
+          )}
+        </div>
+        <div className="flex items-center justify-between mt-2 gap-2">
+          <time className="text-xs text-slate-400">{formatDate(n.created_at)}</time>
+          {isUnread && (
+            <button
+              onClick={() => onMarkRead(n.id)}
+              className="text-xs text-blue-600 hover:underline font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              Mark as read
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [tab, setTab] = useState('all'); // 'all' | 'unread'
 
-  async function load() {
+  async function load(unreadOnly = false) {
     setLoading(true);
     setError('');
     try {
       const res = await getNotifications({ unread: unreadOnly ? 'true' : undefined });
       setNotifications(res.data || []);
     } catch {
-      setError('Failed to load notifications.');
+      setError('Failed to load notifications. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, [unreadOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(tab === 'unread'); }, [tab]); // eslint-disable-line
 
   async function handleMarkRead(id) {
     await markNotificationRead(id).catch(() => {});
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, status: 'READ' } : n)
-    );
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'READ' } : n));
   }
 
   async function handleMarkAll() {
@@ -61,80 +137,54 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifications.filter(n => n.status === 'UNREAD').length;
+  const displayed   = tab === 'unread' ? notifications.filter(n => n.status === 'UNREAD') : notifications;
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Notifications</h2>
-          {unreadCount > 0 && (
-            <p className="text-slate-500 text-sm mt-0.5">{unreadCount} unread</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={unreadOnly}
-              onChange={e => setUnreadOnly(e.target.checked)}
-              className="rounded border-slate-300"
-            />
-            Unread only
-          </label>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAll}
-              className="text-sm text-blue-600 hover:underline"
-            >
+      <PageHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up.'}
+        action={
+          unreadCount > 0 ? (
+            <Button variant="secondary" size="sm" onClick={handleMarkAll}>
               Mark all read
-            </button>
-          )}
-        </div>
-      </div>
+            </Button>
+          ) : undefined
+        }
+      />
 
-      {error && (
-        <div className="mb-4 rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{error}</div>
-      )}
+      {error && <Notice variant="danger" onDismiss={() => setError('')} className="mb-4">{error}</Notice>}
 
-      <div className="space-y-2">
-        {loading ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center text-slate-500">Loading…</div>
-        ) : notifications.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-10 text-center">
-            <div className="flex justify-center mb-3"><svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4a2 2 0 01-.6-1.8V10a6 6 0 10-12 0v3.8a2 2 0 01-.6 1.8L4 17h5m6 0a3 3 0 11-6 0m6 0H9" /></svg></div>
-            <p className="text-slate-600 font-medium">No notifications</p>
-            <p className="text-slate-400 text-sm mt-1">
-              {unreadOnly ? 'No unread notifications.' : 'You have no notifications yet.'}
-            </p>
+      <Tabs
+        tabs={[
+          { id: 'all',    label: 'All',    count: notifications.length },
+          { id: 'unread', label: 'Unread', count: unreadCount },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+
+      {loading ? (
+        <LoadingState message="Loading notifications…" />
+      ) : displayed.length === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title={tab === 'unread' ? 'No unread notifications' : 'No notifications'}
+          message={
+            tab === 'unread'
+              ? 'All notifications have been read.'
+              : 'Submission reviews, returns, approvals, and system events will appear here.'
+          }
+        />
+      ) : (
+        <Card>
+          <div>
+            {displayed.map(n => (
+              <NotificationItem key={n.id} notification={n} onMarkRead={handleMarkRead} />
+            ))}
           </div>
-        ) : (
-          notifications.map(n => (
-            <div
-              key={n.id}
-              className={`bg-white rounded-lg shadow px-4 py-3 flex items-start gap-3 transition-opacity ${
-                n.status === 'READ' ? 'opacity-60' : ''
-              }`}
-            >
-              <span className={`mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold shrink-0 ${typeColour(n.type)}`}>
-                {typeIcon(n.type)}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-800 leading-snug">{n.message}</p>
-                <p className="text-xs text-slate-400 mt-1">{formatDate(n.created_at)}</p>
-              </div>
-              {n.status === 'UNREAD' && (
-                <button
-                  onClick={() => handleMarkRead(n.id)}
-                  className="text-xs text-blue-600 hover:underline shrink-0 mt-1"
-                >
-                  Mark read
-                </button>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+        </Card>
+      )}
     </div>
   );
 }
-

@@ -1,40 +1,38 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getMySubmissions } from '../../api/submissionApi';
 import { getDatasets } from '../../api/datasetApi';
 import { getReportingPeriods } from '../../api/reportingPeriodApi';
-import StatusBadge from '../../components/StatusBadge';
+import {
+  PageHeader, FilterBar, FilterGroup, Card,
+  LoadingState, EmptyState, ErrorState,
+  StatusBadge, Button, Select, Notice,
+  ReportTable, TableHead,
+} from '../../components/reports';
+import { FileText, Plus } from 'lucide-react';
 
 function formatDate(dt) {
   if (!dt) return '—';
-  return new Date(dt).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return new Date(dt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function actionLabel(status) {
-  if (status === 'DRAFT') return 'Continue';
+  if (status === 'DRAFT')    return 'Continue';
   if (status === 'RETURNED') return 'Correct';
   return 'View';
 }
 
-function SubmissionStatusBadge({ status }) {
-  const colours = {
-    DRAFT: 'bg-amber-100 text-amber-800',
-    SUBMITTED: 'bg-blue-100 text-blue-800',
-    UNDER_REVIEW: 'bg-purple-100 text-purple-800',
-    RETURNED: 'bg-red-100 text-red-800',
-    APPROVED: 'bg-green-100 text-green-800',
-  };
-  return (
-    <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${colours[status] || 'bg-slate-200 text-slate-600'}`}
-    >
-      {status}
-    </span>
-  );
+function actionClass(status) {
+  if (status === 'RETURNED')
+    return 'inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors';
+  if (status === 'DRAFT')
+    return 'inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors';
+  return 'inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors';
+}
+
+// Export SubmissionStatusBadge for use in other pages (ReviewDetailPage, SubmissionQueuePage)
+export function SubmissionStatusBadge({ status }) {
+  return <StatusBadge status={status} />;
 }
 
 function MySubmissionsPage() {
@@ -43,20 +41,28 @@ function MySubmissionsPage() {
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [statusFilter, setStatusFilter] = useState('');
-  const [datasetFilter, setDatasetFilter] = useState('');
-  const [periodFilter, setPeriodFilter] = useState('');
+  const statusFilter  = searchParams.get('status')              || '';
+  const datasetFilter = searchParams.get('dataset_id')          || '';
+  const periodFilter  = searchParams.get('reporting_period_id') || '';
+
+  function setFilter(key, value) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set(key, value); else next.delete(key);
+      return next;
+    });
+  }
 
   async function load() {
     setLoading(true);
     setError('');
     try {
       const params = {};
-      if (statusFilter) params.status = statusFilter;
-      if (datasetFilter) params.dataset_id = datasetFilter;
-      if (periodFilter) params.reporting_period_id = periodFilter;
-
+      if (statusFilter)  params.status               = statusFilter;
+      if (datasetFilter) params.dataset_id            = datasetFilter;
+      if (periodFilter)  params.reporting_period_id   = periodFilter;
       const res = await getMySubmissions(params);
       setSubmissions(res.data || []);
     } catch (err) {
@@ -66,7 +72,6 @@ function MySubmissionsPage() {
     }
   }
 
-  // Load filter options once on mount
   useEffect(() => {
     Promise.all([
       getDatasets({ status: 'ACTIVE' }).catch(() => ({ data: [] })),
@@ -77,125 +82,111 @@ function MySubmissionsPage() {
     });
   }, []);
 
-  useEffect(() => {
-    load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, datasetFilter, periodFilter]);
+  useEffect(() => { load(); }, [statusFilter, datasetFilter, periodFilter]); // eslint-disable-line
+
+  const returnedCount = submissions.filter(s => s.status === 'RETURNED').length;
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-800">My Submissions</h2>
-          <p className="text-slate-500 text-sm">Your data-entry submissions across all datasets and periods.</p>
-        </div>
-        <Link
-          to="/app/data-entry/submissions/new"
-          className="rounded bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700"
-        >
-          + New Submission
-        </Link>
-      </div>
+      <PageHeader
+        title="My Submissions"
+        subtitle="Your health-data submissions across all datasets and reporting periods."
+        action={
+          <Button as={Link} to="/app/data-entry/submissions/new">
+            <Plus className="w-4 h-4" aria-hidden />
+            New Submission
+          </Button>
+        }
+      />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">All statuses</option>
-          <option value="DRAFT">DRAFT</option>
-          <option value="SUBMITTED">SUBMITTED</option>
-          <option value="UNDER_REVIEW">UNDER_REVIEW</option>
-          <option value="RETURNED">RETURNED</option>
-          <option value="APPROVED">APPROVED</option>
-        </select>
-
-        <select
-          value={datasetFilter}
-          onChange={(e) => setDatasetFilter(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">All datasets</option>
-          {datasets.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-
-        <select
-          value={periodFilter}
-          onChange={(e) => setPeriodFilter(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">All periods</option>
-          {periods.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
-      </div>
-
-      {error && (
-        <div className="mb-3 rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{error}</div>
+      {returnedCount > 0 && (
+        <Notice variant="danger" className="mb-4">
+          {returnedCount} submission{returnedCount > 1 ? 's' : ''} returned for correction. Review the return reason and resubmit.
+        </Notice>
       )}
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        {loading ? (
-          <p className="p-4 text-slate-500">Loading…</p>
-        ) : submissions.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-slate-500 mb-3">No submissions found.</p>
-            <Link
-              to="/app/data-entry/submissions/new"
-              className="inline-block rounded bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700"
-            >
-              Start your first submission
+      <FilterBar>
+        <FilterGroup label="Status">
+          <Select value={statusFilter} onChange={e => setFilter('status', e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="UNDER_REVIEW">Under Review</option>
+            <option value="RETURNED">Returned</option>
+            <option value="APPROVED">Approved</option>
+          </Select>
+        </FilterGroup>
+        <FilterGroup label="Dataset">
+          <Select value={datasetFilter} onChange={e => setFilter('dataset_id', e.target.value)}>
+            <option value="">All datasets</option>
+            {datasets.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </Select>
+        </FilterGroup>
+        <FilterGroup label="Period">
+          <Select value={periodFilter} onChange={e => setFilter('reporting_period_id', e.target.value)}>
+            <option value="">All periods</option>
+            {periods.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </Select>
+        </FilterGroup>
+      </FilterBar>
+
+      {error && <Notice variant="danger" onDismiss={() => setError('')} className="mb-4">{error}</Notice>}
+
+      {loading ? (
+        <LoadingState message="Loading submissions…" />
+      ) : submissions.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No submissions found"
+          message={statusFilter || datasetFilter || periodFilter
+            ? 'Try adjusting your filters.'
+            : 'Start a new submission to begin entering health data.'}
+          action={!statusFilter && !datasetFilter && !periodFilter ? (
+            <Link to="/app/data-entry/submissions/new">
+              <Button>Start a Submission</Button>
             </Link>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th className="text-left px-4 py-2">Dataset</th>
-                <th className="text-left px-4 py-2">Reporting Period</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Last Updated</th>
-                <th className="text-right px-4 py-2">Action</th>
-              </tr>
-            </thead>
+          ) : undefined}
+        />
+      ) : (
+        <Card>
+          <ReportTable>
+            <TableHead cols={[
+              { label: 'Dataset' },
+              { label: 'Reporting Period' },
+              { label: 'Status' },
+              { label: 'Last Updated' },
+              { label: 'Action', right: true },
+            ]} />
             <tbody>
-              {submissions.map((s) => (
-                <tr key={s.id} className="border-t border-slate-100 hover:bg-slate-50">
+              {submissions.map(s => (
+                <tr key={s.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <span className="font-medium text-slate-800">{s.dataset_name}</span>
-                    <span className="ml-1 font-mono text-xs text-slate-400">({s.dataset_code})</span>
+                    <span className="ml-1.5 font-mono text-xs text-slate-400">({s.dataset_code})</span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{s.period_label}</td>
-                  <td className="px-4 py-3">
-                    <SubmissionStatusBadge status={s.status} />
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {s.period_label}
                     {s.period_status === 'CLOSED' && (
-                      <span className="ml-2 text-xs text-slate-400 italic">period closed</span>
+                      <span className="ml-1.5 text-xs text-slate-400 italic">· closed</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{formatDate(s.updated_at)}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={s.status} />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-500">{formatDate(s.updated_at)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      to={`/app/data-entry/submissions/${s.id}`}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
+                    <Link to={`/app/data-entry/submissions/${s.id}`} className={actionClass(s.status)}>
                       {actionLabel(s.status)}
                     </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        )}
-      </div>
+          </ReportTable>
+        </Card>
+      )}
     </div>
   );
 }
 
-export { SubmissionStatusBadge };
 export default MySubmissionsPage;

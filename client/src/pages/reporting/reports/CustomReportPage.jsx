@@ -489,7 +489,7 @@ export default function CustomReportPage() {
                   onClick={handlePrint}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 transition-colors"
                 >
-                  🖨 Print
+                  Print
                 </button>
                 {exportError && (
                   <span className="text-red-600 text-xs">{exportError}</span>
