@@ -25,6 +25,8 @@ import MonthlyReportPage from '../pages/reporting/reports/MonthlyReportPage';
 import IndicatorReportPage from '../pages/reporting/reports/IndicatorReportPage';
 import SubmissionStatusPage from '../pages/reporting/reports/SubmissionStatusPage';
 import ReportHistoryPage from '../pages/reporting/reports/ReportHistoryPage';
+// Custom Report (Stage 09)
+import CustomReportPage from '../pages/reporting/reports/CustomReportPage';
 // Notifications (Stage 07)
 import NotificationsPage from '../pages/notifications/NotificationsPage';
 
@@ -62,10 +64,11 @@ function AppRoutes() {
             <Route path="reporting/queue" element={<RequireRole role="REPORTING"><SubmissionQueuePage /></RequireRole>} />
             <Route path="reporting/submissions/:id" element={<RequireRole role="REPORTING"><ReviewDetailPage /></RequireRole>} />
 
-            {/* ── Reporting Reports (Stage 08) ── */}
+            {/* ── Reporting Reports (Stage 08 + 09) ── */}
             <Route path="reporting/reports/dataset" element={<RequireRole role="REPORTING"><DatasetReportPage /></RequireRole>} />
             <Route path="reporting/reports/monthly" element={<RequireRole role="REPORTING"><MonthlyReportPage /></RequireRole>} />
             <Route path="reporting/reports/indicator" element={<RequireRole role="REPORTING"><IndicatorReportPage /></RequireRole>} />
+            <Route path="reporting/reports/custom" element={<RequireRole role="REPORTING"><CustomReportPage /></RequireRole>} />
             <Route path="reporting/reports/submission-status" element={<RequireRole role="REPORTING"><SubmissionStatusPage /></RequireRole>} />
             <Route path="reporting/reports/history" element={<RequireRole role="REPORTING"><ReportHistoryPage /></RequireRole>} />
 

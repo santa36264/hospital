@@ -19,6 +19,7 @@ const NAV_BY_ROLE = {
     { to: '/app/reporting/reports/dataset', label: 'Dataset Report' },
     { to: '/app/reporting/reports/monthly', label: 'Monthly Report' },
     { to: '/app/reporting/reports/indicator', label: 'Indicator Report' },
+    { to: '/app/reporting/reports/custom', label: 'Custom Report' },
     { to: '/app/reporting/reports/submission-status', label: 'Submission Status' },
     { to: '/app/reporting/reports/history', label: 'Report History' },
     { to: '/app/notifications', label: 'Notifications' },

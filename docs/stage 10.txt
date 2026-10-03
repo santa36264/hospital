@@ -1,0 +1,1061 @@
+============================================================
+STAGE 10 — DASHBOARD & DATA ANALYSIS
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. STAGE PURPOSE
+============================================================
+
+Implement the Dashboard and Data Analysis layer.
+
+Stage 10 transforms approved health-service data into visual,
+management-oriented information.
+
+The dashboard must use APPROVED data only for finalized health
+indicators.
+
+The main purpose is to allow authorized management/reporting users
+to understand:
+
+- reporting coverage
+- approved dataset availability
+- indicator values
+- period-to-period changes
+- trends
+- basic comparisons
+
+This stage introduces visualization and analysis.
+
+============================================================
+2. IMPORTANT DATA RULE
+============================================================
+
+Finalized dashboard and indicator analytics MUST use:
+
+submission.status = APPROVED
+
+ONLY.
+
+Do not use:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+
+as finalized analytical values.
+
+Submission workflow status may be displayed separately where useful.
+
+Never convert missing data to zero.
+
+============================================================
+3. DASHBOARD USERS
+============================================================
+
+Stage 10 introduces meaningful MANAGER access.
+
+MANAGER:
+
+- can view management dashboard
+- can view approved health indicators
+- can view approved trends
+- can view approved period comparisons
+- cannot edit data
+- cannot approve/return submissions
+- cannot enter data
+- cannot access Admin configuration
+
+REPORTING:
+
+- can access dashboard/analysis
+- can continue using reporting features
+- can access approved analytical information
+
+ADMIN:
+
+- may access dashboard for system oversight
+- retains administrative capabilities
+
+DATA_ENTRY:
+
+- does NOT receive management dashboard/analytics.
+
+Do not weaken existing RBAC.
+
+============================================================
+4. DASHBOARD ROUTE
+============================================================
+
+Create:
+
+/app/manager
+
+or, if the existing routing architecture is more appropriate:
+
+/app/manager/dashboard
+
+The dashboard must be protected with role authorization.
+
+Only:
+
+MANAGER
+REPORTING
+ADMIN
+
+may access it.
+
+============================================================
+5. DASHBOARD STRUCTURE
+============================================================
+
+The dashboard should be a coherent management interface.
+
+Suggested structure:
+
+------------------------------------------------------------
+Hospital Health Dashboard
+
+Overview of approved health-service data
+------------------------------------------------------------
+
+FILTERS
+
+Reporting Period
+[ September 2026 ]
+
+Dataset
+[ All Datasets ]
+
+[ Apply Filters ]
+
+------------------------------------------------------------
+
+SUMMARY CARDS
+
+Approved Datasets
+[ 12 ]
+
+Reporting Coverage
+[ 85% ]
+
+Indicators Available
+[ 96 ]
+
+Latest Reporting Period
+[ September 2026 ]
+
+------------------------------------------------------------
+
+DATASET STATUS
+
+Approved / Not Approved
+
+------------------------------------------------------------
+
+KEY INDICATORS
+
+Indicator        Value       Period
+ANC Visits       245         Sep 2026
+HIV Testing      81%         Sep 2026
+...
+
+------------------------------------------------------------
+
+TREND / PERIOD ANALYSIS
+
+Indicator:
+[ Select Indicator ]
+
+Period range:
+[ Select From ] [ Select To ]
+
+[ View Analysis ]
+
+------------------------------------------------------------
+
+RECENT REPORTING ACTIVITY
+
+Dataset
+Period
+Status
+Approved Date
+
+------------------------------------------------------------
+
+The exact visual arrangement may be adjusted after inspecting the
+existing AppShell and report components.
+
+============================================================
+6. DASHBOARD SUMMARY CARDS
+============================================================
+
+Provide useful summary metrics.
+
+At minimum:
+
+1. Total Active Datasets
+
+2. Approved Datasets for Selected Period
+
+3. Reporting Coverage
+
+4. Approved Indicators / Available Indicator Data
+
+Do NOT present missing data as zero health measurements.
+
+Reporting Coverage should be calculated as:
+
+approved active datasets / total active datasets × 100
+
+If there are no active datasets:
+
+display:
+
+N/A
+
+rather than 0%.
+
+============================================================
+7. PERIOD FILTER
+============================================================
+
+Dashboard must allow selecting a reporting period.
+
+Default behavior:
+
+Use the latest available reporting period.
+
+However, do not assume the latest period is APPROVED.
+
+The dashboard must still correctly show approval coverage.
+
+Allow changing the selected period.
+
+============================================================
+8. DATASET FILTER
+============================================================
+
+Allow:
+
+All Datasets
+
+or
+
+One Dataset
+
+If a dataset is selected:
+
+all relevant dashboard sections should respect that selection.
+
+Do not show indicators from unrelated datasets.
+
+============================================================
+9. DATASET REPORTING COVERAGE
+============================================================
+
+Display a visual representation of reporting coverage.
+
+Example:
+
+Total Active Datasets: 10
+
+Approved:
+8
+
+Not Approved:
+2
+
+Coverage:
+80%
+
+Possible visualization:
+
+- horizontal progress bar
+- donut/pie chart
+- simple summary visualization
+
+Use an accessible visual representation.
+
+Do not make the visualization the only way to understand the data.
+
+Show numerical values alongside it.
+
+============================================================
+10. DATASET STATUS TABLE
+============================================================
+
+Create a dataset status section.
+
+Columns:
+
+Dataset
+Code
+Selected Period
+Status
+Approved Date
+
+Statuses:
+
+APPROVED
+NOT APPROVED
+
+"NOT APPROVED" means no approved submission exists.
+
+It does NOT mean the health indicator value is zero.
+
+Provide:
+
+View Report
+
+for approved datasets where appropriate.
+
+============================================================
+11. KEY INDICATORS
+============================================================
+
+Show a useful set of approved indicator values for the selected
+period.
+
+At minimum:
+
+- Indicator name
+- Dataset
+- Value
+- Data type
+- Period
+
+Only indicators with approved data should be displayed.
+
+Missing values should not appear as zero.
+
+The UI should make clear that these are approved values.
+
+============================================================
+12. INDICATOR ANALYSIS
+============================================================
+
+Create:
+
+/app/manager/analysis
+
+or an equivalent route consistent with the application architecture.
+
+This page allows users to analyze one indicator over multiple periods.
+
+Selection:
+
+Dataset
+Indicator
+Start Period
+End Period
+
+The indicator dropdown must depend on the selected dataset.
+
+============================================================
+13. INDICATOR TREND DATA
+============================================================
+
+Display:
+
+- selected indicator
+- dataset
+- period range
+- values by period
+
+Example:
+
+Indicator:
+ANC Visits
+
+| Period | Value |
+|--------|------:|
+| Jan 2026 | 180 |
+| Feb 2026 | 195 |
+| Mar 2026 | 210 |
+| Apr 2026 | 225 |
+
+Only APPROVED values appear as actual values.
+
+If no approved submission exists for a period:
+
+display:
+
+N/A
+
+Do NOT use zero.
+
+============================================================
+14. TREND VISUALIZATION
+============================================================
+
+Add a chart for numeric/percentage indicators.
+
+Recommended:
+
+Line chart
+
+X-axis:
+Reporting Period
+
+Y-axis:
+Indicator value
+
+Use an appropriate chart library.
+
+Before installing a library:
+
+inspect package.json.
+
+Prefer a stable React-compatible chart library.
+
+Do not introduce unnecessary dependencies.
+
+For:
+
+INTEGER
+NUMERIC
+DECIMAL
+PERCENTAGE
+
+a line chart may be used.
+
+For:
+
+TEXT
+BOOLEAN
+DATE
+
+do not force an inappropriate numeric line chart.
+
+Instead display an appropriate table/data representation.
+
+============================================================
+15. PERIOD COMPARISON
+============================================================
+
+Allow users to compare selected periods.
+
+Example:
+
+Indicator:
+HIV Testing Coverage
+
+Current:
+81%
+
+Previous:
+76%
+
+Difference:
++5 percentage points
+
+For numeric values:
+
+Difference:
+
+current - previous
+
+For percentages:
+
+display percentage-point difference.
+
+Do not incorrectly describe percentage-point change as percentage
+growth.
+
+Example:
+
+76% → 81%
+
+Difference:
++5 percentage points
+
+============================================================
+16. COMPARISON TABLE
+============================================================
+
+Create a comparison table such as:
+
+Indicator
+Period A
+Period B
+Difference
+
+Example:
+
+| Indicator | Aug 2026 | Sep 2026 | Difference |
+|-----------|----------|----------|------------|
+| ANC Visits | 210 | 245 | +35 |
+| Coverage | 76% | 81% | +5 pp |
+
+Only compare compatible numeric/percentage indicators.
+
+For non-numeric indicators:
+
+show the values without mathematical difference.
+
+============================================================
+17. MULTI-PERIOD ANALYSIS
+============================================================
+
+Allow a reasonable period range.
+
+Example:
+
+Last 6 months
+Last 12 months
+
+or:
+
+Start Period
+End Period
+
+The backend must determine chronological ordering.
+
+Do not trust frontend period ordering.
+
+============================================================
+18. ANALYTICS API
+============================================================
+
+Create dashboard endpoints such as:
+
+GET /api/v1/analytics/dashboard
+
+Query:
+
+reporting_period_id
+dataset_id optional
+
+Returns:
+
+- summary
+- coverage
+- dataset status
+- key indicators
+
+------------------------------------------------------------
+
+GET /api/v1/analytics/indicator-trend
+
+Query:
+
+dataset_id
+indicator_id
+start_period_id
+end_period_id
+
+Returns:
+
+- indicator metadata
+- periods
+- approved values
+
+------------------------------------------------------------
+
+GET /api/v1/analytics/indicator-comparison
+
+Query:
+
+dataset_id
+indicator_id
+period_a
+period_b
+
+Returns:
+
+- indicator
+- period A value
+- period B value
+- calculated difference
+
+============================================================
+19. ANALYTICS SERVICE ARCHITECTURE
+============================================================
+
+Follow:
+
+Route
+→ Middleware
+→ Controller
+→ Service
+→ Repository
+→ MySQL
+
+Suggested files:
+
+server/src/repositories/analyticsRepository.js
+
+server/src/services/analyticsService.js
+
+server/src/controllers/analyticsController.js
+
+server/src/routes/analyticsRoutes.js
+
+Do not put analytical business logic inside controllers.
+
+============================================================
+20. APPROVED DATA QUERY RULE
+============================================================
+
+All analytical values must originate from:
+
+data_values
+JOIN submissions
+WHERE submissions.status = 'APPROVED'
+
+The backend must enforce this.
+
+Never trust a frontend flag such as:
+
+approved=true
+
+to determine whether data is approved.
+
+============================================================
+21. ANALYTICS CALCULATION RULES
+============================================================
+
+Calculations must happen server-side where practical.
+
+Difference:
+
+current - previous
+
+For percentages:
+
+81 - 76 = +5 percentage points
+
+Do not calculate:
+
+(81 - 76) / 76
+
+unless a future stage explicitly requires growth percentage.
+
+Stage 10 only needs:
+
+absolute difference
+
+and percentage-point difference where applicable.
+
+============================================================
+22. MISSING DATA RULE
+============================================================
+
+If an approved submission does not exist for a period:
+
+value = null
+
+The UI should display:
+
+N/A
+
+If one period has data and another does not:
+
+Example:
+
+August: 76%
+September: N/A
+
+Do not calculate a difference.
+
+Display:
+
+Difference: N/A
+
+============================================================
+23. UI/UX REQUIREMENTS
+============================================================
+
+This is a major requirement.
+
+The dashboard must feel like a professional hospital management
+application.
+
+Reuse the existing:
+
+- AppShell
+- sidebar
+- header
+- PageHeader
+- ReportCard
+- StatCard
+- ReportTable
+- StatusBadge
+- LoadingState
+- EmptyState
+- ErrorState
+- existing form controls
+
+Do not create an unrelated dashboard design.
+
+============================================================
+24. MANAGER SIDEBAR
+============================================================
+
+Manager navigation should now become meaningful.
+
+Suggested:
+
+Management
+  - Dashboard
+  - Indicator Analysis
+  - Notifications
+
+Do not give Manager access to:
+
+- Admin configuration
+- Data Entry pages
+- Reporting review queue
+- Audit log
+
+unless explicitly authorized elsewhere.
+
+REPORTING can have:
+
+Reporting
+  - Dashboard
+  - Review Queue
+  - Dataset Reports
+  - Monthly Reports
+  - Indicator Reports
+  - Custom Reports
+  - Submission Status
+  - Report History
+  - Notifications
+  - Indicator Analysis
+
+ADMIN may have administrative + dashboard access according to RBAC.
+
+============================================================
+25. DASHBOARD VISUAL DESIGN
+============================================================
+
+Use a professional dashboard layout.
+
+Top:
+
+PageHeader
+
+Then:
+
+Filter card
+
+Then:
+
+Summary cards
+
+Then:
+
+Coverage visualization + dataset status
+
+Then:
+
+Key indicators
+
+Then:
+
+Recent reporting information
+
+Avoid:
+
+- excessive colors
+- huge decorative graphics
+- meaningless animations
+- overcrowded cards
+- placeholder dashboards
+
+Every visual should communicate useful information.
+
+============================================================
+26. CHART DESIGN
+============================================================
+
+Charts must be readable.
+
+Include:
+
+- title
+- axis labels where appropriate
+- legend where useful
+- tooltip
+- meaningful units
+- N/A handling
+
+Do not create charts with misleading zero values.
+
+If data is missing, represent it as missing.
+
+============================================================
+27. RESPONSIVE DESIGN
+============================================================
+
+Dashboard must work on:
+
+- desktop
+- laptop
+- tablet
+
+Cards should wrap naturally.
+
+Tables should scroll horizontally when necessary.
+
+Charts should resize with the available width.
+
+============================================================
+28. ACCESSIBILITY
+============================================================
+
+Provide:
+
+- meaningful labels
+- keyboard-accessible controls
+- readable contrast
+- visible focus states
+- chart/table alternative data representation
+
+Charts must never be the only way to understand the underlying
+information.
+
+============================================================
+29. PERFORMANCE
+============================================================
+
+Avoid:
+
+- N+1 queries
+- fetching all data unnecessarily
+- separate queries for every chart point
+
+Use efficient aggregate/query patterns.
+
+The dashboard should load the required data in a reasonable number
+of database queries.
+
+============================================================
+30. SECURITY
+============================================================
+
+All analytics endpoints require authentication.
+
+Role rules:
+
+MANAGER
+REPORTING
+ADMIN
+
+may access analytics.
+
+DATA_ENTRY:
+
+403
+
+Anonymous:
+
+401
+
+Do not allow users to bypass RBAC by changing URLs.
+
+============================================================
+31. READ-ONLY ANALYTICS
+============================================================
+
+Analytics must never modify:
+
+- submissions
+- data_values
+- submission_history
+- audit_logs
+
+Dashboard and analysis endpoints are read-only.
+
+============================================================
+32. TESTING
+============================================================
+
+Test:
+
+AUTHORIZATION
+
+- anonymous -> 401
+- DATA_ENTRY -> 403
+- MANAGER -> success
+- REPORTING -> success
+- ADMIN -> success
+
+DASHBOARD
+
+- valid period
+- dataset filter
+- approved counts
+- coverage calculation
+- no active datasets
+- no approved data
+- missing values
+
+TREND
+
+- valid indicator
+- valid period range
+- chronological ordering
+- approved values only
+- missing period -> null/N/A
+- invalid dataset
+- invalid indicator
+- cross-dataset indicator -> rejected
+
+COMPARISON
+
+- numeric indicator
+- percentage indicator
+- difference calculation
+- missing period
+- incompatible/non-numeric indicator
+
+REGRESSION
+
+- Stage 04 authentication
+- Stage 05 configuration
+- Stage 06 data entry
+- Stage 07 review
+- Stage 08 reports
+- Stage 09 custom reports/export
+
+CLIENT
+
+npm run build
+
+SERVER
+
+module load/startup test
+
+============================================================
+33. DO NOT IMPLEMENT STAGE 11+
+============================================================
+
+DO NOT implement:
+
+- full audit-log UI
+- advanced Admin management
+- system settings
+- user management
+- password administration UI
+- advanced security administration
+- deployment
+
+Those belong to Stage 11+.
+
+============================================================
+34. DOCUMENTATION
+============================================================
+
+Create:
+
+docs/stage 10 review.txt
+
+Include:
+
+1. Implementation summary
+2. Files created
+3. Files modified
+4. Analytics APIs
+5. Query architecture
+6. Approved-data rules
+7. Calculation rules
+8. Dashboard UI/UX
+9. Manager access
+10. Charts
+11. Tests
+12. Problems/fixes
+13. Remaining issues
+14. Confirmation Stage 11+ was not implemented
+15. Acceptance criteria
+16. Readiness for Stage 11
+
+============================================================
+35. ACCEPTANCE CRITERIA
+============================================================
+
+[ ] Manager dashboard exists.
+
+[ ] Dashboard is protected by RBAC.
+
+[ ] DATA_ENTRY cannot access analytics.
+
+[ ] Dashboard uses approved data only.
+
+[ ] Reporting coverage is calculated correctly.
+
+[ ] Dataset status is displayed.
+
+[ ] Key approved indicators are displayed.
+
+[ ] Indicator analysis page exists.
+
+[ ] Dataset -> indicator cascading selection works.
+
+[ ] Multi-period trend data works.
+
+[ ] Numeric/percentage indicators can be visualized.
+
+[ ] Non-numeric indicators use appropriate data presentation.
+
+[ ] Period comparison works.
+
+[ ] Numeric difference is calculated correctly.
+
+[ ] Percentage-point difference is calculated correctly.
+
+[ ] Missing data remains N/A.
+
+[ ] No missing data is converted to zero.
+
+[ ] Analytics endpoints are read-only.
+
+[ ] No N+1 chart queries are introduced.
+
+[ ] Dashboard UI matches the existing hospital application.
+
+[ ] Manager sidebar is coherent.
+
+[ ] Responsive layout works.
+
+[ ] Charts have accessible table/data alternatives.
+
+[ ] Existing Stage 04–09 functionality remains intact.
+
+[ ] Client build succeeds.
+
+[ ] Backend tests pass.
+
+[ ] Stage 11+ functionality is not implemented.
+
+============================================================
+36. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+Before coding:
+
+1. Inspect docs/stage 01.txt through docs/stage 10.txt.
+2. Inspect all Stage 03–09 review files.
+3. Inspect the actual current frontend/backend.
+4. Inspect existing report components.
+5. Inspect existing AppShell and role-based navigation.
+6. Inspect existing report repository/service patterns.
+7. Inspect package.json before adding chart dependencies.
+
+Do not merely document the solution.
+
+Actually implement and test Stage 10.
+
+Do not silently implement Stage 11+.
+
+The dashboard must feel like a natural evolution of the existing
+hospital reporting system.
+
+============================================================
+END OF STAGE 10 SPECIFICATION
+============================================================

@@ -1,5 +1,6 @@
 const express = require('express');
 const reportController = require('../controllers/reportController');
+const customReportRoutes = require('./customReportRoutes');
 const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -8,38 +9,21 @@ const router = express.Router();
 router.use(requireAuth);
 
 // Dataset Report — REPORTING and ADMIN
-router.get(
-  '/dataset',
-  requireRole('REPORTING', 'ADMIN'),
-  reportController.datasetReport
-);
+router.get('/dataset', requireRole('REPORTING', 'ADMIN'), reportController.datasetReport);
 
 // Monthly Report — REPORTING and ADMIN
-router.get(
-  '/monthly',
-  requireRole('REPORTING', 'ADMIN'),
-  reportController.monthlyReport
-);
+router.get('/monthly', requireRole('REPORTING', 'ADMIN'), reportController.monthlyReport);
 
 // Indicator Report — REPORTING and ADMIN
-router.get(
-  '/indicator',
-  requireRole('REPORTING', 'ADMIN'),
-  reportController.indicatorReport
-);
+router.get('/indicator', requireRole('REPORTING', 'ADMIN'), reportController.indicatorReport);
 
 // Submission Status Report — REPORTING and ADMIN
-router.get(
-  '/submission-status',
-  requireRole('REPORTING', 'ADMIN'),
-  reportController.submissionStatusReport
-);
+router.get('/submission-status', requireRole('REPORTING', 'ADMIN'), reportController.submissionStatusReport);
 
 // Report History — own history for authenticated user (REPORTING and ADMIN)
-router.get(
-  '/history',
-  requireRole('REPORTING', 'ADMIN'),
-  reportController.reportHistory
-);
+router.get('/history', requireRole('REPORTING', 'ADMIN'), reportController.reportHistory);
+
+// Custom Report (Stage 09) — mounted at /reports/custom/*
+router.use('/custom', customReportRoutes);
 
 module.exports = router;
