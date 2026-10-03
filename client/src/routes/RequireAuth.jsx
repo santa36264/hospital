@@ -19,9 +19,16 @@ function RequireAuth({ children }) {
   return children;
 }
 
+/**
+ * RequireRole accepts a single role string OR an array of allowed roles.
+ * Usage:
+ *   <RequireRole role="ADMIN">...</RequireRole>
+ *   <RequireRole role={['MANAGER','REPORTING','ADMIN']}>...</RequireRole>
+ */
 export function RequireRole({ role, children }) {
   const { user } = useAuth();
-  if (user?.role !== role) {
+  const allowed = Array.isArray(role) ? role : [role];
+  if (!allowed.includes(user?.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
   return children;

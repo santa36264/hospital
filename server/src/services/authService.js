@@ -90,6 +90,13 @@ async function login(email, password, meta = {}) {
 
   const accessToken = tokenService.signAccessToken(user, sessionId);
 
+  try {
+    const { db } = require('../config/database');
+    await db('users').where({ id: user.id }).update({ last_login_at: new Date() });
+  } catch (err) {
+    console.error('Failed to update last_login_at:', err.message);
+  }
+
   await auditLogRepository.log({
     userId: user.id,
     action: 'LOGIN_SUCCESS',

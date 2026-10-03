@@ -1,0 +1,1366 @@
+============================================================
+STAGE 12 — VALIDATION, SECURITY & BUSINESS RULES
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+STAGE:
+12 of 14
+
+TITLE:
+Validation, Security & Business Rules
+
+============================================================
+1. STAGE OBJECTIVE
+============================================================
+
+Stage 12 performs a system-wide validation, security, and
+business-rule hardening pass across the completed Stage 01–11
+implementation.
+
+The purpose is NOT to introduce a major new feature.
+
+The purpose is to verify and strengthen:
+
+- Input validation
+- Authentication security
+- Authorization
+- Session security
+- Password rules
+- Submission business rules
+- Review/approval rules
+- Reporting-period rules
+- Dataset/indicator rules
+- Administrative security
+- Approved-data boundaries
+- API error handling
+- Data integrity
+- Cross-role access boundaries
+- Auditability of security-sensitive operations
+
+Stage 12 must preserve the existing architecture and UI.
+
+Any issue discovered should be fixed at the appropriate existing
+layer rather than bypassing the established architecture.
+
+============================================================
+2. STAGE BOUNDARY
+============================================================
+
+IN SCOPE:
+
+- Security hardening
+- Validation hardening
+- Business-rule verification
+- Authorization hardening
+- Session/security review
+- API input validation
+- Database integrity verification
+- Cross-role access testing
+- Error-response hardening
+- Security-sensitive audit verification
+- UI validation improvements where required by backend rules
+
+OUT OF SCOPE:
+
+- New major features
+- New reporting types
+- New analytics features
+- Deployment
+- CI/CD
+- Production infrastructure
+- Mobile application
+- Telegram bot
+- SMS integration
+- Payment integration
+- Automated React component test framework
+- Full UI redesign
+- New database architecture
+- New roles
+- Multi-hospital functionality
+
+Do NOT implement Stage 13 or Stage 14 functionality.
+
+============================================================
+3. SECURITY PRINCIPLE
+============================================================
+
+The backend is authoritative.
+
+Never trust:
+
+- Frontend role information
+- Frontend user IDs
+- Frontend ownership claims
+- Frontend status values
+- Frontend approval values
+- Frontend calculated totals
+- Frontend validation alone
+
+Every security-sensitive rule must be enforced server-side.
+
+Frontend validation exists for usability.
+
+Backend validation exists for correctness and security.
+
+============================================================
+4. AUTHENTICATION SECURITY REVIEW
+============================================================
+
+Review the existing authentication implementation from Stage 04.
+
+Verify:
+
+- Passwords are hashed.
+- Plain-text passwords are never stored.
+- Password hashes are never returned by APIs.
+- Access tokens have configured expiration.
+- Refresh tokens are securely stored/hashed.
+- Refresh-token rotation works.
+- Revoked refresh sessions cannot be reused.
+- Logout revokes the appropriate session.
+- Inactive users cannot authenticate.
+- Deactivated users cannot continue refreshing sessions.
+- Password changes revoke refresh sessions.
+- Login failures are handled safely.
+- Authentication errors do not reveal whether sensitive
+  account information exists unnecessarily.
+
+Do not replace the existing authentication architecture.
+
+============================================================
+5. PASSWORD VALIDATION
+============================================================
+
+Establish a consistent password validation rule.
+
+Minimum requirements:
+
+- Password is required.
+- Password must meet a reasonable minimum length.
+- Password must not be blank or whitespace-only.
+- Password confirmation must match where confirmation exists.
+- Password hashes must never be returned.
+
+Use one centralized validation rule rather than duplicating
+different password rules across login/admin forms.
+
+Do not implement password complexity rules that are unnecessary
+or inconsistent with the existing project unless required by the
+current security design.
+
+============================================================
+6. LOGIN SECURITY
+============================================================
+
+Review:
+
+- Login rate limiting
+- Failed-login handling
+- Successful-login audit
+- Inactive-account handling
+- Session creation
+- Refresh flow
+- Logout
+
+Verify that:
+
+- Invalid credentials do not expose sensitive information.
+- Login attempts cannot bypass rate limiting through trivial
+  malformed requests.
+- Inactive users cannot log in.
+- A revoked refresh token cannot create another valid session.
+- Refresh rotation does not allow reuse of the previous token.
+
+Do not introduce MFA or external identity providers.
+
+============================================================
+7. AUTHORIZATION MATRIX
+============================================================
+
+Verify the complete role matrix.
+
+ROLE:
+
+ADMIN
+- User management: ALLOW
+- Audit logs: ALLOW
+- Dataset configuration: ALLOW
+- Indicator configuration: ALLOW
+- Reporting periods: ALLOW
+- Reports: ALLOW
+- Analytics: ALLOW
+- Data-entry submissions: according to existing Admin rules,
+  but do not grant ordinary Data Entry ownership automatically
+- Review workflow: preserve existing documented access rules
+
+
+DATA_ENTRY
+- Own submissions: ALLOW
+- Dataset configuration: DENY
+- Indicator configuration: DENY
+- Reporting periods: DENY
+- Review queue: DENY
+- Reports: DENY
+- Analytics: DENY
+- Audit logs: DENY
+- User management: DENY
+
+
+REPORTING
+- Review workflow: ALLOW
+- Reports: ALLOW
+- Analytics: ALLOW
+- Dataset configuration: DENY
+- Indicator configuration: DENY
+- Reporting periods: DENY
+- User management: DENY
+- Audit logs: DENY
+
+
+MANAGER
+- Approved analytics: ALLOW
+- Existing permitted Manager functionality: ALLOW
+- Data Entry: DENY
+- Review workflow: DENY
+- Configuration: DENY
+- User management: DENY
+- Audit logs: DENY
+
+Verify authorization at the API level.
+
+Do not rely on hidden frontend navigation.
+
+============================================================
+8. IDOR / OBJECT-LEVEL AUTHORIZATION
+============================================================
+
+Review all endpoints accepting IDs.
+
+Examples:
+
+- user_id
+- submission_id
+- dataset_id
+- indicator_id
+- reporting_period_id
+- report parameters
+- notification IDs
+
+For each endpoint verify:
+
+1. The object exists.
+2. The object belongs to the correct scope.
+3. The current user has permission to access it.
+4. The current user cannot modify another user's protected
+   object simply by changing the ID.
+
+Important Data Entry rule:
+
+A DATA_ENTRY user can only access and modify their own
+submissions.
+
+A Data Entry user must not be able to:
+
+- Read another user's submission
+- Edit another user's submission
+- Submit another user's draft
+- Change another user's submission status
+- Access another user's submission history
+
+============================================================
+9. SUBMISSION BUSINESS RULES
+============================================================
+
+Verify the existing Stage 06 submission rules.
+
+A submission is uniquely identified by:
+
+Dataset + Reporting Period + Data Entry Owner
+
+However, the existing business rule establishes:
+
+One active submission per Dataset + Reporting Period.
+
+Therefore:
+
+Duplicate creation for the same Dataset + Reporting Period
+must be prevented.
+
+The database unique constraint remains authoritative.
+
+Application-level validation should provide a clear error before
+or alongside the database constraint.
+
+============================================================
+10. SUBMISSION STATUS TRANSITIONS
+============================================================
+
+Only valid transitions are allowed.
+
+Valid workflow:
+
+DRAFT
+  ↓
+SUBMITTED
+  ↓
+UNDER_REVIEW
+  ├── APPROVED
+  └── RETURNED
+          ↓
+       SUBMITTED
+
+Approved submissions:
+
+APPROVED
+  ↓
+Controlled amendment process only
+
+No direct arbitrary status changes are allowed.
+
+Invalid transitions must return a clear validation/business-rule
+error.
+
+Examples of invalid operations:
+
+DRAFT → APPROVED
+DRAFT → UNDER_REVIEW
+SUBMITTED → APPROVED
+APPROVED → DRAFT
+APPROVED → RETURNED
+RETURNED → APPROVED
+
+unless performed through the explicitly implemented workflow.
+
+============================================================
+11. SEPARATION OF DUTIES
+============================================================
+
+Preserve the existing separation-of-duties rules.
+
+A DATA_ENTRY user:
+
+- Cannot approve submissions.
+- Cannot return submissions for review.
+- Cannot approve their own submission.
+
+A REPORTING user:
+
+- Reviews submissions.
+- Cannot modify ordinary Data Entry ownership.
+- Cannot bypass approval workflow.
+
+A user must never be able to approve their own submission.
+
+This must be enforced by the backend.
+
+============================================================
+12. RETURNED SUBMISSIONS
+============================================================
+
+Verify:
+
+RETURNED → SUBMITTED
+
+The original submission remains the same submission.
+
+Do not create a new submission automatically.
+
+Return reason is mandatory.
+
+A returned submission must retain its history.
+
+The correction must be auditable.
+
+============================================================
+13. APPROVED DATA PROTECTION
+============================================================
+
+Approved data must not be silently changed.
+
+Verify that:
+
+- Approved values cannot be edited through ordinary Data Entry
+  endpoints.
+- Approved submissions cannot be returned through ordinary
+  Data Entry actions.
+- Approved data is used by analytics only when status is
+  APPROVED.
+- Reports use the existing approved-data rules.
+- Missing approved values remain NULL/N/A.
+- No API converts missing values to zero.
+
+Any approved-data modification must use the controlled amendment
+mechanism already planned by the project.
+
+Do not invent a new amendment workflow unless the current
+implementation requires a security fix.
+
+============================================================
+14. REPORTING PERIOD RULES
+============================================================
+
+Verify:
+
+OPEN:
+- New submissions allowed.
+- Draft editing allowed according to existing rules.
+- Submission allowed.
+
+CLOSED:
+- New submission blocked.
+- Existing draft cannot be submitted.
+- Existing draft becomes read-only.
+- Existing historical data remains accessible according to
+  existing rules.
+
+Reopening a closed period must remain an exceptional,
+auditable operation if supported by the existing system.
+
+Users must not bypass the period state by manipulating request
+parameters.
+
+============================================================
+15. DATASET AND INDICATOR RULES
+============================================================
+
+Verify:
+
+Inactive datasets:
+
+- Cannot receive new submissions.
+- Existing historical data remains preserved.
+
+Inactive indicators:
+
+- Cannot receive new values through new submissions.
+- Existing historical values remain preserved.
+
+Indicator must belong to the selected dataset.
+
+Indicator IDs from another dataset must be rejected.
+
+Dataset/indicator mismatch must never result in data being written
+to the wrong dataset.
+
+============================================================
+16. INDICATOR VALIDATION
+============================================================
+
+Verify all supported indicator types:
+
+INTEGER
+NUMERIC
+DECIMAL
+TEXT
+DATE
+BOOLEAN
+PERCENTAGE
+
+Rules:
+
+INTEGER:
+- Valid integer only.
+
+NUMERIC/DECIMAL:
+- Valid numeric value.
+- Respect configured minimum.
+- Respect configured maximum.
+- Respect configured precision.
+
+PERCENTAGE:
+- Default range 0–100.
+- Respect configured range if explicitly configured.
+
+TEXT:
+- String validation.
+- Respect configured required rule.
+
+DATE:
+- Valid date format.
+
+BOOLEAN:
+- Only valid boolean values accepted.
+
+Required indicators:
+
+- Must have a value before final submission.
+
+Optional indicators:
+
+- May remain NULL.
+
+Never silently coerce invalid values into valid values.
+
+============================================================
+17. TYPE COERCION SECURITY
+============================================================
+
+Review all API input parsing.
+
+Do not trust JavaScript type coercion blindly.
+
+Examples:
+
+"abc" must not become 0.
+
+"" must not automatically become 0.
+
+"false" must not automatically become true.
+
+Malformed numeric values must be rejected.
+
+Malformed dates must be rejected.
+
+Unexpected arrays/objects must not be accepted where a scalar
+indicator value is expected.
+
+============================================================
+18. MASS ASSIGNMENT / MASS UPDATE PROTECTION
+============================================================
+
+Review PATCH/POST bodies for unexpected fields.
+
+Only explicitly supported fields may be updated.
+
+Do not allow clients to submit fields such as:
+
+- user_id
+- role without authorization
+- status without authorization
+- approved_at
+- created_at
+- updated_at
+- submitted_by
+- reviewed_by
+- approved_by
+- audit fields
+
+unless that endpoint explicitly supports the field.
+
+Prevent mass-assignment vulnerabilities.
+
+============================================================
+19. ADMIN SECURITY
+============================================================
+
+Verify Stage 11 administrative rules.
+
+Last active ADMIN:
+
+- Cannot be deactivated.
+- Cannot be demoted.
+- Cannot lose final administrative access.
+
+User deletion:
+
+- Must remain unsupported.
+- Deactivation is the account lifecycle mechanism.
+
+Password change:
+
+- Must hash the new password.
+- Must revoke refresh sessions.
+- Must create an audit record.
+
+Administrative actions must not bypass existing business rules.
+
+============================================================
+20. AUDIT LOG SECURITY
+============================================================
+
+Audit logs must be:
+
+- Append-only
+- Admin-readable
+- Not editable through API
+- Not deletable through API
+
+Verify that no endpoint allows:
+
+PUT /audit-logs/:id
+PATCH /audit-logs/:id
+DELETE /audit-logs/:id
+
+unless explicitly required by the documented architecture.
+
+Sensitive information must never be logged.
+
+Never log:
+
+- Passwords
+- Password hashes
+- JWTs
+- Refresh tokens
+- Session secrets
+
+Audit details should contain useful administrative information
+without exposing credentials.
+
+============================================================
+21. API INPUT VALIDATION
+============================================================
+
+Review all major API categories:
+
+/auth
+/datasets
+/indicators
+/reporting-periods
+/submissions
+/review
+/notifications
+/reports
+/analytics
+/admin/users
+/admin/audit-logs
+/admin/system
+
+Verify:
+
+- Required fields
+- Data types
+- IDs
+- Enum values
+- Date formats
+- Pagination
+- Search parameters
+- Filter parameters
+- Maximum lengths
+- Unexpected fields
+- Invalid query parameters
+
+Malformed input should result in a controlled 4xx response.
+
+Do not allow malformed requests to produce server crashes.
+
+============================================================
+22. PAGINATION VALIDATION
+============================================================
+
+Review all paginated endpoints.
+
+Verify:
+
+- page must be positive
+- pageSize must be positive
+- pageSize must have a reasonable maximum
+- invalid values are rejected or safely normalized
+- negative offsets cannot be generated
+- extremely large page sizes cannot be used to force excessive
+  database reads
+
+Use one consistent pagination rule across the application where
+practical.
+
+============================================================
+23. SEARCH AND FILTER VALIDATION
+============================================================
+
+Review search/filter endpoints.
+
+Verify:
+
+- Empty searches are handled correctly.
+- Extremely long search strings are rejected/limited.
+- Filter values are validated.
+- Invalid IDs are rejected.
+- Database queries use Knex parameterization.
+- User-controlled strings never become raw SQL fragments.
+
+Do not introduce raw SQL concatenation from request parameters.
+
+============================================================
+24. REPORT SECURITY
+============================================================
+
+Review:
+
+- Dataset reports
+- Monthly reports
+- Indicator reports
+- Submission status reports
+- Report history
+- Custom report preview
+- PDF export
+- Excel export
+
+Verify that users cannot use report parameters to access data
+outside their authorized role.
+
+Verify approved-data restrictions remain intact.
+
+Custom report requests must validate:
+
+- Dataset
+- Indicators
+- Periods
+- Indicator/dataset relationship
+- Maximum selection limits
+
+Never trust frontend selection limits.
+
+============================================================
+25. ANALYTICS SECURITY
+============================================================
+
+Review Stage 10 analytics.
+
+Verify:
+
+/analytics/dashboard
+/analytics/indicator-trend
+/analytics/indicator-comparison
+
+Rules:
+
+- MANAGER allowed
+- REPORTING allowed
+- ADMIN allowed
+- DATA_ENTRY denied
+
+Analytics must only use APPROVED submissions.
+
+Indicator/dataset mismatch must return a controlled error.
+
+Invalid periods must be rejected.
+
+Missing values must remain NULL.
+
+Server-side calculations remain authoritative.
+
+============================================================
+26. NOTIFICATION SECURITY
+============================================================
+
+Users must only be able to access their own notifications.
+
+Verify that changing a notification ID cannot expose another
+user's notification.
+
+Read/unread operations must also be user-scoped.
+
+ADMIN access must not accidentally turn ordinary notification
+endpoints into unrestricted cross-user access.
+
+============================================================
+27. ERROR RESPONSE SECURITY
+============================================================
+
+Review API errors.
+
+Production-style responses must not expose:
+
+- Stack traces
+- SQL statements
+- Database credentials
+- File paths
+- JWT values
+- Password hashes
+- Internal secrets
+
+Use consistent error structures.
+
+Example:
+
+{
+  "message": "Validation failed",
+  "errors": {
+    "email": "Email is required"
+  }
+}
+
+Use the project's existing error-response convention if one
+already exists.
+
+Do not create multiple incompatible error formats unnecessarily.
+
+============================================================
+28. CORS AND HTTP SECURITY
+============================================================
+
+Review existing server configuration.
+
+Verify:
+
+- CORS allows only configured frontend origins.
+- Credentials behavior is intentional.
+- Production cookies use Secure.
+- HttpOnly is preserved.
+- SameSite behavior is preserved.
+- Sensitive endpoints are not unintentionally exposed.
+
+Do not weaken security settings simply to make local development
+easier.
+
+Do not introduce deployment-specific configuration beyond the
+current project scope.
+
+============================================================
+29. RATE LIMITING
+============================================================
+
+Review existing login rate limiting.
+
+Verify it is applied to the authentication endpoint.
+
+Do not introduce aggressive rate limits on normal reporting,
+analytics, or data-entry endpoints unless a clear abuse risk is
+identified.
+
+Do not break legitimate hospital workflows.
+
+============================================================
+30. DATABASE INTEGRITY
+============================================================
+
+Verify existing database constraints.
+
+Important constraints include:
+
+- Unique user email
+- Unique dataset code
+- Indicator uniqueness within dataset
+- Unique dataset + reporting period submission
+- Unique submission + indicator data value
+- Foreign keys
+- Required fields
+- Valid status values
+
+Do not remove existing constraints.
+
+If a missing constraint is required for an already documented
+business rule, add the minimum necessary migration.
+
+Do not redesign the database.
+
+============================================================
+31. TRANSACTION SAFETY
+============================================================
+
+Review multi-step operations.
+
+Transactions should protect operations such as:
+
+- Submission creation with history
+- Submission update with history
+- Submission submission with history/audit
+- Review approval/return with history/notification/audit
+- User password change + session revocation + audit where
+  appropriate
+- User activation/deactivation + session revocation + audit
+  where appropriate
+
+Avoid partial state changes.
+
+If a multi-step operation fails, it should not leave inconsistent
+records.
+
+============================================================
+32. CONCURRENCY / RACE CONDITIONS
+============================================================
+
+Review operations vulnerable to simultaneous requests.
+
+Especially:
+
+- Duplicate submission creation
+- Last-admin protection
+- User status changes
+- Submission status transitions
+- Approval/return actions
+
+Database constraints must remain the final protection against
+duplicate data.
+
+Do not rely only on:
+
+"check first, then insert"
+
+for uniqueness-sensitive operations.
+
+============================================================
+33. SECURITY-SENSITIVE LOGGING
+============================================================
+
+Review application logs and audit logs.
+
+Logs must not contain:
+
+- Passwords
+- Password hashes
+- JWTs
+- Refresh tokens
+- Database credentials
+- Environment secrets
+
+Useful identifiers may be logged when appropriate:
+
+- User ID
+- Submission ID
+- Dataset ID
+- Reporting period ID
+
+Keep logging useful without exposing sensitive data.
+
+============================================================
+34. FRONTEND SECURITY
+============================================================
+
+Review frontend behavior.
+
+The frontend must not:
+
+- Store passwords
+- Display password hashes
+- Display tokens unnecessarily
+- Trust role information for authorization
+- Assume hidden routes provide security
+- Send unauthorized administrative fields
+
+Protected routes remain useful for UX.
+
+Server authorization remains authoritative.
+
+============================================================
+35. SECURITY HEADERS
+============================================================
+
+Inspect existing Express security configuration.
+
+If security headers are missing and can be safely introduced
+without changing application behavior, add an appropriate
+security-header middleware.
+
+Do not introduce a large security framework unnecessarily.
+
+Do not break local development.
+
+Document any newly added security middleware.
+
+============================================================
+36. VALIDATION ARCHITECTURE
+============================================================
+
+Avoid duplicated validation logic where practical.
+
+Prefer:
+
+Request validation
+    ↓
+Service business rules
+    ↓
+Repository persistence
+    ↓
+Database constraints
+
+Validation should be appropriate to the layer.
+
+Examples:
+
+Request layer:
+- required fields
+- format
+- basic type
+
+Service layer:
+- ownership
+- workflow
+- role/business rules
+- state transitions
+
+Repository/database:
+- persistence
+- uniqueness
+- foreign keys
+
+============================================================
+37. TESTING REQUIREMENTS
+============================================================
+
+Create:
+
+test_stage12.ps1
+
+The script must test security and business rules.
+
+Minimum categories:
+
+AUTHENTICATION
+--------------
+
+- Anonymous protected endpoint → 401
+- Invalid login
+- Inactive user login blocked
+- Valid login
+- Refresh
+- Logout
+- Revoked refresh token rejected
+
+
+RBAC
+----
+
+For representative protected endpoints:
+
+- ADMIN
+- DATA_ENTRY
+- REPORTING
+- MANAGER
+
+Verify expected 200/403 behavior.
+
+
+OBJECT AUTHORIZATION
+--------------------
+
+- Data Entry cannot access another user's submission
+- Data Entry cannot modify another user's submission
+- User cannot access another user's notification
+- Admin-only endpoints reject non-admin roles
+
+
+SUBMISSION RULES
+----------------
+
+- Duplicate submission rejected
+- Invalid status transition rejected
+- Required indicator missing on submit rejected
+- Invalid indicator type rejected
+- Invalid numeric range rejected
+- Invalid percentage rejected
+- Dataset/indicator mismatch rejected
+- Closed period submission rejected
+- Inactive dataset submission rejected
+
+
+REVIEW RULES
+------------
+
+- Data Entry cannot approve
+- Reporting can review
+- User cannot approve own submission
+- Return requires reason
+- Invalid review transition rejected
+
+
+APPROVED DATA
+-------------
+
+- Draft excluded from analytics
+- Submitted excluded
+- Under review excluded
+- Returned excluded
+- Approved included
+- Missing value remains NULL
+
+
+ADMIN
+-----
+
+- Last admin protection
+- Password change
+- Session revocation
+- Admin action audit
+
+
+AUDIT
+-----
+
+- Audit logs Admin-only
+- Audit logs cannot be modified
+- Sensitive credentials absent
+
+
+REPORTS
+-------
+
+- Unauthorized report access blocked
+- Approved-data rule preserved
+- Custom report limits enforced
+
+
+ANALYTICS
+---------
+
+- Role enforcement
+- Approved-only data
+- Invalid dataset/indicator rejected
+- Missing values preserved
+
+
+NOTIFICATIONS
+-------------
+
+- User-scoped access
+- Cross-user notification access blocked
+
+
+INPUT VALIDATION
+----------------
+
+- Missing required fields
+- Invalid IDs
+- Invalid enums
+- Invalid dates
+- Invalid pagination
+- Oversized pagination
+- Unexpected fields
+- Malformed values
+
+
+REGRESSION
+----------
+
+Verify representative functionality from Stages 04–11.
+
+============================================================
+38. SECURITY REVIEW OUTPUT
+============================================================
+
+At the end of implementation produce a concise review containing:
+
+1. Security issues discovered
+2. Business-rule issues discovered
+3. Files created
+4. Files modified
+5. Database migrations
+6. Validation improvements
+7. Authentication improvements
+8. Authorization improvements
+9. Tests performed
+10. Test results
+11. Build result
+12. Remaining known issues
+13. Confirmation that Stage 13 and Stage 14 were not implemented
+
+If no security problems are found in a category, explicitly state:
+
+"No issues found."
+
+Do not claim security guarantees beyond the tests actually
+performed.
+
+============================================================
+39. STAGE 12 ACCEPTANCE CRITERIA
+============================================================
+
+AUTHENTICATION
+--------------
+
+[ ] Passwords remain securely hashed
+
+[ ] Password hashes never returned
+
+[ ] Refresh tokens are protected
+
+[ ] Revoked refresh sessions cannot be reused
+
+[ ] Inactive users cannot authenticate
+
+[ ] Password changes revoke sessions
+
+[ ] Logout works correctly
+
+[ ] Login rate limiting remains functional
+
+
+AUTHORIZATION
+-------------
+
+[ ] All major protected endpoints enforce server-side RBAC
+
+[ ] DATA_ENTRY cannot access analytics
+
+[ ] DATA_ENTRY cannot access audit logs
+
+[ ] DATA_ENTRY cannot access admin APIs
+
+[ ] REPORTING cannot access admin APIs
+
+[ ] MANAGER cannot access admin APIs
+
+[ ] Only authorized users access reports
+
+[ ] Only authorized users access review workflow
+
+
+OBJECT SECURITY
+---------------
+
+[ ] Data Entry ownership is enforced
+
+[ ] Cross-user submission access is blocked
+
+[ ] Cross-user notification access is blocked
+
+[ ] Dataset/indicator relationships are enforced
+
+
+BUSINESS RULES
+--------------
+
+[ ] Duplicate submissions are prevented
+
+[ ] Valid submission transitions are enforced
+
+[ ] Invalid transitions are rejected
+
+[ ] Separation of duties is enforced
+
+[ ] Return reason is mandatory
+
+[ ] Closed periods block new submission
+
+[ ] Inactive datasets block new submission
+
+[ ] Inactive indicators block new data
+
+
+VALIDATION
+----------
+
+[ ] Indicator types validated
+
+[ ] Required indicators enforced
+
+[ ] Numeric ranges enforced
+
+[ ] Decimal precision enforced
+
+[ ] Percentage range enforced
+
+[ ] Date validation enforced
+
+[ ] Boolean validation enforced
+
+[ ] Unexpected fields rejected/ignored safely
+
+[ ] Pagination validated
+
+[ ] Search/filter parameters validated
+
+
+APPROVED DATA
+-------------
+
+[ ] Analytics use APPROVED data only
+
+[ ] Reports preserve approved-data rules
+
+[ ] Missing values remain NULL/N/A
+
+[ ] No zero substitution introduced
+
+[ ] Approved data cannot be edited through ordinary data-entry
+    endpoints
+
+
+ADMIN SECURITY
+--------------
+
+[ ] Last active admin protected
+
+[ ] Password change revokes sessions
+
+[ ] Administrative actions remain auditable
+
+[ ] Audit logs cannot be edited/deleted
+
+
+ERROR SECURITY
+--------------
+
+[ ] No stack traces exposed
+
+[ ] No SQL errors exposed
+
+[ ] No secrets exposed
+
+[ ] No password hashes exposed
+
+[ ] Consistent API errors used
+
+
+DATABASE
+--------
+
+[ ] Existing constraints preserved
+
+[ ] Foreign keys preserved
+
+[ ] Required unique constraints preserved
+
+[ ] No destructive migration
+
+[ ] No unnecessary schema redesign
+
+
+TRANSACTIONS
+------------
+
+[ ] Multi-step security-sensitive operations remain atomic
+
+[ ] No partial workflow state introduced
+
+
+TESTING
+-------
+
+[ ] test_stage12.ps1 created
+
+[ ] Security tests pass
+
+[ ] Business-rule tests pass
+
+[ ] Regression tests pass
+
+[ ] Client build succeeds
+
+[ ] Server loads successfully
+
+
+SCOPE
+-----
+
+[ ] Stage 13 not implemented
+
+[ ] Stage 14 not implemented
+
+============================================================
+40. FINAL STAGE 12 RESULT
+============================================================
+
+At completion, Stage 12 should leave the existing system with
+stronger validation, authorization, security, and business-rule
+enforcement without changing the fundamental product scope.
+
+The application should remain:
+
+Hospital
+  ↓
+Datasets
+  ↓
+Indicators
+  ↓
+Data Entry
+  ↓
+Submission
+  ↓
+Review
+  ↓
+Approval
+  ↓
+Reports
+  ↓
+Analysis
+  ↓
+Administration
+
+
+Stage 12 strengthens the rules governing every step above.
+
+============================================================
+END OF STAGE 12
+============================================================

@@ -5,10 +5,13 @@ import LoginPage from '../pages/LoginPage';
 import AppShell from '../layouts/AppShell';
 import {
   AppHome,
-  AdminPlaceholder,
   ManagerPlaceholder,
   UnauthorizedPage,
 } from '../pages/placeholderPages';
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import UserManagementPage from '../pages/admin/UserManagementPage';
+import AuditLogsPage from '../pages/admin/AuditLogsPage';
+import SystemPage from '../pages/admin/SystemPage';
 import DatasetsPage from '../pages/DatasetsPage';
 import IndicatorsPage from '../pages/IndicatorsPage';
 import ReportingPeriodsPage from '../pages/ReportingPeriodsPage';
@@ -29,6 +32,9 @@ import ReportHistoryPage from '../pages/reporting/reports/ReportHistoryPage';
 import CustomReportPage from '../pages/reporting/reports/CustomReportPage';
 // Notifications (Stage 07)
 import NotificationsPage from '../pages/notifications/NotificationsPage';
+// Manager Dashboard (Stage 10)
+import ManagerDashboardPage from '../pages/manager/ManagerDashboardPage';
+import IndicatorAnalysisPage from '../pages/manager/IndicatorAnalysisPage';
 
 function AppRoutes() {
   return (
@@ -49,7 +55,10 @@ function AppRoutes() {
             <Route index element={<AppHome />} />
 
             {/* ── Admin ── */}
-            <Route path="admin" element={<RequireRole role="ADMIN"><AdminPlaceholder /></RequireRole>} />
+            <Route path="admin" element={<RequireRole role="ADMIN"><AdminDashboardPage /></RequireRole>} />
+            <Route path="admin/users" element={<RequireRole role="ADMIN"><UserManagementPage /></RequireRole>} />
+            <Route path="admin/audit-logs" element={<RequireRole role="ADMIN"><AuditLogsPage /></RequireRole>} />
+            <Route path="admin/system" element={<RequireRole role="ADMIN"><SystemPage /></RequireRole>} />
             <Route path="admin/datasets" element={<RequireRole role="ADMIN"><DatasetsPage /></RequireRole>} />
             <Route path="admin/indicators" element={<RequireRole role="ADMIN"><IndicatorsPage /></RequireRole>} />
             <Route path="admin/reporting-periods" element={<RequireRole role="ADMIN"><ReportingPeriodsPage /></RequireRole>} />
@@ -74,8 +83,32 @@ function AppRoutes() {
 
             <Route path="reporting" element={<RequireRole role="REPORTING"><Navigate to="/app/reporting/queue" replace /></RequireRole>} />
 
-            {/* ── Manager (placeholder) ── */}
-            <Route path="manager" element={<RequireRole role="MANAGER"><ManagerPlaceholder /></RequireRole>} />
+            {/* ── Manager (Stage 10) ── */}
+            <Route
+              path="manager/dashboard"
+              element={
+                <RequireRole role={['MANAGER','REPORTING','ADMIN']}>
+                  <ManagerDashboardPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="manager/analysis"
+              element={
+                <RequireRole role={['MANAGER','REPORTING','ADMIN']}>
+                  <IndicatorAnalysisPage />
+                </RequireRole>
+              }
+            />
+            {/* /app/manager → redirect to dashboard */}
+            <Route
+              path="manager"
+              element={
+                <RequireRole role={['MANAGER','REPORTING','ADMIN']}>
+                  <Navigate to="/app/manager/dashboard" replace />
+                </RequireRole>
+              }
+            />
 
             {/* ── Notifications (all authenticated roles) ── */}
             <Route path="notifications" element={<NotificationsPage />} />

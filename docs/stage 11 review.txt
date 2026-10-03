@@ -1,0 +1,153 @@
+============================================================
+STAGE 11 — ADMINISTRATION, AUDIT & SYSTEM MANAGEMENT REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 11 implementation review
+
+============================================================
+1. WHAT WAS IMPLEMENTED
+============================================================
+
+- Admin Dashboard (/app/admin) with summary cards and recent
+  admin activity.
+- User Management (/app/admin/users): paginated/searchable/
+  filterable user table, create/edit dialogs, role change,
+  activate/deactivate with confirmation dialogs.
+- Password management: Admin changes a user's password; bcrypt
+  hash replaced; refresh sessions revoked; audit event.
+- Last-admin protection: deactivating or demoting the final
+  active ADMIN is rejected with 409.
+- Admin-only Audit Logs page (/app/admin/audit-logs): filters
+  (action, entity type, date range, search), pagination,
+  detail dialog; access itself audited as AUDIT_LOG_VIEWED on
+  first-page requests.
+- System page (/app/admin/system): safe overview (name, API
+  version, environment, version, DB connectivity, counts, users
+  by role). No secrets exposed.
+- Admin sidebar expanded: Dashboard, Users, Datasets,
+  Indicators, Reporting Periods, Audit Logs, System.
+- Admin dashboard kept distinct from Manager analytics.
+
+============================================================
+2. FILES CREATED
+============================================================
+
+server/migrations/006_users_last_login.js
+server/src/repositories/adminUserRepository.js
+server/src/repositories/adminAuditRepository.js
+server/src/services/adminUserService.js
+server/src/services/adminAuditService.js
+server/src/controllers/adminUserController.js
+server/src/controllers/adminAuditController.js
+server/src/routes/adminUserRoutes.js
+server/src/routes/adminAuditRoutes.js
+server/src/routes/adminSystemRoutes.js
+client/src/api/adminUsersApi.js
+client/src/api/adminAuditApi.js
+client/src/api/adminSystemApi.js
+client/src/pages/admin/AdminDashboardPage.jsx
+client/src/pages/admin/UserManagementPage.jsx
+client/src/pages/admin/AuditLogsPage.jsx
+client/src/pages/admin/SystemPage.jsx
+test_stage11.ps1
+docs/stage 11 review.txt
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/src/routes/index.js (mounted /admin/users,
+  /admin/audit-logs, /admin/system)
+server/src/repositories/sessionRepository.js (revokeAllByUser)
+server/src/services/authService.js (records users.last_login_at
+  on successful login)
+client/src/routes/AppRoutes.jsx (admin routes to new pages)
+client/src/layouts/AppShell.jsx (Admin nav expanded)
+
+============================================================
+4. DATABASE CHANGES
+============================================================
+
+Migration 006_users_last_login: users.last_login_at DATETIME
+NULL. Additive only. No tables dropped, no data destroyed.
+audit_logs/refresh_sessions schema reused as-is.
+
+============================================================
+5. API ENDPOINTS
+============================================================
+
+GET   /api/v1/admin/users                 (auth+ADMIN)
+GET   /api/v1/admin/users/:id
+POST  /api/v1/admin/users
+PATCH /api/v1/admin/users/:id
+POST  /api/v1/admin/users/:id/password
+POST  /api/v1/admin/users/:id/activate
+POST  /api/v1/admin/users/:id/deactivate
+GET   /api/v1/admin/audit-logs            (auth+ADMIN)
+GET   /api/v1/admin/system/overview       (auth+ADMIN)
+
+============================================================
+6. UI CHANGES
+============================================================
+
+- /app/admin -> AdminDashboardPage (summary + recent activity).
+- /app/admin/users -> UserManagementPage.
+- /app/admin/audit-logs -> AuditLogsPage.
+- /app/admin/system -> SystemPage.
+- AppShell Admin nav expanded; shared components reused
+  (PageHeader, StatCard, FilterBar, FilterGroup, inputClass,
+  selectClass, LoadingState, EmptyState, ErrorState, Pagination,
+  ReportCard, StatusBadge). No new design system.
+
+============================================================
+7. TESTS AND RESULTS
+============================================================
+
+test_stage11.ps1: 42 passed, 0 failed.
+
+Covered: RBAC (401 anonymous, 403 DATA_ENTRY/REPORTING/MANAGER,
+200 ADMIN), user list/pagination/search/role filter/status
+filter, create user, duplicate email 409, safe get (no
+password_hash), update, role change, activate/deactivate,
+last-admin deactivation 409, last-admin role change 409, admin
+password change, new login works, old password invalidated,
+refresh sessions revoked (implied via password re-login test),
+password-change + user-created audit events, audit list
+pagination/filters, no hashes in audit payloads, system
+overview safe values, and Stage 04-10 regression checks
+(health, me, datasets, indicators, reporting-periods, my
+submissions, review queue, dataset report, custom preview,
+analytics dashboard/trend/comparison).
+
+============================================================
+8. BUILD RESULT
+============================================================
+
+client: npm run build -- succeeded (known Recharts chunk-size
+warning only).
+server: app loads (node -e require('./src/app')), migrations
+applied, health endpoint OK.
+
+============================================================
+9. REMAINING ISSUES
+============================================================
+
+- No automated React component tests (Stage 13 scope).
+- Refresh-revocation on deactivate/password-change verified via
+  re-login requirement; fine-grained token-expiry assertions
+  remain manual.
+- Audit-log IP uses metadata.ip; no dedicated column by design
+  (avoids schema duplication).
+
+============================================================
+10. CONFIRMATION — STAGE 12+ NOT IMPLEMENTED
+============================================================
+
+No Stage 12 (security expansion), Stage 13 (complete
+testing/UX refinement), or Stage 14 (deployment/docs) features
+were implemented.
+
+============================================================
+END OF STAGE 11 REVIEW
+============================================================

@@ -4,10 +4,13 @@ import NotificationBell from '../components/NotificationBell';
 
 const NAV_BY_ROLE = {
   ADMIN: [
-    { to: '/app/admin', label: 'Admin Home' },
+    { to: '/app/admin', label: 'Dashboard' },
+    { to: '/app/admin/users', label: 'Users' },
     { to: '/app/admin/datasets', label: 'Datasets' },
     { to: '/app/admin/indicators', label: 'Indicators' },
     { to: '/app/admin/reporting-periods', label: 'Reporting Periods' },
+    { to: '/app/admin/audit-logs', label: 'Audit Logs' },
+    { to: '/app/admin/system', label: 'System' },
   ],
   DATA_ENTRY: [
     { to: '/app/data-entry/submissions', label: 'My Submissions' },
@@ -22,10 +25,13 @@ const NAV_BY_ROLE = {
     { to: '/app/reporting/reports/custom', label: 'Custom Report' },
     { to: '/app/reporting/reports/submission-status', label: 'Submission Status' },
     { to: '/app/reporting/reports/history', label: 'Report History' },
+    { to: '/app/manager/dashboard', label: 'Dashboard' },
+    { to: '/app/manager/analysis', label: 'Indicator Analysis' },
     { to: '/app/notifications', label: 'Notifications' },
   ],
   MANAGER: [
-    { to: '/app/manager', label: 'Dashboard' },
+    { to: '/app/manager/dashboard', label: 'Dashboard' },
+    { to: '/app/manager/analysis', label: 'Indicator Analysis' },
     { to: '/app/notifications', label: 'Notifications' },
   ],
 };

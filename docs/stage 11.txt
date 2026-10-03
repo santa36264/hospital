@@ -1,0 +1,1690 @@
+============================================================
+STAGE 11 — ADMINISTRATION, AUDIT & SYSTEM MANAGEMENT
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+STAGE:
+11 of 14
+
+TITLE:
+Administration, Audit & System Management
+
+============================================================
+1. STAGE OBJECTIVE
+============================================================
+
+Stage 11 implements the administrative management layer of the
+Hospital Health Data Management, Reporting and Analysis System.
+
+The ADMIN role becomes responsible for managing:
+
+1. System users
+2. User roles and account status
+3. Administrative password management
+4. Audit logs
+5. Administrative system information/configuration
+6. Administrative notification visibility where appropriate
+
+Stage 11 must provide a professional Admin experience consistent
+with the UI/UX established in Stages 05–10.
+
+The objective is to give the ADMIN role a controlled interface for
+managing the application itself without exposing direct database
+operations or unsafe system configuration.
+
+Stage 11 must preserve all functionality implemented in
+Stages 01–10.
+
+============================================================
+2. SCOPE
+============================================================
+
+IN SCOPE
+--------
+
+A. User Management
+B. User account activation/deactivation
+C. Primary role assignment
+D. Administrator password management
+E. Audit Log management and viewing
+F. Administrative system overview/configuration
+G. Admin dashboard improvements
+H. Administrative UI/UX
+I. Administrative security rules
+J. Auditability of administrative actions
+
+
+OUT OF SCOPE
+------------
+
+The following must NOT be implemented in Stage 11:
+
+- Deployment
+- Production hosting
+- CI/CD
+- Backup automation
+- Database backup UI
+- Advanced security infrastructure
+- MFA/2FA
+- Password reset through email/SMS
+- External identity providers
+- Multi-hospital support
+- Multi-tenant support
+- Advanced analytics
+- Predictive analytics
+- New reporting types
+- New Data Entry workflows
+- New Review workflows
+- Mobile application
+- Telegram bot
+- Payment integration
+- SMS integration
+- Email provider integration
+- Automated test framework
+- Stage 12 validation/security expansion
+- Stage 13 complete testing/refinement
+- Stage 14 deployment/documentation
+
+Do not silently implement functionality belonging to Stage 12–14.
+
+============================================================
+3. EXISTING SYSTEM CONTEXT
+============================================================
+
+The system currently contains four primary roles:
+
+1. ADMIN
+2. DATA_ENTRY
+3. REPORTING
+4. MANAGER
+
+Each user has exactly one primary role.
+
+Multi-role users are NOT supported.
+
+The current workflow is:
+
+Hospital
+  ↓
+Datasets
+  ↓
+Indicators
+  ↓
+Data Entry
+  ↓
+Submission
+  ↓
+Review
+  ↓
+Approval
+  ↓
+Reports / Analysis
+  ↓
+Management
+
+
+Existing role responsibilities:
+
+ADMIN
+- System configuration
+- User administration
+- Administrative oversight
+
+DATA_ENTRY
+- Create submissions
+- Save drafts
+- Submit data
+- Correct returned submissions
+
+REPORTING
+- Review submissions
+- Approve/return submissions
+- Generate reports
+- View approved analytics
+
+MANAGER
+- Consume approved analytical information
+
+
+Stage 11 must not change these fundamental responsibilities.
+
+============================================================
+4. ADMIN ACCESS MODEL
+============================================================
+
+All Stage 11 administrative APIs must require:
+
+1. Authentication
+2. ADMIN role
+
+A non-admin authenticated user must receive:
+
+HTTP 403 Forbidden
+
+Unauthenticated users must receive:
+
+HTTP 401 Unauthorized
+
+
+Frontend routes must also be protected using the existing
+RequireAuth / RequireRole architecture.
+
+ADMIN-only pages include:
+
+/app/admin
+/app/admin/users
+/app/admin/audit-logs
+/app/admin/system
+
+
+If an ADMIN route is opened by another role:
+
+- Do not render administrative content.
+- Use the existing unauthorized/forbidden behavior.
+
+Do not rely on frontend protection alone.
+
+Every administrative API must enforce ADMIN authorization
+on the server.
+
+============================================================
+5. USER MANAGEMENT
+============================================================
+
+5.1 USER LIST
+------------
+
+Create an Admin user-management page:
+
+/app/admin/users
+
+The page must display users in a professional table.
+
+Suggested columns:
+
+- Name
+- Email
+- Role
+- Status
+- Last Login
+- Created At
+- Actions
+
+Status values:
+
+ACTIVE
+INACTIVE
+
+The table must support:
+
+- Search
+- Role filter
+- Status filter
+- Pagination
+- Loading state
+- Empty state
+- Error state
+- Retry action
+
+
+Search should support at minimum:
+
+- Name
+- Email
+
+Search/filtering must be server-backed where practical.
+
+Do not load an unlimited number of users into the browser.
+
+------------------------------------------------------------
+5.2 CREATE USER
+------------------------------------------------------------
+
+ADMIN can create a new user.
+
+Required fields:
+
+- Full name
+- Email
+- Role
+- Initial password
+
+Optional fields should NOT be invented unless already supported
+by the existing users schema.
+
+Allowed roles:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+
+Email must be unique.
+
+Duplicate email:
+
+HTTP 409 Conflict
+
+
+Password must never be stored as plain text.
+
+Use the existing password hashing mechanism established in Stage 04.
+
+The API must hash the password before persistence.
+
+The frontend must never display or retrieve an existing user's
+password/hash.
+
+------------------------------------------------------------
+5.3 EDIT USER
+------------------------------------------------------------
+
+ADMIN can update:
+
+- Full name
+- Email
+- Primary role
+- Account status
+
+Email uniqueness must remain enforced.
+
+Changing a user's role must be auditable.
+
+Changing account status must be auditable.
+
+Do not allow editing immutable database identifiers.
+
+------------------------------------------------------------
+5.4 ACTIVATE / DEACTIVATE USER
+------------------------------------------------------------
+
+ADMIN can activate or deactivate accounts.
+
+Deactivation must prevent the user from authenticating.
+
+An already-authenticated inactive user must not continue using
+protected APIs indefinitely.
+
+Existing authentication/session checks must respect the user's
+current account status.
+
+If the existing JWT/session architecture needs an explicit
+database status check for this rule, implement the minimum change
+required.
+
+Do not create a new authentication architecture.
+
+============================================================
+6. LAST ADMIN PROTECTION
+============================================================
+
+The system must never allow the final usable ADMIN account to
+be removed from administrative control.
+
+The following operations must be blocked when they would result
+in zero active administrators:
+
+- Deactivating the last active ADMIN
+- Changing the role of the last active ADMIN to another role
+
+Return:
+
+HTTP 409 Conflict
+
+Use a clear message such as:
+
+"At least one active administrator account must remain."
+
+This rule must be enforced server-side.
+
+The frontend may warn the administrator before submitting the
+operation, but the backend remains authoritative.
+
+Deleting users is NOT supported in Stage 11.
+
+Use deactivation instead.
+
+============================================================
+7. ADMIN PASSWORD MANAGEMENT
+============================================================
+
+Stage 11 supports administrative password management.
+
+ADMIN may reset/change another user's password.
+
+This operation must:
+
+1. Accept a new password
+2. Hash the password using the existing hashing mechanism
+3. Replace the stored password hash
+4. Revoke that user's active refresh sessions
+5. Record an audit event
+
+The user's existing access tokens should become unusable according
+to the existing authentication/session architecture as far as
+practical.
+
+Do not display the generated or existing password after submission.
+
+The Admin UI should clearly communicate:
+
+"Password changed successfully."
+
+Do not implement:
+
+- Email password reset
+- SMS password reset
+- Password recovery links
+- OTP password recovery
+
+Those are outside Stage 11.
+
+============================================================
+8. SELF-ACCOUNT SAFETY
+============================================================
+
+An administrator may edit their own profile where supported.
+
+However, the system must prevent an administrator from accidentally
+removing their own last administrative access.
+
+Examples:
+
+If there is only one active ADMIN:
+
+- Cannot change own role away from ADMIN.
+- Cannot deactivate own account.
+
+If multiple active ADMIN accounts exist:
+
+- These restrictions may be relaxed according to the same
+  last-admin rule.
+
+The server must make the final decision.
+
+============================================================
+9. USER MANAGEMENT API
+============================================================
+
+Create an administrative user API.
+
+Suggested base:
+
+/api/v1/admin/users
+
+
+Endpoints:
+
+GET
+/api/v1/admin/users
+
+Purpose:
+List users with pagination/search/filtering.
+
+
+GET
+/api/v1/admin/users/:id
+
+Purpose:
+Get safe user details.
+
+Never return password hashes.
+
+
+POST
+/api/v1/admin/users
+
+Purpose:
+Create user.
+
+
+PATCH
+/api/v1/admin/users/:id
+
+Purpose:
+Update user profile, role, or status.
+
+
+POST
+/api/v1/admin/users/:id/password
+
+Purpose:
+Change/reset a user's password.
+
+
+POST
+/api/v1/admin/users/:id/activate
+
+Purpose:
+Activate account.
+
+
+POST
+/api/v1/admin/users/:id/deactivate
+
+Purpose:
+Deactivate account.
+
+
+All endpoints:
+
+- Require authentication
+- Require ADMIN
+- Validate input
+- Use service layer
+- Use repository layer
+- Return consistent API responses
+- Do not expose password hashes
+
+Follow the existing architecture:
+
+Route
+ ↓
+Middleware
+ ↓
+Controller
+ ↓
+Service
+ ↓
+Repository
+ ↓
+MySQL
+
+============================================================
+10. AUDIT LOG MANAGEMENT
+============================================================
+
+The existing audit_logs table from Stage 03 must now receive
+a proper administrative viewing interface.
+
+Audit logs are:
+
+- Append-only
+- Never edited
+- Never deleted through the application
+
+Only ADMIN can view audit logs.
+
+REPORTING must NOT receive general audit-log access.
+
+MANAGER must NOT receive audit-log access.
+
+DATA_ENTRY must NOT receive audit-log access.
+
+
+============================================================
+11. AUDIT EVENTS
+============================================================
+
+Existing authentication and workflow events must remain intact.
+
+Examples already present include:
+
+LOGIN_SUCCESS
+LOGIN_FAILED
+BLOCKED_INACTIVE
+SESSION_REFRESHED
+LOGOUT
+
+Stage 11 adds administrative events.
+
+Recommended administrative event types:
+
+USER_CREATED
+USER_UPDATED
+USER_ACTIVATED
+USER_DEACTIVATED
+USER_ROLE_CHANGED
+USER_PASSWORD_CHANGED
+AUDIT_LOG_VIEWED
+SYSTEM_SETTING_UPDATED
+
+For role changes, activation/deactivation, and password changes,
+the audit record should identify the affected user where the
+existing audit schema supports entity references.
+
+Audit records should capture, where supported:
+
+- Actor/user
+- Action/event type
+- Entity type
+- Entity ID
+- Description/details
+- IP address if already supported
+- Timestamp
+
+Do not invent unsupported audit columns if the existing schema
+does not contain them.
+
+If the existing schema needs a small migration to support required
+audit information, make only the minimum necessary change.
+
+============================================================
+12. AUDIT LOG API
+============================================================
+
+Create:
+
+/api/v1/admin/audit-logs
+
+
+GET:
+
+GET /api/v1/admin/audit-logs
+
+Supported filters:
+
+- Event/action type
+- User
+- Entity type where supported
+- Date range
+- Search text where practical
+
+Pagination is required.
+
+Default ordering:
+
+Newest first.
+
+The API must not return an unlimited audit-log dataset.
+
+Example response structure:
+
+{
+  "items": [],
+  "pagination": {
+    "page": 1,
+    "pageSize": 25,
+    "total": 0,
+    "totalPages": 0
+  }
+}
+
+Use the existing project API response conventions if they already
+exist rather than introducing a second response style.
+
+============================================================
+13. AUDIT LOG UI
+============================================================
+
+Create:
+
+/app/admin/audit-logs
+
+The page must provide:
+
+- Page header
+- Description
+- Filter toolbar
+- Date range controls
+- Event type filter
+- User filter
+- Search where practical
+- Audit table
+- Pagination
+- Loading state
+- Empty state
+- Error state
+- Retry action
+
+Suggested columns:
+
+- Timestamp
+- User
+- Event
+- Entity
+- Description
+- IP Address if available
+
+The timestamp should be displayed in a human-readable format.
+
+Do not expose raw database implementation details unnecessarily.
+
+Clicking an audit entry may open a detail dialog/panel.
+
+The detail view may show:
+
+- Event
+- Actor
+- Timestamp
+- Entity
+- Description
+- Metadata/details
+
+Sensitive information must not be exposed.
+
+Never display:
+
+- Password hashes
+- Password values
+- Refresh tokens
+- JWT tokens
+- Session secrets
+
+============================================================
+14. AUDIT LOG ACCESS AUDITING
+============================================================
+
+Viewing audit logs may itself be logged as:
+
+AUDIT_LOG_VIEWED
+
+However, avoid generating an excessive audit volume by logging
+every pagination click or every UI interaction.
+
+Log the meaningful administrative audit-log access operation,
+not every frontend request if doing so would create unnecessary
+noise.
+
+============================================================
+15. SYSTEM ADMINISTRATION
+============================================================
+
+Create:
+
+/app/admin/system
+
+This page is a controlled administrative overview.
+
+It must NOT expose arbitrary server configuration.
+
+It should show safe system information such as:
+
+- Application name
+- API version if available
+- Database connectivity status
+- Current application environment
+- Active user count
+- Active dataset count
+- Active reporting period information
+- System version/build information if already available
+
+Only expose information safe for an authenticated administrator.
+
+Do not expose:
+
+- Database passwords
+- JWT secrets
+- Environment secrets
+- API keys
+- Refresh tokens
+- Connection strings containing credentials
+- Server filesystem secrets
+
+============================================================
+16. SYSTEM SETTINGS
+============================================================
+
+Only introduce editable system settings if there is a clear
+existing requirement for them.
+
+Do NOT create a generic "settings" table simply because an Admin
+page exists.
+
+If a setting is needed by an existing documented business rule,
+implement it explicitly and safely.
+
+Potential examples may include:
+
+- Application display name
+- Session inactivity timeout
+
+However, do not duplicate security configuration already defined
+through environment variables unless the project requirements
+explicitly require runtime configuration.
+
+If no additional runtime setting is currently required:
+
+Display a System Overview page instead of inventing configurable
+settings.
+
+============================================================
+17. ADMIN DASHBOARD
+============================================================
+
+The existing Admin experience should become a real dashboard.
+
+Route:
+
+/app/admin
+
+The Admin Dashboard should provide a concise system overview.
+
+Suggested summary cards:
+
+1. Total Users
+2. Active Users
+3. Active Datasets
+4. Open Reporting Periods
+
+Additional useful administrative information may include:
+
+- Users by role
+- Recently created users
+- Recent administrative activity
+- Current system status
+
+Do not turn this into a duplicate Manager analytics dashboard.
+
+The Admin Dashboard is about:
+
+SYSTEM ADMINISTRATION
+
+The Manager Dashboard is about:
+
+APPROVED HEALTH DATA ANALYSIS
+
+These responsibilities must remain visually and functionally
+distinct.
+
+============================================================
+18. ADMIN SIDEBAR
+============================================================
+
+Update the existing AppShell Admin navigation.
+
+Recommended structure:
+
+ADMIN
+------
+Dashboard
+Users
+Datasets
+Indicators
+Reporting Periods
+Reports
+Audit Logs
+System
+Notifications
+
+Existing Admin functionality must remain accessible.
+
+Do not remove existing dataset, indicator, reporting-period,
+or report functionality.
+
+The sidebar should clearly distinguish:
+
+Configuration
+Reporting
+Administration
+
+Use the existing sidebar component and design language.
+
+Do not create a completely separate layout.
+
+============================================================
+19. ADMIN UI/UX REQUIREMENTS
+============================================================
+
+UI/UX is a first-class requirement of Stage 11.
+
+The Admin area must feel like part of the same hospital application.
+
+Reuse existing:
+
+- AppShell
+- Sidebar
+- Header
+- PageHeader
+- StatCard
+- FilterBar
+- StatusBadge
+- Tables
+- Dialogs
+- Buttons
+- Form components
+- Loading states
+- Empty states
+- Error states
+
+Do not create duplicate visual systems when an existing shared
+component can be reused.
+
+------------------------------------------------------------
+19.1 USER TABLE
+------------------------------------------------------------
+
+The user table should be:
+
+- Clean
+- Compact but readable
+- Responsive
+- Horizontally scrollable on small screens
+- Easy to scan
+- Consistent with report tables
+
+Role badges:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Status badges:
+
+ACTIVE
+INACTIVE
+
+Actions should use a clear action menu or compact buttons.
+
+Avoid overcrowding each row.
+
+------------------------------------------------------------
+19.2 USER FORM
+------------------------------------------------------------
+
+Create/edit user UI should use a consistent form design.
+
+Requirements:
+
+- Clear labels
+- Required-field indication
+- Inline validation
+- Server error display
+- Password visibility toggle for newly entered password
+- Disabled submit state while saving
+- Success feedback
+- Cancel action
+
+Never display existing passwords.
+
+------------------------------------------------------------
+19.3 CONFIRMATION DIALOGS
+------------------------------------------------------------
+
+Destructive or security-sensitive actions require confirmation.
+
+Examples:
+
+- Deactivate user
+- Change role
+- Reset/change password
+
+The dialog must clearly explain what will happen.
+
+Do not use browser-native `alert()` or `confirm()` if the project
+already has reusable dialog components.
+
+------------------------------------------------------------
+19.4 AUDIT TABLE
+------------------------------------------------------------
+
+The audit table should prioritize:
+
+- Timestamp
+- Actor
+- Action
+- Entity
+- Description
+
+Use expandable/detail UI when additional metadata exists.
+
+============================================================
+20. RESPONSIVE DESIGN
+============================================================
+
+Admin pages must work at:
+
+- Desktop
+- Tablet
+- Mobile
+
+Desktop:
+
+- Sidebar visible
+- Tables have comfortable spacing
+- Dashboard cards use responsive grid
+
+Tablet:
+
+- Filters wrap
+- Tables remain usable
+
+Mobile:
+
+- Sidebar follows existing mobile behavior
+- Filter controls stack
+- Tables allow horizontal scrolling
+- Dialogs fit viewport
+- Forms become single-column
+
+Do not introduce horizontal page overflow.
+
+============================================================
+21. SECURITY REQUIREMENTS
+============================================================
+
+Stage 11 must follow the existing security architecture.
+
+Required:
+
+- Authentication
+- ADMIN authorization
+- Server-side authorization
+- Input validation
+- Password hashing
+- Session revocation after password changes
+- Last-admin protection
+- No password/hash exposure
+- No secret exposure
+- Parameterized database queries through Knex
+- Safe error messages
+
+Do not return raw database errors to users.
+
+Do not trust role/status values supplied by the frontend.
+
+The server must determine whether an operation is permitted.
+
+============================================================
+22. DATA ACCESS RULES
+============================================================
+
+ADMIN can manage:
+
+- Users
+- Dataset configuration
+- Indicator configuration
+- Reporting periods
+- Administrative records
+- Audit logs
+
+ADMIN can view reports according to existing Stage 08 rules.
+
+ADMIN can view analytics according to existing Stage 10 rules.
+
+ADMIN does NOT bypass business rules simply because the user has
+the ADMIN role.
+
+For example:
+
+- Approved-data analytics still use APPROVED data only.
+- Reporting-period rules remain intact.
+- Dataset/indicator history remains preserved.
+
+Administrative privilege does not mean unrestricted database
+access through the UI.
+
+============================================================
+23. AUDITABILITY RULES
+============================================================
+
+The following administrative actions must be auditable:
+
+- User creation
+- User profile update
+- Role change
+- Activation
+- Deactivation
+- Password change
+- Relevant system setting change
+
+Audit records must identify the actor.
+
+An administrator must not be able to edit or delete audit records
+through the application.
+
+If audit records are already append-only at the database level,
+preserve that behavior.
+
+============================================================
+24. DATABASE REQUIREMENTS
+============================================================
+
+Before creating migrations:
+
+1. Inspect the existing users table.
+2. Inspect the existing audit_logs table.
+3. Inspect refresh_sessions.
+4. Reuse existing columns where possible.
+5. Do not duplicate existing functionality.
+
+Only create a migration if the current schema genuinely requires
+a change.
+
+Possible requirements include:
+
+- Indexes for user administration queries
+- Additional audit metadata if truly required
+- System setting storage only if a real setting is needed
+
+Do NOT create unnecessary tables.
+
+Any migration must:
+
+- Be reversible where practical
+- Follow existing Knex migration conventions
+- Work with the project's MariaDB version
+- Preserve existing data
+
+============================================================
+25. API ARCHITECTURE
+============================================================
+
+Continue the established backend architecture:
+
+Route
+ ↓
+Middleware
+ ↓
+Controller
+ ↓
+Service
+ ↓
+Repository
+ ↓
+MySQL
+
+
+Recommended server files:
+
+server/src/routes/adminUserRoutes.js
+server/src/controllers/adminUserController.js
+server/src/services/adminUserService.js
+server/src/repositories/adminUserRepository.js
+
+server/src/routes/adminAuditRoutes.js
+server/src/controllers/adminAuditController.js
+server/src/services/adminAuditService.js
+server/src/repositories/adminAuditRepository.js
+
+Names may be adjusted if the existing project uses a stronger
+consistent naming convention.
+
+Do not bypass service/repository layers.
+
+============================================================
+26. FRONTEND ARCHITECTURE
+============================================================
+
+Continue the existing React structure.
+
+Recommended pages:
+
+client/src/pages/admin/AdminDashboardPage.jsx
+client/src/pages/admin/UserManagementPage.jsx
+client/src/pages/admin/AuditLogsPage.jsx
+client/src/pages/admin/SystemPage.jsx
+
+Recommended API modules:
+
+client/src/api/adminUsersApi.js
+client/src/api/adminAuditApi.js
+client/src/api/adminSystemApi.js
+
+Reuse existing shared components.
+
+Do not create a second design system.
+
+============================================================
+27. ERROR HANDLING
+============================================================
+
+Expected administrative errors must be handled clearly.
+
+Examples:
+
+401:
+"Your session has expired. Please sign in again."
+
+403:
+"You do not have permission to perform this action."
+
+404:
+"User not found."
+
+409:
+"At least one active administrator account must remain."
+
+422:
+Show field-level validation errors where possible.
+
+500:
+Show a generic user-friendly error.
+
+Never expose:
+
+- SQL errors
+- Stack traces
+- Password hashes
+- Secrets
+- JWT values
+
+============================================================
+28. USER STATUS AND SESSION BEHAVIOR
+============================================================
+
+When an account is deactivated:
+
+1. Authentication must be blocked.
+2. Active refresh sessions should be revoked.
+3. Existing protected requests must respect account status.
+4. The action must be audited.
+
+When a password is changed:
+
+1. Password hash is replaced.
+2. Refresh sessions are revoked.
+3. The action is audited.
+
+The system must not leave long-lived refresh sessions active after
+a security-sensitive account change.
+
+============================================================
+29. ADMIN NOTIFICATIONS
+============================================================
+
+Do not create a separate notification architecture.
+
+Reuse the existing notification system.
+
+If Stage 11 generates an administrative notification that has a
+clear business purpose, use the existing notification model.
+
+Do not generate notifications for every ordinary administrative
+action unless required.
+
+Audit logs remain the authoritative record of administrative
+actions.
+
+============================================================
+30. PERFORMANCE REQUIREMENTS
+============================================================
+
+User list:
+
+- Server-side pagination
+- Indexed searchable fields where appropriate
+
+Audit logs:
+
+- Server-side pagination
+- Newest-first ordering
+- Filtered queries
+
+Do not load all users or all audit logs into the browser.
+
+Avoid N+1 queries.
+
+Use joins/aggregations where appropriate.
+
+Do not optimize prematurely with unnecessary complexity.
+
+============================================================
+31. TESTING REQUIREMENTS
+============================================================
+
+Create a Stage 11 verification script following the style of
+previous stage test scripts.
+
+Suggested:
+
+test_stage11.ps1
+
+Test at minimum:
+
+AUTHORIZATION
+-------------
+
+- Anonymous → 401
+- DATA_ENTRY → 403
+- REPORTING → 403
+- MANAGER → 403
+- ADMIN → 200
+
+
+USER MANAGEMENT
+---------------
+
+- List users
+- Pagination works
+- Search works
+- Role filter works
+- Status filter works
+- Create user
+- Duplicate email → 409
+- Get user
+- Password hash never returned
+- Update user
+- Change role
+- Activate user
+- Deactivate user
+
+
+LAST ADMIN PROTECTION
+--------------------
+
+- Cannot deactivate last active ADMIN
+- Cannot change last active ADMIN role
+- Cannot remove own final admin access
+
+
+PASSWORD MANAGEMENT
+-------------------
+
+- Change password
+- Password is hashed
+- Existing refresh sessions revoked
+- Audit event created
+- New authentication works
+
+
+AUDIT LOGS
+----------
+
+- Admin can list logs
+- Non-admin cannot list logs
+- Pagination works
+- Filters work
+- Administrative actions appear in logs
+- Password values/hashes are not exposed
+
+
+SYSTEM
+------
+
+- Admin system overview works
+- Non-admin blocked
+- Sensitive environment values not exposed
+
+
+REGRESSION
+----------
+
+Verify key existing endpoints from Stages 04–10 continue working:
+
+- /health
+- /auth/me
+- datasets
+- indicators
+- reporting periods
+- submissions
+- review queue
+- reports
+- custom reports
+- analytics dashboard
+- indicator trend
+- indicator comparison
+
+============================================================
+32. FRONTEND BUILD VERIFICATION
+============================================================
+
+Run:
+
+npm run build
+
+Expected:
+
+- Build succeeds
+- No compilation errors
+- No broken imports
+- No route errors
+
+A bundle-size warning may remain acceptable if it is the same
+known Recharts warning from Stage 10.
+
+Do not make bundle optimization the main goal of Stage 11.
+
+============================================================
+33. SERVER VERIFICATION
+============================================================
+
+Run the existing server module/load checks.
+
+Verify:
+
+- Express application loads
+- Routes register successfully
+- Database connection works
+- Migrations run successfully
+- No startup exceptions
+
+============================================================
+34. REGRESSION PROTECTION
+============================================================
+
+Stage 11 must not break:
+
+Stage 04
+Authentication and sessions
+
+Stage 05
+Dataset/indicator/period configuration
+
+Stage 06
+Data Entry
+
+Stage 07
+Review and approval
+
+Stage 08
+Reports
+
+Stage 09
+Custom reports and exports
+
+Stage 10
+Dashboard and analytics
+
+If an existing component needs modification for Admin functionality,
+preserve its existing behavior.
+
+============================================================
+35. UI/UX QUALITY BAR
+============================================================
+
+The Admin interface must not feel like a collection of developer
+forms.
+
+It should feel like one professional hospital application.
+
+Required qualities:
+
+- Consistent spacing
+- Clear hierarchy
+- Consistent typography
+- Consistent buttons
+- Consistent badges
+- Clear page titles
+- Good table readability
+- Responsive layouts
+- Proper empty states
+- Proper loading states
+- Proper error states
+- Accessible focus states
+- Clear confirmation dialogs
+- No unnecessary giant blank spaces
+- No placeholder screens
+- No raw JSON as the primary UI
+- No browser alert/confirm where shared dialogs exist
+
+The Admin dashboard, User Management, Audit Logs, and System pages
+must visually belong to the same application as:
+
+- Data Entry
+- Reporting
+- Reports
+- Manager Dashboard
+- Indicator Analysis
+
+============================================================
+36. STAGE 11 ACCEPTANCE CRITERIA
+============================================================
+
+USER MANAGEMENT
+---------------
+
+[ ] Admin user-management page exists
+
+[ ] Admin can list users
+
+[ ] User list supports pagination
+
+[ ] User search works
+
+[ ] Role filtering works
+
+[ ] Status filtering works
+
+[ ] Admin can create users
+
+[ ] Duplicate email is rejected
+
+[ ] Admin can edit users
+
+[ ] Admin can change primary role
+
+[ ] Admin can activate/deactivate users
+
+[ ] Users cannot be deleted
+
+[ ] Password hashes are never returned
+
+
+PASSWORD MANAGEMENT
+-------------------
+
+[ ] Admin can change/reset another user's password
+
+[ ] Password is hashed
+
+[ ] Refresh sessions are revoked
+
+[ ] Password action is audited
+
+
+LAST ADMIN SAFETY
+-----------------
+
+[ ] Last active ADMIN cannot be deactivated
+
+[ ] Last active ADMIN cannot be changed to another role
+
+[ ] Last admin cannot remove their own final administrative access
+
+
+AUDIT LOG
+---------
+
+[ ] Admin audit-log page exists
+
+[ ] Audit log is Admin-only
+
+[ ] Audit logs are paginated
+
+[ ] Audit logs can be filtered
+
+[ ] Administrative actions are recorded
+
+[ ] Audit records cannot be edited
+
+[ ] Audit records cannot be deleted through UI
+
+[ ] Sensitive credentials are never exposed
+
+
+SYSTEM
+------
+
+[ ] Admin system page exists
+
+[ ] System overview information is displayed
+
+[ ] Database status is shown safely
+
+[ ] No secrets are exposed
+
+[ ] No arbitrary server configuration is exposed
+
+
+ADMIN DASHBOARD
+---------------
+
+[ ] Admin dashboard exists
+
+[ ] User statistics are displayed
+
+[ ] Dataset statistics are displayed
+
+[ ] Reporting-period information is displayed
+
+[ ] Admin dashboard is distinct from Manager analytics dashboard
+
+
+RBAC
+----
+
+[ ] Anonymous users receive 401
+
+[ ] DATA_ENTRY receives 403
+
+[ ] REPORTING receives 403
+
+[ ] MANAGER receives 403
+
+[ ] ADMIN receives access
+
+
+UI/UX
+-----
+
+[ ] Admin sidebar is coherent
+
+[ ] User-management UI is responsive
+
+[ ] Audit-log UI is responsive
+
+[ ] System UI is responsive
+
+[ ] Loading states exist
+
+[ ] Empty states exist
+
+[ ] Error states exist
+
+[ ] Confirmation dialogs exist
+
+[ ] Existing shared UI components are reused
+
+[ ] No unnecessary duplicate design system introduced
+
+
+REGRESSION
+----------
+
+[ ] Stage 04 functionality remains intact
+
+[ ] Stage 05 functionality remains intact
+
+[ ] Stage 06 functionality remains intact
+
+[ ] Stage 07 functionality remains intact
+
+[ ] Stage 08 functionality remains intact
+
+[ ] Stage 09 functionality remains intact
+
+[ ] Stage 10 functionality remains intact
+
+
+BUILD
+-----
+
+[ ] Client build succeeds
+
+[ ] Server loads successfully
+
+[ ] Stage 11 test script passes
+
+
+SCOPE
+-----
+
+[ ] Stage 12+ functionality is NOT implemented
+
+[ ] Stage 13 functionality is NOT implemented
+
+[ ] Stage 14 functionality is NOT implemented
+
+============================================================
+37. IMPORTANT IMPLEMENTATION RULES FOR OPENCODE
+============================================================
+
+Before modifying code:
+
+1. Inspect the existing project.
+2. Inspect the users table.
+3. Inspect the audit_logs table.
+4. Inspect refresh_sessions.
+5. Inspect authentication middleware.
+6. Inspect RequireRole.
+7. Inspect AppShell.
+8. Inspect existing shared UI components.
+9. Inspect existing API response/error conventions.
+10. Inspect existing audit-service/repository patterns.
+
+Do not assume the schema.
+
+Reuse existing functionality wherever possible.
+
+Do not duplicate:
+
+- Authentication
+- Password hashing
+- Role definitions
+- Audit infrastructure
+- Notification infrastructure
+- UI components
+- API response formats
+
+Do not rewrite working Stage 04–10 functionality unnecessarily.
+
+Implement Stage 11 incrementally.
+
+After implementation:
+
+1. Run migrations.
+2. Run Stage 11 tests.
+3. Run regression tests.
+4. Run client build.
+5. Verify server startup.
+6. Verify Admin UI manually.
+7. Verify every non-admin role receives 403.
+8. Verify no Stage 12+ functionality was introduced.
+
+============================================================
+38. STAGE 11 DELIVERABLE
+============================================================
+
+At the end of Stage 11 the application should provide a complete
+administrative layer:
+
+ADMIN
+  ↓
+Admin Dashboard
+  ├── User Management
+  │     ├── Create
+  │     ├── Edit
+  │     ├── Activate
+  │     ├── Deactivate
+  │     ├── Role Management
+  │     └── Password Management
+  │
+  ├── Dataset Management
+  ├── Indicator Management
+  ├── Reporting Period Management
+  │
+  ├── Reports
+  │
+  ├── Audit Logs
+  │
+  ├── System Overview
+  │
+  └── Notifications
+
+
+The result should be a professional, secure, auditable
+administration layer while preserving the existing health-data
+collection, reporting, and analysis workflows.
+
+============================================================
+39. STAGE BOUNDARY
+============================================================
+
+STAGE 11 ENDS HERE.
+
+Do not implement:
+
+- Stage 12 validation/security expansion
+- Stage 13 complete testing and UI/UX refinement
+- Stage 14 deployment/documentation
+
+Those stages remain separate.
+
+============================================================
+END OF STAGE 11
+============================================================

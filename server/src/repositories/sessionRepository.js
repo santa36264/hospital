@@ -38,4 +38,10 @@ async function updateTokenHash(id, tokenHash) {
     .update({ token_hash: tokenHash });
 }
 
-module.exports = { create, findByTokenHash, findById, revoke, touch, updateTokenHash };
+async function revokeAllByUser(userId) {
+  return db('refresh_sessions')
+    .where({ user_id: userId, revoked_at: null })
+    .update({ revoked_at: new Date() });
+}
+
+module.exports = { create, findByTokenHash, findById, revoke, revokeAllByUser, touch, updateTokenHash };
