@@ -15,33 +15,6 @@ function AppHome() {
   );
 }
 
-export function PlaceholderPage({ title }) {
-  return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-xl font-semibold text-slate-800 mb-2">{title}</h2>
-      <p className="text-slate-500">
-        Placeholder area. Business modules will be implemented in later stages.
-      </p>
-    </div>
-  );
-}
-
-function AdminPlaceholder() {
-  return <PlaceholderPage title="Admin Area" />;
-}
-
-function DataEntryPlaceholder() {
-  return <PlaceholderPage title="Data Entry Area" />;
-}
-
-function ReportingPlaceholder() {
-  return <PlaceholderPage title="Reporting Area" />;
-}
-
-function ManagerPlaceholder() {
-  return <PlaceholderPage title="Manager Area" />;
-}
-
 function UnauthorizedPage() {
   return (
     <div className="p-6 text-center">
@@ -51,11 +24,4 @@ function UnauthorizedPage() {
   );
 }
 
-export {
-  AppHome,
-  AdminPlaceholder,
-  DataEntryPlaceholder,
-  ReportingPlaceholder,
-  ManagerPlaceholder,
-  UnauthorizedPage,
-};
+export { AppHome, UnauthorizedPage };

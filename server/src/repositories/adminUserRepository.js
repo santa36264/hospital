@@ -57,8 +57,11 @@ async function create({ name, email, passwordHash, roleId }) {
   return findById(id);
 }
 
-async function update(id, patch) {
-  await db('users').where({ id }).update(patch);
+async function update(id, patch, executor = null) {
+  if (!patch || Object.keys(patch).length === 0) {
+    return findById(id);
+  }
+  await (executor || db)('users').where({ id }).update(patch);
   return findById(id);
 }
 

@@ -20,8 +20,8 @@ async function findById(id) {
   return db('refresh_sessions').where({ id }).first();
 }
 
-async function revoke(id) {
-  return db('refresh_sessions')
+async function revoke(id, executor = null) {
+  return (executor || db)('refresh_sessions')
     .where({ id, revoked_at: null })
     .update({ revoked_at: new Date() });
 }
@@ -38,8 +38,8 @@ async function updateTokenHash(id, tokenHash) {
     .update({ token_hash: tokenHash });
 }
 
-async function revokeAllByUser(userId) {
-  return db('refresh_sessions')
+async function revokeAllByUser(userId, executor = null) {
+  return (executor || db)('refresh_sessions')
     .where({ user_id: userId, revoked_at: null })
     .update({ revoked_at: new Date() });
 }

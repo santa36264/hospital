@@ -1,0 +1,874 @@
+============================================================
+STAGE 13 — COMPLETE TESTING & UI/UX REFINEMENT
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+============================================================
+1. STAGE OBJECTIVE
+============================================================
+
+Perform a complete end-to-end testing, quality assurance, and
+UI/UX refinement pass across the entire application.
+
+The goal is to ensure that the system behaves as one coherent,
+professional hospital health-data management application.
+
+Stage 13 must improve both:
+
+1. Functional correctness
+2. User experience and visual consistency
+
+UI/UX is a first-class requirement in this stage and must not be
+treated as optional or deferred to Stage 14.
+
+Do not redesign the product scope.
+
+Do not add unrelated features.
+
+Do not implement deployment or production infrastructure.
+
+============================================================
+2. EXISTING PRODUCT SCOPE
+============================================================
+
+The system is a SINGLE-HOSPITAL health data management,
+reporting, and analysis system.
+
+Core workflow:
+
+Hospital
+→ Datasets
+→ Indicators
+→ Reporting Periods
+→ Data Entry
+→ Submission
+→ Review
+→ Approval/Return
+→ Reports
+→ Analysis
+→ Management
+
+Roles:
+
+ADMIN
+DATA_ENTRY
+REPORTING
+MANAGER
+
+Existing workflow statuses:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+RETURNED
+APPROVED
+
+Existing major areas:
+
+ADMIN
+- Dashboard
+- Users
+- Datasets
+- Indicators
+- Reporting Periods
+- Audit Logs
+- System Overview
+
+DATA_ENTRY
+- My Submissions
+- Create Submission
+- Edit Draft
+- Submit
+- Returned Submission Correction
+- Submission History
+- Notifications
+
+REPORTING
+- Review Queue
+- Review Detail
+- Notifications
+- Dataset Reports
+- Monthly Reports
+- Indicator Reports
+- Submission Status
+- Report History
+- Custom Reports
+- Dashboard
+- Indicator Analysis
+
+MANAGER
+- Dashboard
+- Indicator Analysis
+- Approved-data analytics
+
+============================================================
+3. FIRST STEP — INSPECT THE EXISTING SYSTEM
+============================================================
+
+Before changing code:
+
+1. Inspect Stage 01–12 documentation.
+2. Inspect the current server structure.
+3. Inspect the current client structure.
+4. Inspect shared UI components.
+5. Inspect AppShell/sidebar/header/navigation.
+6. Inspect authentication and protected routes.
+7. Inspect all API routes.
+8. Inspect current test scripts.
+9. Inspect package.json files.
+10. Run the existing application.
+11. Run existing tests.
+12. Run client build.
+13. Check browser console/runtime errors.
+
+Do not assume the existing implementation is correct.
+
+Test the actual implementation.
+
+============================================================
+4. END-TO-END WORKFLOW TESTING
+============================================================
+
+Test the complete real workflow.
+
+FLOW A — ADMIN CONFIGURATION
+
+Admin:
+
+1. Login.
+2. Open Admin Dashboard.
+3. Create/inspect dataset.
+4. Create/inspect indicators.
+5. Create/inspect reporting period.
+6. Activate/deactivate configuration where applicable.
+7. Verify validation messages.
+8. Verify duplicate protection.
+9. Verify navigation.
+
+Expected:
+
+Configuration changes must behave correctly and must not
+break historical records.
+
+------------------------------------------------------------
+
+FLOW B — DATA ENTRY
+
+Data Entry user:
+
+1. Login.
+2. View dashboard/application shell.
+3. View available active datasets.
+4. Select an OPEN reporting period.
+5. Create submission.
+6. Enter indicator values.
+7. Save draft.
+8. Leave page.
+9. Return to submission.
+10. Confirm saved values remain.
+11. Submit.
+12. Confirm status changes to SUBMITTED.
+13. Confirm submission is no longer editable.
+14. Confirm notification/workflow behavior.
+
+------------------------------------------------------------
+
+FLOW C — REPORTING REVIEW
+
+Reporting user:
+
+1. Login.
+2. Open Review Queue.
+3. Find submitted record.
+4. Open review detail.
+5. Start review.
+6. Inspect submitted values.
+7. Approve a valid submission.
+
+Verify:
+
+SUBMITTED
+→ UNDER_REVIEW
+→ APPROVED
+
+Confirm:
+
+- history
+- audit
+- notifications
+- timestamps
+- UI status indicators
+
+------------------------------------------------------------
+
+FLOW D — RETURNED SUBMISSION
+
+Create another submission.
+
+Reporting:
+
+1. Start review.
+2. Return submission.
+3. Provide mandatory reason.
+
+Data Entry:
+
+1. Receive notification.
+2. Open returned submission.
+3. See return reason.
+4. Correct data.
+5. Save.
+6. Resubmit.
+
+Verify:
+
+RETURNED
+→ SUBMITTED
+
+The original submission remains the same record.
+
+No duplicate submission is created.
+
+------------------------------------------------------------
+
+FLOW E — APPROVED DATA
+
+After approval:
+
+1. Open reports.
+2. Open dataset report.
+3. Open monthly report.
+4. Open indicator report.
+5. Open submission status report.
+6. Open custom report.
+7. Open manager dashboard.
+8. Open indicator analysis.
+
+Verify only APPROVED data is used where required.
+
+Missing values must remain missing/null.
+
+Do not silently convert missing values to zero.
+
+============================================================
+5. ROLE REGRESSION TESTING
+============================================================
+
+Verify each role independently.
+
+ADMIN:
+
+- Admin pages allowed
+- Configuration allowed
+- User management allowed
+- Audit logs allowed
+- System overview allowed
+- Unauthorized workflow actions blocked
+
+DATA_ENTRY:
+
+- Data entry pages allowed
+- Own submissions accessible
+- Other users' submissions blocked
+- Admin pages blocked
+- Reporting review blocked
+- Management analytics blocked where required
+
+REPORTING:
+
+- Review workflow allowed
+- Reports allowed
+- Analytics allowed where already implemented
+- Admin management blocked
+- User management blocked
+
+MANAGER:
+
+- Management dashboard allowed
+- Approved analytics allowed
+- Admin pages blocked
+- Data-entry editing blocked
+- Review workflow blocked
+
+Verify both:
+
+1. Frontend route protection
+2. Backend authorization
+
+Frontend hiding alone is NOT sufficient.
+
+============================================================
+6. AUTHENTICATION & SESSION REGRESSION
+============================================================
+
+Test:
+
+- valid login
+- invalid login
+- missing credentials
+- logout
+- refresh
+- revoked refresh token
+- inactive timeout
+- protected route without authentication
+- expired/invalid access token
+- role-based access
+
+Verify:
+
+- no protected page remains visible after logout
+- authentication state is restored correctly
+- refresh does not create duplicate sessions unexpectedly
+- errors are user-friendly
+- sensitive token/password information is never displayed
+
+============================================================
+7. DATA VALIDATION TESTING
+============================================================
+
+Test every indicator type:
+
+INTEGER
+NUMERIC
+DECIMAL
+TEXT
+DATE
+BOOLEAN
+PERCENTAGE
+
+Test:
+
+- required values
+- missing values
+- invalid types
+- min values
+- max values
+- precision
+- percentage range
+- blank strings
+- whitespace
+- invalid dates
+- excessively long text where applicable
+
+Verify both frontend and backend validation.
+
+Backend validation remains authoritative.
+
+============================================================
+8. REPORTING TESTING
+============================================================
+
+Test:
+
+Dataset Report
+Monthly Report
+Indicator Report
+Submission Status
+Report History
+Custom Report
+
+Verify:
+
+- filters
+- dataset selection
+- indicator selection
+- period selection
+- empty states
+- approved-data rules
+- invalid selections
+- pagination where applicable
+- loading states
+- error states
+- table formatting
+- date formatting
+- numeric formatting
+
+============================================================
+9. CUSTOM REPORT TESTING
+============================================================
+
+Test:
+
+1. Select dataset.
+2. Select one indicator.
+3. Select multiple indicators.
+4. Select one period.
+5. Select multiple periods.
+6. Preview.
+7. Change selections.
+8. Preview again.
+9. Print.
+10. Export PDF.
+11. Export Excel.
+
+Verify:
+
+- chronological periods
+- indicator-by-period matrix
+- missing values
+- correct values
+- no stale preview
+- export matches preview
+- invalid requests are rejected
+- excessive selections are handled safely
+
+============================================================
+10. UI/UX REFINEMENT
+============================================================
+
+Treat the application as one complete product.
+
+Inspect every major page for:
+
+- consistent spacing
+- typography
+- buttons
+- forms
+- tables
+- cards
+- dialogs
+- badges
+- alerts
+- navigation
+- page headers
+- breadcrumbs where appropriate
+- loading states
+- empty states
+- error states
+- success feedback
+- confirmation dialogs
+
+Use the existing shared design system/components where possible.
+
+Avoid unnecessary one-off components when a shared component
+already exists.
+
+============================================================
+11. APP SHELL REFINEMENT
+============================================================
+
+Improve the shared:
+
+- sidebar
+- header
+- user area
+- role display
+- notification bell
+- navigation
+- active navigation state
+- mobile navigation
+- page content container
+
+Ensure all roles feel like they are using the SAME application.
+
+The UI may differ by role/function, but visual language should
+remain consistent.
+
+Do not create separate unrelated visual systems.
+
+============================================================
+12. RESPONSIVE DESIGN
+============================================================
+
+Test the application at:
+
+- desktop
+- laptop
+- tablet
+- mobile width
+
+Pay special attention to:
+
+- sidebar
+- tables
+- forms
+- dialogs
+- filters
+- report tables
+- dashboard cards
+- charts
+- navigation
+- action buttons
+
+Prevent:
+
+- horizontal page overflow
+- clipped content
+- unreadable tables
+- inaccessible dialogs
+- overlapping buttons
+- broken layouts
+
+Horizontal scrolling inside large data tables is acceptable where
+appropriate.
+
+============================================================
+13. ACCESSIBILITY BASICS
+============================================================
+
+Check:
+
+- keyboard navigation
+- visible focus states
+- form labels
+- button labels
+- accessible dialog behavior
+- meaningful error messages
+- sufficient text readability
+- semantic headings
+- disabled states
+- loading indicators
+
+Do not claim full WCAG compliance unless actually verified.
+
+============================================================
+14. ERROR & EMPTY STATES
+============================================================
+
+Every important data page should handle:
+
+LOADING
+EMPTY
+ERROR
+SUCCESS
+
+Examples:
+
+- no submissions
+- no reports
+- no approved data
+- no notifications
+- no users
+- no audit records
+- no search results
+- API failure
+- expired session
+
+Messages must explain what happened in clear user language.
+
+Avoid exposing raw SQL, stack traces, or internal errors.
+
+============================================================
+15. FORM UX
+============================================================
+
+Review all major forms.
+
+Verify:
+
+- labels
+- placeholders
+- required indicators
+- validation messages
+- disabled submit states
+- loading states
+- successful save feedback
+- failed save feedback
+- confirmation for destructive actions
+- unsaved-change handling where practical
+
+Do not introduce unnecessary confirmation dialogs.
+
+============================================================
+16. TABLE UX
+============================================================
+
+Review all important tables.
+
+Verify:
+
+- column readability
+- responsive behavior
+- status badges
+- dates
+- numeric values
+- empty states
+- search
+- filters
+- pagination
+- action buttons
+- consistent row spacing
+
+Avoid excessive visual density.
+
+============================================================
+17. DASHBOARD & ANALYTICS UX
+============================================================
+
+Review:
+
+Admin Dashboard
+Manager Dashboard
+Reporting Dashboard
+Indicator Analysis
+
+Verify:
+
+- cards display correct data
+- loading states
+- empty states
+- charts resize correctly
+- chart labels remain readable
+- tables match chart data
+- no misleading zero values
+- approved-data rules are respected
+
+Do not introduce new analytics metrics unless required to fix
+an existing implementation problem.
+
+============================================================
+18. NOTIFICATION UX
+============================================================
+
+Verify:
+
+- unread state
+- read state
+- notification bell
+- notification list
+- timestamps
+- message readability
+- user ownership
+- navigation from notification to relevant page where already
+  supported
+
+Do not expose another user's notifications.
+
+============================================================
+19. SECURITY UI REVIEW
+============================================================
+
+Verify that the frontend never displays:
+
+- password hashes
+- JWT tokens
+- refresh tokens
+- database credentials
+- secret keys
+- internal stack traces
+- SQL statements
+
+Review error handling for all major API calls.
+
+============================================================
+20. BROWSER & CONSOLE CHECK
+============================================================
+
+Run the application in a real browser.
+
+Check:
+
+- console errors
+- unhandled promise errors
+- failed API requests
+- broken images/assets
+- React warnings
+- incorrect redirects
+- stale state
+- duplicate requests where obvious
+- broken navigation
+
+Fix actual issues discovered.
+
+Do not ignore errors merely because the build succeeds.
+
+============================================================
+21. PERFORMANCE REVIEW
+============================================================
+
+Perform a practical performance review.
+
+Check:
+
+- unnecessary repeated API calls
+- obvious N+1 frontend requests
+- unnecessary full-page reloads
+- excessive rendering
+- oversized UI assets
+- large report rendering behavior
+- dashboard/chart behavior
+
+Do not perform premature architectural rewrites.
+
+Only make changes supported by observed issues.
+
+============================================================
+22. AUTOMATED TESTING
+============================================================
+
+Review existing automated tests.
+
+Add practical tests where valuable, especially for:
+
+- critical UI interactions
+- authentication behavior
+- protected routes
+- submission workflow
+- review workflow
+- form validation
+- shared components
+
+Do not replace the existing server/API regression suite.
+
+Keep Stage 12 security tests working.
+
+============================================================
+23. REGRESSION TESTING
+============================================================
+
+After all changes run:
+
+- Stage 04 tests
+- Stage 05 tests
+- Stage 06 tests
+- Stage 07 tests
+- Stage 08 tests
+- Stage 09 tests
+- Stage 10 tests
+- Stage 11 tests
+- Stage 12 tests
+- Stage 13 tests
+
+If previous test scripts are unavailable or not runnable,
+document the exact reason.
+
+Do not delete previous tests simply to make the suite pass.
+
+============================================================
+24. BUILD & SERVER VERIFICATION
+============================================================
+
+Run:
+
+client:
+npm run build
+
+server:
+verify application startup
+verify migrations
+verify health endpoint
+verify route registration
+
+Fix all real errors.
+
+Known non-blocking warnings may remain only if documented.
+
+============================================================
+25. CODE QUALITY
+============================================================
+
+Clean up:
+
+- obvious duplicated UI logic
+- unused imports
+- dead code introduced during Stage 13
+- inconsistent component usage
+- inconsistent naming
+- obvious console debugging
+- temporary test code accidentally left in production paths
+
+Do not perform a full rewrite.
+
+Preserve the existing architecture:
+
+Route
+→ Middleware
+→ Controller
+→ Service
+→ Repository
+→ MySQL
+
+============================================================
+26. DATABASE SAFETY
+============================================================
+
+Do not make destructive schema changes.
+
+Do not delete historical data.
+
+Do not change workflow semantics without documenting why.
+
+If a migration is genuinely required:
+
+- make it additive/safe
+- preserve existing data
+- test migration
+- document it
+
+============================================================
+27. STAGE BOUNDARY
+============================================================
+
+DO NOT IMPLEMENT STAGE 14.
+
+Do not implement:
+
+- production deployment
+- hosting configuration
+- production server provisioning
+- production domain setup
+- production SSL setup
+- CI/CD deployment
+- production backup infrastructure
+
+Those belong to Stage 14.
+
+============================================================
+28. FINAL REVIEW OUTPUT
+============================================================
+
+Create:
+
+test_stage13.ps1
+
+Create:
+
+docs/stage 13 review.txt
+
+The final review must contain:
+
+1. Tests performed
+2. Bugs discovered
+3. Bugs fixed
+4. UI/UX improvements
+5. Responsive improvements
+6. Accessibility improvements
+7. Security regression results
+8. Workflow regression results
+9. Files created
+10. Files modified
+11. Database changes
+12. Automated test results
+13. Build result
+14. Browser/console result
+15. Performance observations
+16. Remaining known issues
+17. Confirmation that Stage 14 was NOT implemented
+
+============================================================
+29. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+Stage 13 is complete only when:
+
+- Core workflows pass end-to-end.
+- RBAC regression passes.
+- Security regression passes.
+- Stage 12 tests still pass.
+- Reports work correctly.
+- Custom reports work correctly.
+- PDF/Excel/Print are verified.
+- Major UI pages are visually consistent.
+- Responsive layouts are usable.
+- Loading/empty/error states are handled.
+- Browser console has no unresolved critical errors.
+- Client build succeeds.
+- Server starts successfully.
+- No destructive database changes were introduced.
+- No Stage 14 deployment features were implemented.
+
+============================================================
+END OF STAGE 13
+============================================================

@@ -3,11 +3,7 @@ import { AuthProvider } from '../context/AuthContext';
 import RequireAuth, { RequireRole } from './RequireAuth';
 import LoginPage from '../pages/LoginPage';
 import AppShell from '../layouts/AppShell';
-import {
-  AppHome,
-  ManagerPlaceholder,
-  UnauthorizedPage,
-} from '../pages/placeholderPages';
+import { AppHome, UnauthorizedPage } from '../pages/placeholderPages';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import AuditLogsPage from '../pages/admin/AuditLogsPage';

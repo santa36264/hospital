@@ -1,4 +1,6 @@
 $BASE = "http://localhost:5000/api/v1"
+$stamp = Get-Date -Format 'yyyyMMddHHmmss'
+$testEmail = 'testuser' + $stamp + '@dev.local'
 $pass = 0; $fail = 0
 
 function Check($label, [scriptblock]$expr) {
@@ -52,19 +54,19 @@ Check "Search works"              { (ApiGet "$BASE/admin/users?search=admin@dev.
 Check "Role filter works"         { (ApiGet "$BASE/admin/users?role=MANAGER" $adminSess).data[0].role -eq 'MANAGER' }
 Check "Status filter works"       { (ApiGet "$BASE/admin/users?status=ACTIVE" $adminSess).data.Count -ge 1 }
 
-$createBody = @{ name='Test User'; email='testuser@dev.local'; role='MANAGER'; password='TestPassword123!' }
+$createBody = @{ name='Test User'; email="$testEmail"; role='MANAGER'; password='TestPassword123!' }
 Check "Create user" {
   $r = ApiPost "$BASE/admin/users" $createBody $adminSess
-  $r.success -eq $true -and $r.data.email -eq 'testuser@dev.local'
+  $r.success -eq $true -and $r.data.email -eq "$testEmail"
 }
 Check "Duplicate email -> 409" {
   try { ApiPost "$BASE/admin/users" $createBody $adminSess; $false }
   catch { $_.Exception.Response.StatusCode.Value__ -eq 409 }
 }
-$testUser = (ApiGet "$BASE/admin/users?search=testuser@dev.local" $adminSess).data[0]
+$testUser = (ApiGet "$BASE/admin/users?search=$testEmail" $adminSess).data[0]
 Check "Get user / no password hash" {
   $u = ApiGet "$BASE/admin/users/$($testUser.id)" $adminSess
-  ($u.data.email -eq 'testuser@dev.local') -and ($u.data.PSObject.Properties.Name -notcontains 'password_hash')
+  ($u.data.email -eq "$testEmail") -and ($u.data.PSObject.Properties.Name -notcontains 'password_hash')
 }
 Check "Update user" {
   (ApiPatch "$BASE/admin/users/$($testUser.id)" @{ name='Test User 2' } $adminSess).data.name -eq 'Test User 2'
@@ -94,11 +96,11 @@ Check "Admin changes user password" {
   (ApiPost "$BASE/admin/users/$($testUser.id)/password" @{ password='NewSecret123!' } $adminSess).success -eq $true
 }
 Check "New login works with new password" {
-  $s = Login 'testuser@dev.local' 'NewSecret123!'
+  $s = Login "$testEmail" 'NewSecret123!'
   $s -ne $null
 }
 Check "Old password no longer works" {
-  $s = Login 'testuser@dev.local' 'TestPassword123!'
+  $s = Login "$testEmail" 'TestPassword123!'
   $s -eq $null
 }
 Check "Password change audit event exists" {
@@ -149,3 +151,8 @@ Check "analytics indicator-comparison" {
 Write-Host "`n================================"
 Write-Host "RESULT: $pass passed, $fail failed"
 exit $fail
+
+
+
+
+

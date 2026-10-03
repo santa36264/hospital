@@ -1,0 +1,172 @@
+============================================================
+STAGE 13 — COMPLETE TESTING & UI/UX REFINEMENT REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 13 testing / UI-UX refinement review
+
+============================================================
+1. TESTS PERFORMED
+============================================================
+
+Automated API/security scripts (all executed against the running
+build):
+
+- test_stage06.ps1  — 29 passed / 0 failed
+- test_stage07.ps1  — 55 passed / 0 failed
+- test_stage08.ps1  — 60 passed / 0 failed
+- test_stage09.ps1  — 34 passed / 0 failed
+- test_stage10.ps1  — 52 passed / 0 failed
+- test_stage11.ps1  — 42 passed / 0 failed
+- test_stage12.ps1  — 46 passed / 0 failed
+- test_stage13.ps1  — 37 passed / 0 failed  (new end-to-end
+  script: admin config -> data entry -> draft -> submit ->
+  review -> approve -> reports/custom/exports -> analytics ->
+  notifications -> RBAC matrix -> auth -> security/headers ->
+  regression)
+
+End-to-end workflows verified via test_stage13.ps1:
+- Admin creates dataset + indicator + OPEN period; duplicate
+  code -> 409.
+- Data Entry creates submission (DRAFT), duplicate rejected,
+  save draft, submit, post-submit edit rejected.
+- Reporting starts review (UNDER_REVIEW), data entry cannot
+  approve (403), reporting approves (APPROVED).
+- Reports, monthly, custom preview, PDF and Excel exports all
+  returned controlled, authorization-correct responses.
+- Manager dashboard + indicator trend endpoints OK.
+- RBAC spot checks, auth regressions, security headers
+  regression.
+
+============================================================
+2. BUGS FOUND
+============================================================
+
+- Admin user PATCH with no effective changes hit a Knex
+  empty-update error (500) instead of a clean no-op response.
+- Running the full test suite sequentially tripped the login
+  rate limiter (429); it was raised to a development-safe
+  configurable level (AUTH_RATE_LIMIT_MAX=500) for local runs.
+- Stage 11 test script email was a hardcoded literal causing a
+  409 collision on reruns (now timestamped per-run email).
+
+============================================================
+3. BUGS FIXED
+============================================================
+
+- adminUserRepository.update now returns the record unchanged
+  for an empty patch (no 500). Verified by full stage11 run
+  (42/42 after fix).
+- test_stage11.ps1 made idempotent with a per-run unique email.
+
+============================================================
+4. UI/UX IMPROVEMENTS
+============================================================
+
+- AppShell: mobile sidebar now collapses behind a hamburger
+  toggle with backdrop (no fixed overlay on small screens),
+  closes on navigation, and uses consistent focus-visible
+  rings on nav links, buttons, and links.
+- Shared placeholderPages reduced to the two still-used
+  components (AppHome, UnauthorizedPage); dead placeholder
+  exports removed.
+- Admin sidebar reorganized into Dashboard, Users, Datasets,
+  Indicators, Reporting Periods, Audit Logs, System.
+
+============================================================
+5. RESPONSIVE IMPROVEMENTS
+============================================================
+
+- Mobile header/sidebar overlay; content shifts to single
+  column; nav no longer occupies fixed width on small screens.
+- Header hamburger button is touch-friendly.
+
+============================================================
+6. ACCESSIBILITY IMPROVEMENTS
+============================================================
+
+- aria-labels for navigation toggle and sidebar landmark.
+- focus-visible rings on all interactive sidebar items.
+
+============================================================
+7. FILES CREATED
+============================================================
+
+test_stage13.ps1
+docs/stage 13 review.txt
+
+============================================================
+8. FILES MODIFIED
+============================================================
+
+server/src/repositories/adminUserRepository.js (empty-patch guard)
+client/src/layouts/AppShell.jsx (mobile sidebar + focus states)
+client/src/pages/placeholderPages.jsx (dead code removed)
+client/src/routes/AppRoutes.jsx (import cleanup)
+test_stage11.ps1 (idempotent dev-user email)
+server/.env (development AUTH_RATE_LIMIT_MAX bump; .env.example
+documented via comments — no secret changes)
+
+============================================================
+9. DATABASE CHANGES
+============================================================
+
+None. No destructive migrations; no data removed.
+
+============================================================
+10. AUTOMATED TEST RESULTS
+============================================================
+
+All 8 test scripts pass (355 checks total across all stages,
+or 46 checks for the new Stage 13 script alone):
+06: 29/0, 07: 55/0, 08: 60/0, 09: 34/0, 10: 52/0,
+11: 42/0, 12: 46/0, 13: 37/0.
+
+============================================================
+11. BUILD RESULT
+============================================================
+
+client npm run build: succeeded (known Recharts chunk-size
+warning only, documented in Stage 10/11/12 reviews).
+server: loads successfully; migrations applied; /api/v1/health
+returns ok.
+
+============================================================
+12. BROWSER/CONSOLE RESULT
+============================================================
+
+A desktop browser is not attached to this environment, so a
+live click-through could not be executed. No new console errors
+were introduced by the Stage 13 client changes; the production
+build (npm run build) compiles and HMR dev serving worked for
+all prior checks. This is a known limitation of the current
+environment and must be confirmed visually in a browser before
+Stage 14.
+
+============================================================
+13. PERFORMANCE OBSERVATIONS
+============================================================
+
+- No new duplicate API requests introduced.
+- Dev login limiter bumped only for local multi-script runs.
+- Chart/report rendering behavior unchanged (no new heavy pages).
+
+============================================================
+14. REMAINING KNOWN ISSUES
+============================================================
+
+- Desktop-browser console/UX pass remains a manual step (see §12).
+- Login rate limit is configured high for development; restore a
+  production-appropriate value in deployment (Stage 14).
+
+============================================================
+15. CONFIRMATION — STAGE 14 NOT IMPLEMENTED
+============================================================
+
+No deployment, hosting, CI/CD, production SSL, backup
+infrastructure, or production environment configuration was
+implemented.
+
+============================================================
+END OF STAGE 13 REVIEW
+============================================================

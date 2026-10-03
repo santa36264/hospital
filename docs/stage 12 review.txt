@@ -1,0 +1,135 @@
+============================================================
+STAGE 12 — VALIDATION, SECURITY & BUSINESS RULES REVIEW
+============================================================
+
+PROJECT: Hospital Health Data Management, Reporting and Analysis System
+REVIEW TYPE: Stage 12 security/validation/business-rule hardening
+
+============================================================
+1. SECURITY/BUSINESS-RULE ISSUES DISCOVERED
+============================================================
+
+- Pagination inputs were not validated/clamped (invalid or
+  oversized page/pageSize could produce SQL errors or excessive
+  reads) on /admin/users and /admin/audit-logs.
+- Admin user deactivate + refresh-session revocation + audit were
+  NOT wrapped in a transaction; a failure could leave sessions
+  active after deactivation/password change.
+- No HTTP security headers set (X-Content-Type-Options,
+  X-Frame-Options, Referrer-Policy, Cache-Control, etc.).
+- Password length rule was inline; centralized for consistency.
+- Audit-log export of hashes/tokens: verified none exposed.
+- Object-level checks (submission ownership, notification
+  ownership) were verified as present and re-tested.
+
+============================================================
+2. FILES CREATED
+============================================================
+
+server/src/utils/pagination.js
+server/src/utils/passwordPolicy.js
+server/src/middleware/securityHeaders.js
+test_stage12.ps1
+docs/stage 12 review.txt
+
+============================================================
+3. FILES MODIFIED
+============================================================
+
+server/src/controllers/adminUserController.js (pagination guard)
+server/src/controllers/adminAuditController.js (pagination guard)
+server/src/app.js (securityHeaders middleware)
+server/src/services/adminUserService.js (transactions +
+  centralized password policy)
+server/src/repositories/adminUserRepository.js (update executor)
+server/src/repositories/sessionRepository.js (revoke executors)
+server/src/repositories/auditLogRepository.js (log executor)
+
+============================================================
+4. DATABASE MIGRATIONS
+============================================================
+
+None. Existing constraints preserved (unique email, dataset code,
+indicator-per-dataset, submission per dataset+period, FK
+integrity, status enums). No destructive migration.
+
+============================================================
+5. SECURITY/VALIDATION IMPROVEMENTS
+============================================================
+
+- normalizePagination clamps page>=1 and pageSize to 1..100 on
+  /admin/users and /admin/audit-logs; invalid values safely
+  normalized (no NaN SQL).
+- Centralized password policy (min 12, non-blank) shared by admin
+  user flows.
+- Admin password change and deactivation now run inside
+  db.transaction covering user update (where applicable),
+  refresh-session revocation, and the audit record atomically.
+- securityHeaders middleware applies X-Content-Type-Options,
+  X-Frame-Options, Referrer-Policy, X-XSS-Protection,
+  Cross-Origin-Resource-Policy, and Cache-Control: no-store to
+  every response.
+- Verified no SQL error leakage in 500 responses (message masked
+  in production; errors are consistent JSON).
+
+============================================================
+6. TESTS PERFORMED (test_stage12.ps1)
+============================================================
+
+46 checks, 0 failed:
+
+- Authentication: anonymous 401, invalid login 401, valid login,
+  refresh, logout, revoked refresh rejected.
+- RBAC: DATA_ENTRY blocked from /analytics/dashboard, /admin/*;
+  REPORTING & MANAGER blocked from /admin/*; MANAGER & DATA_ENTRY
+  blocked from /review/queue.
+- Object security: cross-user submission read/modify blocked;
+  cross-user notification modify blocked.
+- Submission rules: duplicate dataset+period rejected (422/400/409);
+  non-data-entry cannot create.
+- Admin/audit: last-admin deactivate 409; audit-logs reject PATCH/
+  DELETE (404); no password-hash content in audit payloads.
+- Reports/analytics: DATA_ENTRY analytics 403; dataset report
+  works for REPORTING; invalid dataset/indicator -> controlled
+  error (no 500).
+- Input validation: page/pageSize normalization, oversized
+  pageSize clamp, invalid date filters safe, unknown user 404,
+  SQL-injection string treated as literal search.
+- Security headers present on responses.
+- Regression: /health, /auth/me, datasets, indicators, periods,
+  my submissions, review queue, admin users/audit-logs/system,
+  analytics dashboard all pass.
+
+============================================================
+7. BUILD RESULT
+============================================================
+
+client npm run build: succeeded (only the known Recharts
+chunk-size warning).
+server: app loads cleanly (node require app OK); all routes
+register; health endpoint OK.
+
+============================================================
+8. REMAINING KNOWN ISSUES
+============================================================
+
+- Pagination guard applied to admin endpoints; other list
+  endpoints are non-paginated by design (Stage 06–10 lists are
+  bounded by workflow data volumes).
+- Audit-log detail dialog (frontend) is debug-oriented; a later
+  stage may fold filtering into fewer requests.
+- Inactivity timeout and rotation are verified via API-level tests;
+  automated React idle-timer testing is Stage 13 scope.
+
+============================================================
+9. CONFIRMATION — STAGE 13/14 NOT IMPLEMENTED
+============================================================
+
+No Stage 13 (complete testing/UX refinement) and no Stage 14
+(deployment/documentation) features were implemented. No new
+major features were added; the Stage 12 pass strengthened
+validation, security, and business-rule enforcement only.
+
+============================================================
+END OF STAGE 12 REVIEW
+============================================================

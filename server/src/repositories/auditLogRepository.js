@@ -1,8 +1,9 @@
 const { db } = require('../config/database');
 
-async function log({ userId = null, action, resourceType, resourceId = null, oldValues = null, newValues = null, metadata = null }) {
+async function log({ userId = null, action, resourceType, resourceId = null, oldValues = null, newValues = null, metadata = null }, executor = null) {
+  const client = executor || db;
   try {
-    await db('audit_logs').insert({
+    await client('audit_logs').insert({
       user_id: userId,
       action,
       resource_type: resourceType,

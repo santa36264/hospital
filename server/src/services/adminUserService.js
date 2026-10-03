@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const ApiError = require('../errors/ApiError');
+const { db } = require('../config/database');
 const adminUserRepository = require('../repositories/adminUserRepository');
 const sessionRepository = require('../repositories/sessionRepository');
 const auditLogRepository = require('../repositories/auditLogRepository');
@@ -27,10 +28,10 @@ function validateEmail(email) {
 }
 
 function assertValidPassword(password) {
-  if (!password || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-    throw new ApiError(422, 'Validation failed.', {
-      password: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
-    });
+  const { passwordError } = require('../utils/passwordPolicy');
+  const err = passwordError(password);
+  if (err) {
+    throw new ApiError(422, 'Validation failed.', { password: err });
   }
 }
 
@@ -116,16 +117,28 @@ async function updateUser(id, { name, email, role, status }, actor) {
     });
   }
   if (patch.status !== undefined) {
-    await auditLogRepository.log({
-      userId: actor.id,
-      action: status === 'ACTIVE' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
-      resourceType: 'user',
-      resourceId: id,
-      oldValues: { status: user.status },
-      newValues: { status },
-    });
     if (status === 'INACTIVE') {
-      await sessionRepository.revokeAllByUser(id);
+      // Deactivation + session revocation + audit must be atomic.
+      await db.transaction(async (trx) => {
+        await auditLogRepository.log({
+          userId: actor.id,
+          action: 'USER_DEACTIVATED',
+          resourceType: 'user',
+          resourceId: id,
+          oldValues: { status: user.status },
+          newValues: { status },
+        }, trx);
+        await sessionRepository.revokeAllByUser(id, trx);
+      });
+    } else {
+      await auditLogRepository.log({
+        userId: actor.id,
+        action: 'USER_ACTIVATED',
+        resourceType: 'user',
+        resourceId: id,
+        oldValues: { status: user.status },
+        newValues: { status },
+      });
     }
   }
   if (patch.name !== undefined || patch.email !== undefined) {
@@ -151,15 +164,16 @@ async function changePassword(id, newPassword, actor) {
   assertValidPassword(newPassword);
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  await adminUserRepository.update(id, { password_hash: passwordHash });
-  await sessionRepository.revokeAllByUser(id);
-
-  await auditLogRepository.log({
-    userId: actor.id,
-    action: 'USER_PASSWORD_CHANGED',
-    resourceType: 'user',
-    resourceId: id,
-    metadata: { targetUserEmail: user.email },
+  await db.transaction(async (trx) => {
+    await adminUserRepository.update(id, { password_hash: passwordHash }, trx);
+    await sessionRepository.revokeAllByUser(id, trx);
+    await auditLogRepository.log({
+      userId: actor.id,
+      action: 'USER_PASSWORD_CHANGED',
+      resourceType: 'user',
+      resourceId: id,
+      metadata: { targetUserEmail: user.email },
+    }, trx);
   });
   return { id: user.id };
 }
