@@ -1,0 +1,1442 @@
+============================================================
+STAGE 14 — PROFESSIONAL UI/UX, FINAL AUDIT & DEPLOYMENT
+READINESS
+============================================================
+
+PROJECT:
+Hospital Health Data Management, Reporting and Analysis System
+
+STAGE:
+14 — Final Professionalization, Audit & Deployment Readiness
+
+============================================================
+1. STAGE OBJECTIVE
+============================================================
+
+This is the FINAL stage before delivering the system to a hospital.
+
+The system must not look like a university/demo CRUD project.
+
+It must look and behave like a professional hospital health-data
+management, reporting, and analysis application.
+
+The final result should communicate:
+
+- professionalism
+- trust
+- clarity
+- usability
+- consistency
+- reliability
+- appropriate healthcare/data-management aesthetics
+
+This stage has TWO major objectives:
+
+1. Professional UI/UX transformation and final product polish
+2. Final production/deployment readiness and audit
+
+Do not rewrite the backend architecture.
+
+Do not remove existing tested functionality.
+
+Preserve all existing business rules and security controls.
+
+============================================================
+2. IMPORTANT PRODUCT PRINCIPLE
+============================================================
+
+The system is intended to be given to a real hospital.
+
+Therefore:
+
+"Functional" is NOT sufficient.
+
+The application must also be:
+
+- visually professional
+- easy to understand
+- consistent
+- responsive
+- maintainable
+- suitable for daily staff use
+- suitable for management reporting
+- suitable for demonstrations and handover
+
+Do not optimize for flashy design.
+
+Optimize for:
+
+PROFESSIONAL + CLEAN + TRUSTWORTHY + PRACTICAL
+
+============================================================
+3. FIRST ACTION — COMPLETE SYSTEM INSPECTION
+============================================================
+
+Before modifying the UI:
+
+1. Inspect Stage 01–13 documentation.
+2. Inspect the complete current client.
+3. Inspect AppShell.
+4. Inspect all role-specific navigation.
+5. Inspect all dashboard pages.
+6. Inspect all forms.
+7. Inspect all tables.
+8. Inspect all report pages.
+9. Inspect custom reports.
+10. Inspect notification UI.
+11. Inspect dialogs/modals.
+12. Inspect shared components.
+13. Inspect icons currently used.
+14. Inspect chart usage.
+15. Inspect duplicate navigation items.
+16. Inspect placeholder/demo-looking UI.
+17. Run all existing tests.
+18. Run the application in a browser if available.
+
+Do not blindly replace existing components.
+
+Reuse good existing components where appropriate.
+
+============================================================
+4. GLOBAL UI/UX DESIGN DIRECTION
+============================================================
+
+The visual language should resemble a modern professional
+healthcare information system.
+
+Use:
+
+- clean layouts
+- restrained colors
+- professional typography
+- consistent spacing
+- subtle borders
+- subtle shadows where useful
+- clear information hierarchy
+- consistent component sizing
+- clear status colors
+- accessible contrast
+- professional icons
+- meaningful data visualization
+
+Avoid:
+
+- childish design
+- excessive gradients
+- excessive animations
+- excessive colors
+- giant decorative elements
+- unnecessary illustrations
+- visual clutter
+- random card layouts
+- inconsistent spacing
+- excessive rounded elements
+- excessive shadows
+- decorative charts without purpose
+
+The interface should feel calm and trustworthy.
+
+============================================================
+5. ICON POLICY
+============================================================
+
+DO NOT use emoji characters as functional application icons.
+
+Examples that should NOT be used as primary UI icons:
+
+📊
+📈
+👤
+👥
+🔔
+⚙️
+📁
+📝
+✅
+❌
+🏥
+
+Use a professional icon library instead.
+
+Prefer the existing icon library if one is already installed.
+
+If an icon library is not already available, use a consistent
+professional library such as Lucide React rather than creating
+random icon implementations.
+
+Rules:
+
+- consistent icon family
+- consistent stroke style
+- consistent sizing
+- meaningful semantic icons
+- icons must support text, not replace important labels
+- do not use icons merely for decoration
+
+Do not mix multiple unrelated icon styles.
+
+============================================================
+6. DESIGN SYSTEM
+============================================================
+
+Create or refine a consistent UI design system.
+
+Define reusable patterns for:
+
+- page headers
+- section headers
+- buttons
+- primary actions
+- secondary actions
+- destructive actions
+- inputs
+- selects
+- textareas
+- checkboxes
+- radio controls
+- status badges
+- cards
+- tables
+- tabs
+- dialogs
+- alerts
+- notifications
+- tooltips where useful
+- pagination
+- loading states
+- empty states
+- error states
+- success messages
+
+Do not duplicate styling unnecessarily across pages.
+
+Prefer shared components.
+
+============================================================
+7. COLOR SYSTEM
+============================================================
+
+Use a restrained professional healthcare-oriented color system.
+
+Primary color:
+
+Use a professional blue/indigo-oriented primary color unless
+the existing hospital branding requires another documented
+brand color.
+
+Supporting colors:
+
+- neutral gray
+- success green
+- warning amber
+- error red
+- informational blue
+
+Status meanings must remain consistent.
+
+Example:
+
+APPROVED
+→ success treatment
+
+RETURNED
+→ warning treatment
+
+SUBMITTED
+→ informational treatment
+
+UNDER_REVIEW
+→ active/in-progress treatment
+
+DRAFT
+→ neutral treatment
+
+Do not use color as the only method of communicating status.
+
+============================================================
+8. TYPOGRAPHY & SPACING
+============================================================
+
+Establish consistent:
+
+- heading hierarchy
+- body text size
+- label size
+- table text
+- helper text
+- error text
+- spacing between sections
+- spacing between form fields
+- card padding
+- page margins
+
+Avoid pages that feel either:
+
+- too empty
+- excessively dense
+
+The interface should prioritize readability.
+
+============================================================
+9. APP SHELL REDESIGN
+============================================================
+
+Refine the global:
+
+- sidebar
+- header
+- page container
+- user menu
+- role display
+- notification bell
+- mobile navigation
+- active navigation
+- logout control
+
+The AppShell must feel like one professional application.
+
+Desktop:
+
+- stable sidebar
+- clear active item
+- logical navigation groups
+- consistent branding
+
+Mobile:
+
+- hamburger menu
+- overlay
+- touch-friendly controls
+- navigation closes after selection
+- no fixed sidebar occupying content width
+
+============================================================
+10. NAVIGATION CLEANUP
+============================================================
+
+Remove all duplicate navigation entries.
+
+In particular, inspect and fix duplicate Dashboard links in
+the ADMIN navigation.
+
+There must be exactly one clear Dashboard destination per
+appropriate role.
+
+Recommended ADMIN structure:
+
+ADMIN
+-------------------------
+Dashboard
+
+Data Management
+  Datasets
+  Indicators
+  Reporting Periods
+
+User & Security
+  Users
+  Audit Logs
+  System
+
+Recommended DATA_ENTRY structure:
+
+DATA ENTRY
+-------------------------
+Dashboard
+My Submissions
+Notifications
+
+Recommended REPORTING structure:
+
+REPORTING
+-------------------------
+Dashboard
+Review Queue
+
+Reports
+  Dataset Reports
+  Monthly Reports
+  Indicator Reports
+  Submission Status
+  Custom Reports
+  Report History
+
+Analysis
+  Indicator Analysis
+
+Notifications
+
+Recommended MANAGER structure:
+
+MANAGER
+-------------------------
+Dashboard
+Indicator Analysis
+Notifications
+
+Use the actual existing routes.
+
+Do not create duplicate routes simply to match this structure.
+
+If a page already serves multiple purposes, preserve the existing
+route and improve navigation around it.
+
+============================================================
+11. ADMIN DASHBOARD
+============================================================
+
+Redesign the Admin Dashboard so that it feels like a real
+administration control center.
+
+It should communicate system state rather than simply display
+generic cards.
+
+Potential information:
+
+- total users
+- active users
+- active datasets
+- open reporting periods
+- pending submissions
+- submissions awaiting review
+- approved submissions
+- recent administrative activity
+
+Use charts only when they provide meaningful information.
+
+Possible visualizations:
+
+- submission status distribution
+- activity over time
+- users by role
+- dataset activity
+
+Do not add meaningless charts simply to make the dashboard
+look busy.
+
+============================================================
+12. DATA ENTRY DASHBOARD
+============================================================
+
+If the existing Data Entry experience lacks a useful dashboard,
+improve it without creating unnecessary complexity.
+
+Focus on:
+
+- current reporting periods
+- drafts
+- submitted records
+- returned records
+- recently updated submissions
+- important notifications
+
+Make the next action obvious.
+
+Example:
+
+"3 submissions need correction"
+
+should be visually more useful than a generic decorative card.
+
+============================================================
+13. DATA ENTRY FORM REDESIGN
+============================================================
+
+The data-entry experience is one of the most important screens.
+
+It should feel like a professional health-data collection form.
+
+Improve:
+
+- dataset title
+- reporting period information
+- submission status
+- indicator grouping
+- labels
+- descriptions
+- required indicators
+- validation messages
+- numeric input controls
+- save draft action
+- submit action
+- return reason
+
+Organize long datasets into meaningful visual sections.
+
+Avoid presenting a large collection of unrelated inputs as one
+boring continuous form.
+
+Use section headers and appropriate spacing.
+
+Do not change the underlying indicator/data model.
+
+============================================================
+14. SUBMISSION STATUS UX
+============================================================
+
+Make submission status immediately understandable.
+
+Use:
+
+- status badge
+- status timeline/history
+- current state
+- last updated time
+- relevant next action
+
+For example:
+
+DRAFT
+→ SUBMITTED
+→ UNDER REVIEW
+→ APPROVED
+
+or:
+
+DRAFT
+→ SUBMITTED
+→ RETURNED
+→ SUBMITTED
+→ APPROVED
+
+The UI must not introduce a fake RESUBMITTED status because
+the existing business model does not use one.
+
+============================================================
+15. REPORTING REVIEW CENTER
+============================================================
+
+Improve the Reporting Review Queue.
+
+Provide clear:
+
+- summary information
+- search
+- filters
+- submission status
+- dataset
+- reporting period
+- submission date
+- reviewer actions
+
+The reviewer should quickly understand what requires attention.
+
+Review detail should clearly separate:
+
+1. Submission information
+2. Submitted data
+3. History
+4. Review decision
+
+Approval and Return actions must remain clearly distinguished.
+
+Return must continue requiring a reason.
+
+============================================================
+16. NOTIFICATION EXPERIENCE
+============================================================
+
+Improve:
+
+- notification bell
+- unread count
+- notification list
+- notification cards/rows
+- timestamps
+- read/unread states
+- relevant navigation
+
+Do not over-design notifications.
+
+They should communicate useful workflow information quickly.
+
+Examples:
+
+- submission returned
+- submission approved
+- important workflow notification
+
+Never expose another user's notifications.
+
+============================================================
+17. REPORTING UI
+============================================================
+
+Reports must look like actual professional reports.
+
+Improve:
+
+- report title
+- dataset
+- reporting period
+- filters
+- summary information
+- table layout
+- number formatting
+- dates
+- status indicators
+- empty states
+- print layout
+
+The user should immediately understand:
+
+WHAT
+WHEN
+WHICH DATASET
+WHICH PERIOD
+WHAT THE VALUES REPRESENT
+
+============================================================
+18. CUSTOM REPORT BUILDER
+============================================================
+
+Improve the Custom Report page into a professional report-building
+workspace.
+
+Recommended structure:
+
+1. Dataset selection
+2. Indicator selection
+3. Reporting period selection
+4. Preview
+5. Export actions
+
+Make selected indicators and periods easy to understand.
+
+Provide clear selection counts.
+
+Example:
+
+Indicators
+3 selected
+
+Periods
+6 selected
+
+Do not create unnecessary wizard complexity.
+
+Preview should be visually clear.
+
+Export actions:
+
+- Print
+- PDF
+- Excel
+
+Must remain consistent with the existing backend APIs.
+
+============================================================
+19. DASHBOARDS & CHARTS
+============================================================
+
+Review all existing dashboards and analysis pages.
+
+Add or improve charts ONLY where they provide meaningful
+analytical value.
+
+Useful chart types include:
+
+- line charts for trends over reporting periods
+- bar charts for comparing datasets/indicators
+- stacked bars for meaningful status composition
+- limited pie/donut usage for simple part-to-whole views
+
+Do NOT use charts simply because charts look attractive.
+
+Each chart must answer a useful question.
+
+Examples:
+
+"What is the submission trend over time?"
+
+"How are submissions distributed by status?"
+
+"How has this indicator changed across reporting periods?"
+
+"How do selected indicators compare?"
+
+Existing Recharts infrastructure should be reused.
+
+Do not introduce another chart library unnecessarily.
+
+============================================================
+20. MANAGER DASHBOARD
+============================================================
+
+The Manager dashboard should focus on management information,
+not administration.
+
+Prioritize:
+
+- approved-data indicators
+- important trends
+- reporting coverage
+- dataset status
+- meaningful comparisons
+- recent approved reporting activity
+
+Do not show unapproved values as management facts.
+
+Maintain the existing APPROVED-only rule.
+
+============================================================
+21. INDICATOR ANALYSIS
+============================================================
+
+Improve the Indicator Analysis experience.
+
+Make it easy to:
+
+1. Select dataset
+2. Select indicator
+3. Select reporting periods where supported
+4. View trend
+5. View comparison
+
+Use charts and tables together when useful.
+
+Charts should never hide the exact underlying values.
+
+============================================================
+22. TABLE DESIGN
+============================================================
+
+Create one consistent professional table style.
+
+Tables should support:
+
+- readable headers
+- adequate row spacing
+- status badges
+- clear actions
+- search/filter controls
+- pagination
+- responsive horizontal scrolling where necessary
+- empty states
+
+Avoid overly dense tables.
+
+Avoid giant empty spaces.
+
+============================================================
+23. FORM DESIGN
+============================================================
+
+Standardize forms throughout the application.
+
+Every major form should have:
+
+- clear label
+- required indicator where applicable
+- helpful placeholder only when useful
+- validation message
+- consistent spacing
+- clear primary action
+- secondary/cancel action
+- loading state
+- success feedback
+- failure feedback
+
+Do not use placeholder text as a replacement for labels.
+
+============================================================
+24. DIALOG / MODAL DESIGN
+============================================================
+
+Standardize dialogs.
+
+Dialogs must have:
+
+- clear title
+- explanation when necessary
+- appropriate width
+- accessible close control
+- primary action
+- cancel action
+- loading state
+
+Destructive actions must use confirmation.
+
+Do not use dialogs for large forms when a full page is more
+appropriate.
+
+============================================================
+25. EMPTY / LOADING / ERROR STATES
+============================================================
+
+Every important page must have intentional states.
+
+LOADING:
+
+Use a professional skeleton/spinner pattern.
+
+EMPTY:
+
+Explain what is empty and what the user can do.
+
+ERROR:
+
+Provide a human-readable explanation.
+
+SUCCESS:
+
+Provide clear confirmation without unnecessary interruption.
+
+Never show:
+
+- raw SQL errors
+- stack traces
+- internal server messages
+- undefined
+- null
+- technical debug output
+
+============================================================
+26. SEARCH AND FILTER UX
+============================================================
+
+Standardize:
+
+- search input
+- filter controls
+- clear filters
+- active filter indicators
+- result counts
+- pagination
+
+Avoid filters that are visually scattered across the page.
+
+Group related controls.
+
+============================================================
+27. RESPONSIVE DESIGN
+============================================================
+
+Test and refine:
+
+- desktop
+- laptop
+- tablet
+- mobile
+
+Pay particular attention to:
+
+- sidebar
+- header
+- dashboard cards
+- tables
+- forms
+- reports
+- charts
+- dialogs
+- filter bars
+- action buttons
+
+Prevent:
+
+- page-level horizontal overflow
+- clipped buttons
+- inaccessible dialogs
+- overlapping elements
+- unreadable chart labels
+
+Large data tables may use internal horizontal scrolling.
+
+============================================================
+28. ACCESSIBILITY
+============================================================
+
+Improve practical accessibility:
+
+- semantic headings
+- form labels
+- keyboard navigation
+- visible focus
+- accessible buttons
+- aria-labels where required
+- dialog accessibility
+- readable contrast
+- meaningful status text
+- accessible navigation
+
+Do not claim formal WCAG certification.
+
+============================================================
+29. REMOVE DEMO / BORING / PLACEHOLDER FEEL
+============================================================
+
+Search the entire client for:
+
+- placeholder text
+- fake dashboard content
+- unnecessary sample cards
+- unused buttons
+- "coming soon"
+- debug labels
+- developer-only wording
+- duplicate pages
+- duplicate navigation
+- generic template text
+- unused icons
+- dead components
+
+Remove or replace only what is actually obsolete.
+
+Do not remove legitimate empty states.
+
+============================================================
+30. REMOVE VISUAL INCONSISTENCIES
+============================================================
+
+Search for inconsistent:
+
+- button sizes
+- border radius
+- shadows
+- colors
+- spacing
+- icon sizes
+- typography
+- table styles
+- modal styles
+- status badges
+
+Refactor toward shared components where practical.
+
+Do not rewrite working components unnecessarily.
+
+============================================================
+31. BRANDING
+============================================================
+
+The system should have a clear application identity.
+
+Use the project/application name consistently:
+
+Hospital Health Data Management,
+Reporting and Analysis System
+
+Where appropriate, use a shorter UI name such as:
+
+Hospital Health Data System
+
+Do not invent a hospital name unless the hospital's actual
+branding/name has been explicitly provided.
+
+Keep branding professional and neutral.
+
+============================================================
+32. BROWSER VALIDATION
+============================================================
+
+A real browser check is REQUIRED before final completion.
+
+Test at minimum:
+
+- Admin
+- Data Entry
+- Reporting
+- Manager
+
+Check:
+
+- visual layout
+- navigation
+- responsive behavior
+- console errors
+- failed network requests
+- broken UI states
+- modal behavior
+- charts
+- tables
+- forms
+
+Use Chrome or another modern browser.
+
+Do not consider the system visually complete based only on
+npm run build.
+
+============================================================
+33. COMPLETE FUNCTIONAL REGRESSION
+============================================================
+
+Run all available tests:
+
+Stage 06
+Stage 07
+Stage 08
+Stage 09
+Stage 10
+Stage 11
+Stage 12
+Stage 13
+
+All existing tests must remain passing.
+
+If UI changes cause functional regressions, fix them.
+
+Do not delete tests to make the suite pass.
+
+============================================================
+34. SECURITY FINAL CHECK
+============================================================
+
+Verify:
+
+- authentication
+- RBAC
+- object ownership
+- submission ownership
+- notification ownership
+- admin protection
+- last-admin protection
+- audit protection
+- password protection
+- refresh-session protection
+- security headers
+- no secrets exposed
+- no password hashes exposed
+
+Verify no frontend changes bypass backend authorization.
+
+============================================================
+35. PRODUCTION CONFIGURATION
+============================================================
+
+After UI/UX and functional work is complete, prepare the system
+for production.
+
+Review:
+
+- production environment variables
+- JWT secrets
+- database credentials
+- CORS
+- secure cookies
+- authentication rate limits
+- logging
+- error handling
+- API URL configuration
+- frontend environment configuration
+
+NEVER commit real secrets.
+
+Development credentials must not be used as production credentials.
+
+The development AUTH_RATE_LIMIT_MAX value used for local test
+runs must be reviewed and restored to a production-appropriate
+value.
+
+============================================================
+36. DATABASE PRODUCTION READINESS
+============================================================
+
+Verify:
+
+- all migrations are documented
+- migration order is correct
+- database constraints remain intact
+- no destructive migration exists
+- foreign keys are valid
+- unique constraints are valid
+- indexes are appropriate
+- production database can be initialized
+- existing data is preserved
+
+Do not delete test/production data without explicit instruction.
+
+============================================================
+37. BACKUP STRATEGY
+============================================================
+
+Document a practical production backup strategy.
+
+Include:
+
+- database backups
+- backup frequency
+- retention concept
+- restoration procedure
+- backup verification
+
+Do not claim backups are implemented if they are only documented.
+
+============================================================
+38. DEPLOYMENT PREPARATION
+============================================================
+
+Prepare documentation for deployment.
+
+Document:
+
+Frontend:
+- build command
+- environment variables
+- deployment requirements
+
+Backend:
+- installation
+- environment variables
+- migration commands
+- startup command
+- production configuration
+
+Database:
+- database creation
+- migration process
+- backup/restore considerations
+
+Do not invent provider-specific configuration unless the
+deployment provider is explicitly selected.
+
+============================================================
+39. FINAL DOCUMENTATION
+============================================================
+
+Create/update documentation for:
+
+1. System overview
+2. Architecture
+3. Roles and permissions
+4. Main workflows
+5. Installation
+6. Environment configuration
+7. Database setup
+8. Migrations
+9. Running frontend
+10. Running backend
+11. Testing
+12. Deployment preparation
+13. Backup strategy
+14. Security considerations
+15. User operation guide
+
+Documentation should be understandable to both:
+
+- developer/administrator
+- hospital system user
+
+============================================================
+40. FINAL API DOCUMENTATION
+============================================================
+
+Document the major API groups:
+
+Authentication
+Users
+Datasets
+Indicators
+Reporting Periods
+Submissions
+Review
+Notifications
+Reports
+Custom Reports
+Analytics
+Administration
+Audit Logs
+System
+
+Document:
+
+- endpoint
+- method
+- authentication
+- role
+- purpose
+- important parameters
+- expected response/error behavior
+
+Do not expose secrets or internal implementation details.
+
+============================================================
+41. FINAL SECURITY & QUALITY AUDIT
+============================================================
+
+Perform a final audit of:
+
+- authentication
+- authorization
+- validation
+- business rules
+- database integrity
+- audit logging
+- error handling
+- frontend security
+- API security
+- session management
+- report authorization
+- approved-data rules
+
+Compare implementation against Stage 01–13 requirements.
+
+Record any deviations.
+
+============================================================
+42. FINAL VISUAL AUDIT
+============================================================
+
+Perform a page-by-page visual audit.
+
+Check at minimum:
+
+ADMIN
+- Dashboard
+- Users
+- Datasets
+- Indicators
+- Reporting Periods
+- Audit Logs
+- System
+
+DATA ENTRY
+- Dashboard
+- My Submissions
+- Submission form
+- Submission detail/history
+- Notifications
+
+REPORTING
+- Dashboard
+- Review Queue
+- Review Detail
+- Dataset Report
+- Monthly Report
+- Indicator Report
+- Submission Status
+- Custom Report
+- Report History
+- Indicator Analysis
+- Notifications
+
+MANAGER
+- Dashboard
+- Indicator Analysis
+- Notifications
+
+For each page ask:
+
+1. Is the purpose immediately clear?
+2. Is the navigation correct?
+3. Is there duplicate UI?
+4. Is the page visually consistent?
+5. Is the page responsive?
+6. Are loading/empty/error states handled?
+7. Are actions obvious?
+8. Are icons professional?
+9. Is there unnecessary visual clutter?
+10. Does this look suitable for hospital staff?
+
+============================================================
+43. FINAL USER EXPERIENCE PRINCIPLE
+============================================================
+
+Every screen should answer:
+
+"What does the user need to know or do here?"
+
+Do not add UI elements merely because there is empty space.
+
+Do not add charts merely because dashboards are expected to
+have charts.
+
+Do not add icons merely because buttons look empty.
+
+Do not add cards merely to increase visual complexity.
+
+Every component must have a purpose.
+
+============================================================
+44. FINAL TEST SCRIPT
+============================================================
+
+Create:
+
+test_stage14.ps1
+
+It must verify, where practical:
+
+- application health
+- authentication
+- RBAC
+- critical workflows
+- reports
+- analytics
+- admin security
+- Stage 12 security rules
+- API regression
+
+The script must not expose passwords, tokens, or secrets.
+
+============================================================
+45. FINAL BUILD
+============================================================
+
+Run:
+
+Client:
+
+npm run build
+
+Server:
+
+- startup verification
+- migration verification
+- health endpoint
+- route registration
+
+Fix all blocking errors.
+
+Known non-blocking warnings may remain only if documented.
+
+============================================================
+46. FINAL RELEASE CHECKLIST
+============================================================
+
+Before declaring the system complete:
+
+[ ] No duplicate Dashboard navigation
+[ ] No obsolete navigation
+[ ] No placeholder/demo UI
+[ ] No emoji used as functional UI icons
+[ ] Professional icon system used consistently
+[ ] Consistent design system
+[ ] Consistent buttons/forms/tables
+[ ] Professional dashboards
+[ ] Meaningful charts where appropriate
+[ ] Data Entry UX refined
+[ ] Review UX refined
+[ ] Reports refined
+[ ] Custom Reports refined
+[ ] Notifications refined
+[ ] Responsive layout verified
+[ ] Accessibility basics verified
+[ ] Browser visual check completed
+[ ] Browser console checked
+[ ] API regression passes
+[ ] Security regression passes
+[ ] Database integrity verified
+[ ] Production configuration reviewed
+[ ] Secrets excluded
+[ ] Backup strategy documented
+[ ] Deployment documentation completed
+[ ] User documentation completed
+[ ] API documentation completed
+[ ] Final audit completed
+[ ] Stage 14 tests pass
+[ ] Client build succeeds
+[ ] Server starts successfully
+
+============================================================
+47. IMPORTANT — DO NOT BREAK EXISTING FUNCTIONALITY
+============================================================
+
+The system already has extensive tested functionality.
+
+Do not sacrifice:
+
+- authentication
+- RBAC
+- submission workflow
+- review workflow
+- approval workflow
+- reports
+- exports
+- analytics
+- notifications
+- audit logs
+- security rules
+
+for visual changes.
+
+UI changes must preserve existing APIs and business rules.
+
+============================================================
+48. IMPORTANT — NO MAJOR REWRITE
+============================================================
+
+Do not rewrite the application from scratch.
+
+Do not replace:
+
+React
+Vite
+Tailwind
+Node.js
+Express
+MySQL/MariaDB
+Knex
+JWT
+
+Do not replace the architecture.
+
+Improve the existing implementation.
+
+============================================================
+49. FINAL REVIEW DOCUMENT
+============================================================
+
+Create:
+
+docs/stage 14 review.txt
+
+The review must contain:
+
+1. UI/UX changes
+2. Navigation changes
+3. Design system changes
+4. Icon changes
+5. Dashboard changes
+6. Chart changes
+7. Data Entry improvements
+8. Reporting improvements
+9. Responsive improvements
+10. Accessibility improvements
+11. Functional fixes
+12. Security audit
+13. Production configuration
+14. Database readiness
+15. Documentation created
+16. Deployment preparation
+17. Backup strategy
+18. Browser verification
+19. Test results
+20. Build results
+21. Remaining known issues
+22. Final production-readiness assessment
+
+============================================================
+50. FINAL COMPLETION CRITERIA
+============================================================
+
+Stage 14 is complete only when:
+
+1. The UI looks like a professional hospital application.
+2. Navigation is clean and has no duplicates.
+3. Functional icons use a consistent professional icon system.
+4. Dashboards contain meaningful information.
+5. Charts are used where they genuinely improve understanding.
+6. Data-entry workflows are clear and practical.
+7. Review workflows are clear.
+8. Reports look professional.
+9. Custom reports are usable.
+10. The application is responsive.
+11. Accessibility basics are addressed.
+12. Browser validation is completed.
+13. No critical browser console errors remain.
+14. All critical workflows still work.
+15. Security rules remain enforced.
+16. Existing regression tests pass.
+17. Stage 14 tests pass.
+18. Client build succeeds.
+19. Server starts successfully.
+20. Production configuration is documented.
+21. Backup strategy is documented.
+22. Installation/deployment documentation is complete.
+23. User documentation is complete.
+24. API documentation is complete.
+25. Final audit is complete.
+
+============================================================
+END OF STAGE 14
+============================================================

@@ -101,7 +101,7 @@ export default function DatasetReportPage() {
 
       {!loading && !error && !generated && (
         <EmptyState
-          icon="📋"
+         
           title="Select a dataset and period"
           message="Choose an active dataset and a reporting period above to view the approved indicator values."
         />
@@ -192,3 +192,4 @@ export default function DatasetReportPage() {
     </div>
   );
 }
+

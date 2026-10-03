@@ -3,34 +3,51 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../components/NotificationBell';
 
+import {
+  LayoutDashboard,
+  Users,
+  Database,
+  ListChecks,
+  CalendarDays,
+  ShieldCheck,
+  Settings,
+  FileText,
+  FileBarChart,
+  LineChart,
+  CheckCheck,
+  SlidersHorizontal,
+} from 'lucide-react';
+
 const NAV_BY_ROLE = {
   ADMIN: [
-    { to: '/app/admin', label: 'Dashboard' },
-    { to: '/app/admin/users', label: 'Users' },
-    { to: '/app/admin/datasets', label: 'Datasets' },
-    { to: '/app/admin/indicators', label: 'Indicators' },
-    { to: '/app/admin/reporting-periods', label: 'Reporting Periods' },
-    { to: '/app/admin/audit-logs', label: 'Audit Logs' },
-    { to: '/app/admin/system', label: 'System' },
+    { to: '/app/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/admin/users', label: 'Users', icon: Users },
+    { to: '/app/admin/datasets', label: 'Datasets', icon: Database },
+    { to: '/app/admin/indicators', label: 'Indicators', icon: ListChecks },
+    { to: '/app/admin/reporting-periods', label: 'Reporting Periods', icon: CalendarDays },
+    { to: '/app/admin/audit-logs', label: 'Audit Logs', icon: ShieldCheck },
+    { to: '/app/admin/system', label: 'System', icon: Settings },
   ],
   DATA_ENTRY: [
-    { to: '/app/data-entry/submissions', label: 'My Submissions' },
-    { to: '/app/data-entry/submissions/new', label: 'New Submission' },
+    { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/data-entry/submissions', label: 'My Submissions', icon: FileText },
+    { to: '/app/data-entry/submissions/new', label: 'New Submission', icon: SlidersHorizontal },
   ],
   REPORTING: [
-    { to: '/app/reporting/queue', label: 'Review Queue' },
-    { to: '/app/reporting/reports/dataset', label: 'Dataset Report' },
-    { to: '/app/reporting/reports/monthly', label: 'Monthly Report' },
-    { to: '/app/reporting/reports/indicator', label: 'Indicator Report' },
-    { to: '/app/reporting/reports/custom', label: 'Custom Report' },
-    { to: '/app/reporting/reports/submission-status', label: 'Submission Status' },
-    { to: '/app/reporting/reports/history', label: 'Report History' },
-    { to: '/app/manager/dashboard', label: 'Dashboard' },
-    { to: '/app/manager/analysis', label: 'Indicator Analysis' },
+    { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/reporting/queue', label: 'Review Queue', icon: CheckCheck },
+    { to: '/app/reporting/reports/dataset', label: 'Dataset Report', icon: FileBarChart },
+    { to: '/app/reporting/reports/monthly', label: 'Monthly Report', icon: FileBarChart },
+    { to: '/app/reporting/reports/indicator', label: 'Indicator Report', icon: FileBarChart },
+    { to: '/app/reporting/reports/custom', label: 'Custom Report', icon: SlidersHorizontal },
+    { to: '/app/reporting/reports/submission-status', label: 'Submission Status', icon: FileText },
+    { to: '/app/reporting/reports/history', label: 'Report History', icon: LineChart },
+    { to: '/app/manager/dashboard', label: 'Analytics Dashboard', icon: LayoutDashboard },
+    { to: '/app/manager/analysis', label: 'Indicator Analysis', icon: LineChart },
   ],
   MANAGER: [
-    { to: '/app/manager/dashboard', label: 'Dashboard' },
-    { to: '/app/manager/analysis', label: 'Indicator Analysis' },
+    { to: '/app/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/manager/analysis', label: 'Indicator Analysis', icon: LineChart },
   ],
 };
 
@@ -69,12 +86,12 @@ function AppShell() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" onClick={() => setMobileNavOpen(false)}>
-          <NavLink to="/app" end className={navLinkClass}>
-            Dashboard
-          </NavLink>
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} className={navLinkClass}>
-              {item.label}
+              <span className="inline-flex items-center gap-2">
+                <item.icon className="w-4 h-4 shrink-0" aria-hidden />
+                {item.label}
+              </span>
             </NavLink>
           ))}
         </nav>

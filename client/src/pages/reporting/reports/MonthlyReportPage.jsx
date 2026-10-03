@@ -87,7 +87,7 @@ export default function MonthlyReportPage() {
 
       {!loading && !error && !generated && (
         <EmptyState
-          icon="📅"
+         
           title="Select a reporting period"
           message="Choose a reporting period to see which datasets have approved submissions."
         />
@@ -157,3 +157,4 @@ export default function MonthlyReportPage() {
     </div>
   );
 }
+

@@ -310,7 +310,7 @@ export default function ManagerDashboardPage() {
             />
             {data.keyIndicators.length === 0 ? (
               <EmptyState
-                icon="📊"
+               
                 title="No approved indicator data"
                 message="No approved submissions with indicator values exist for this period."
               />
@@ -351,7 +351,7 @@ export default function ManagerDashboardPage() {
 
       {!loading && !error && !data && (
         <EmptyState
-          icon="📈"
+         
           title="No data available"
           message="No reporting period data found. Ensure periods and approved submissions exist."
         />
@@ -359,3 +359,4 @@ export default function ManagerDashboardPage() {
     </div>
   );
 }
+

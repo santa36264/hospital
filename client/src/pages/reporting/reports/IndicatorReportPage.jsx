@@ -121,7 +121,7 @@ export default function IndicatorReportPage() {
 
       {!loading && !error && !generated && (
         <EmptyState
-          icon="🔍"
+         
           title="Select filters to view indicator data"
           message="Choose a dataset, then select an indicator and a reporting period. Only indicators belonging to the selected dataset are shown."
         />
@@ -207,3 +207,4 @@ export default function IndicatorReportPage() {
     </div>
   );
 }
+

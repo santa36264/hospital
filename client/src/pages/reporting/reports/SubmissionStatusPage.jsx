@@ -113,7 +113,7 @@ export default function SubmissionStatusPage() {
         <ReportCard>
           {result.data.length === 0 ? (
             <EmptyState
-              icon="📄"
+             
               title="No submissions found"
               message="No submissions match the selected filters."
             />
@@ -159,3 +159,4 @@ export default function SubmissionStatusPage() {
     </div>
   );
 }
+

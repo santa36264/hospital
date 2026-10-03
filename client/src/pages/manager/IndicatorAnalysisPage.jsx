@@ -404,7 +404,7 @@ export default function IndicatorAnalysisPage() {
 
               <div className="px-4 py-4">
                 {trendData.values.length === 0 ? (
-                  <EmptyState icon="📉" title="No periods in range" message="No reporting periods found between the selected dates." />
+                  <EmptyState title="No periods in range" message="No reporting periods found between the selected dates." />
                 ) : isChartable(trendData.indicator.data_type) && !showTable ? (
                   <TrendChart values={trendData.values} indicator={trendData.indicator} />
                 ) : (
@@ -506,3 +506,4 @@ export default function IndicatorAnalysisPage() {
     </div>
   );
 }
+

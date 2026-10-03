@@ -460,7 +460,7 @@ export default function CustomReportPage() {
 
           {!previewing && !report && !previewError && (
             <EmptyState
-              icon="📊"
+             
               title="Build your report"
               message="Select a dataset, choose indicators and periods, then click Preview Report to see the results."
             />
@@ -565,3 +565,4 @@ export default function CustomReportPage() {
     </>
   );
 }
+

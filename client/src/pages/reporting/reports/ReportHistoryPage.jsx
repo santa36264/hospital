@@ -62,7 +62,7 @@ export default function ReportHistoryPage() {
         <ReportCard>
           {result.data.length === 0 ? (
             <EmptyState
-              icon="🗂"
+             
               title="No report history yet"
               message="Report history will appear here after you generate reports."
             />
@@ -105,3 +105,4 @@ export default function ReportHistoryPage() {
     </div>
   );
 }
+

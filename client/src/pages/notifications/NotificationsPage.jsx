@@ -101,7 +101,7 @@ export default function NotificationsPage() {
           <div className="bg-white rounded-lg shadow p-6 text-center text-slate-500">Loading…</div>
         ) : notifications.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-10 text-center">
-            <p className="text-3xl mb-3">🔔</p>
+            <div className="flex justify-center mb-3"><svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4a2 2 0 01-.6-1.8V10a6 6 0 10-12 0v3.8a2 2 0 01-.6 1.8L4 17h5m6 0a3 3 0 11-6 0m6 0H9" /></svg></div>
             <p className="text-slate-600 font-medium">No notifications</p>
             <p className="text-slate-400 text-sm mt-1">
               {unreadOnly ? 'No unread notifications.' : 'You have no notifications yet.'}
@@ -137,3 +137,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+
